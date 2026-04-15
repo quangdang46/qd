@@ -118,6 +118,12 @@
       "type": "file"
     },
     {
+      "path": "cli/modules/builtin-modules.ts",
+      "accessCount": 6,
+      "lastAccessed": 1776273594088,
+      "type": "file"
+    },
+    {
       "path": "cli/schemas/skill-manifest.schema.json",
       "accessCount": 4,
       "lastAccessed": 1776272596390,
@@ -166,6 +172,12 @@
       "type": "file"
     },
     {
+      "path": "cli/ide/platform-codes.yaml",
+      "accessCount": 3,
+      "lastAccessed": 1776273662545,
+      "type": "file"
+    },
+    {
       "path": "references/bmad-method-test-architecture-enterprise-main/src/module.yaml",
       "accessCount": 2,
       "lastAccessed": 1776269311091,
@@ -205,6 +217,24 @@
       "path": "test/run-tests.ts",
       "accessCount": 2,
       "lastAccessed": 1776273117716,
+      "type": "file"
+    },
+    {
+      "path": "cli/cli-utils.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776273557700,
+      "type": "file"
+    },
+    {
+      "path": "cli/core/manifest.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776273566910,
+      "type": "file"
+    },
+    {
+      "path": "cli/yaml-format.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776273626329,
       "type": "file"
     },
     {
@@ -253,12 +283,6 @@
       "path": "cli/ide/manager.ts",
       "accessCount": 1,
       "lastAccessed": 1776269644647,
-      "type": "file"
-    },
-    {
-      "path": "cli/ide/platform-codes.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1776269644694,
       "type": "file"
     },
     {
@@ -326,6 +350,12 @@
       "accessCount": 1,
       "lastAccessed": 1776273091712,
       "type": "file"
+    },
+    {
+      "path": "cli",
+      "accessCount": 1,
+      "lastAccessed": 1776273602204,
+      "type": "directory"
     }
   ],
   "userDirectives": []

@@ -4,17 +4,17 @@ const prompts = require('./prompts');
 
 const CLIUtils = {
   /**
-   * Display BMAD logo and version using @clack intro + box
+   * Display QD logo and version using @clack intro + box
    */
   async displayLogo() {
     const color = await prompts.getColor();
     const termWidth = process.stdout.columns || 80;
 
     const logoWide = ['  ____  __  __    _    ____', ' | __ )|  \\/  |  / \\  |  _ \\', " |  _ \\| |\\/| | / _ \\ | | | |", ' | |_) | |  | |/ ___ \\| |_| |', ' |____/|_|  |_/_/   \\_\\____/'];
-    const logoNarrow = ['  BMAD'];
+    const logoNarrow = ['  QD'];
     const logoLines = termWidth >= 60 ? logoWide : logoNarrow;
     const logo = logoLines.map((line) => color.blue(line)).join('\n');
-    const tagline = color.white('    Build More, Architect Dreams\n    (c) BMad Code');
+    const tagline = color.white('    Quick Development Framework\n    (c) QD Framework');
 
     await prompts.box(`${logo}\n${tagline}`, '', {
       contentAlign: 'center',

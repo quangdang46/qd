@@ -1179,7 +1179,7 @@ class OfficialModules {
    * @returns {string} Capitalized username\
    */
   getDefaultUsername() {
-    let result = 'BMad';
+    let result = 'QD';
     try {
       const os = require('node:os');
       const userInfo = os.userInfo();
@@ -1188,7 +1188,7 @@ class OfficialModules {
         result = username.charAt(0).toUpperCase() + username.slice(1);
       }
     } catch {
-      // Do nothing, just return 'BMad'
+      // Do nothing, just return 'QD'
     }
     return result;
   }

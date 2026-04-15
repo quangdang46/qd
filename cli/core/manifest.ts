@@ -20,7 +20,7 @@ class Manifest {
     // Ensure _config directory exists
     await fs.ensureDir(path.dirname(manifestPath));
 
-    // Get the BMad version from package.json
+    // Get the QD version from package.json
     const qdVersion = data.version || require(path.join(process.cwd(), 'package.json')).version;
 
     // Convert module list to new detailed format
