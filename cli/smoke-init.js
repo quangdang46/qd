@@ -27,8 +27,8 @@ function assertExists(filePath) {
 
 function main() {
   const repoRoot = path.resolve(__dirname, '..');
-  const cliPath = path.join(repoRoot, 'dist', 'bmad-cli.js');
-  const tempProject = fs.mkdtempSync(path.join(os.tmpdir(), 'bmad-smoke-init-'));
+  const cliPath = path.join(repoRoot, 'dist', 'qd-cli.js');
+  const tempProject = fs.mkdtempSync(path.join(os.tmpdir(), 'qd-smoke-init-'));
   const projectName = path.basename(tempProject);
   const autoMode = process.argv.includes('--auto');
 
@@ -37,12 +37,12 @@ function main() {
   try {
     const installArgs = [cliPath, 'install', '--directory', tempProject];
     if (autoMode) {
-      installArgs.push('--yes', '--tools', 'none', '--modules', 'bmad');
+      installArgs.push('--yes', '--tools', 'none', '--modules', 'qd');
     }
 
     console.log(
       autoMode
-        ? 'Running install in auto mode (--yes --tools none --modules bmad)'
+        ? 'Running install in auto mode (--yes --tools none --modules qd)'
         : 'Running install in interactive mode (manual confirmations)',
     );
 
@@ -54,14 +54,14 @@ function main() {
       );
     }
 
-    const bmadDir = path.join(tempProject, '_bmad');
-    const configDir = path.join(bmadDir, '_config');
-    assertExists(bmadDir);
+    const qdDir = path.join(tempProject, '_qd');
+    const configDir = path.join(qdDir, '_config');
+    assertExists(qdDir);
     assertExists(path.join(configDir, 'manifest.yaml'));
     assertExists(path.join(configDir, 'skill-manifest.csv'));
     assertExists(path.join(configDir, 'agent-manifest.csv'));
-    assertExists(path.join(configDir, 'bmad-help.csv'));
-    assertExists(path.join(bmadDir, 'bmad', 'config.yaml'));
+    assertExists(path.join(configDir, 'qd-help.csv'));
+    assertExists(path.join(qdDir, 'qd', 'config.yaml'));
 
     const status = run(process.execPath, [cliPath, 'status'], { cwd: tempProject });
     if (status.status !== 0) {
@@ -70,7 +70,7 @@ function main() {
       );
     }
 
-    if (!status.stdout.includes(projectName) && !status.stdout.includes('_bmad')) {
+    if (!status.stdout.includes(projectName) && !status.stdout.includes('_qd')) {
       throw new Error(`Status output did not include expected installation path.\n${status.stdout}`);
     }
 

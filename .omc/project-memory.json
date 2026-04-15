@@ -238,6 +238,12 @@
       "type": "file"
     },
     {
+      "path": "cli/smoke-init.js",
+      "accessCount": 2,
+      "lastAccessed": 1776273760261,
+      "type": "file"
+    },
+    {
       "path": "src/bmm-skills/module.yaml",
       "accessCount": 1,
       "lastAccessed": 1776268584974,
