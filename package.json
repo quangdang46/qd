@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "qd",
+  "version": "6.3.0",
+  "description": "Breakthrough Method of Agile AI-driven Development",
+  "keywords": [
+    "agile",
+    "ai",
+    "orchestrator",
+    "development",
+    "methodology",
+    "agents",
+    "bmad"
+  ],
+  "main": "dist/bmad-cli.js",
+  "bin": {
+    "bmad": "dist/bmad-cli.js"
+  },
+  "scripts": {
+    "build:installer": "tsc -p tsconfig.json",
+    "bmad:install": "node dist/bmad-cli.js install",
+    "bmad:uninstall": "node dist/bmad-cli.js uninstall",
+    "install:bmad": "node dist/bmad-cli.js install",
+    "smoke:init": "node cli/smoke-init.js",
+    "build:test": "tsc -p tsconfig.json --rootDir . --outDir test-dist",
+    "test": "npm run build:test && node test-dist/test-installation-components.js"
+  },
+  "dependencies": {
+    "@clack/core": "^1.0.0",
+    "@clack/prompts": "^1.0.0",
+    "@kayvan/markdown-tree-parser": "^1.6.1",
+    "chalk": "^4.1.2",
+    "commander": "^14.0.0",
+    "csv-parse": "^6.1.0",
+    "glob": "^11.0.3",
+    "ignore": "^7.0.5",
+    "js-yaml": "^4.1.0",
+    "picocolors": "^1.1.1",
+    "semver": "^7.6.3",
+    "xml2js": "^0.6.2",
+    "yaml": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "typescript": "^6.0.2"
+  }
+}

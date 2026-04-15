@@ -1,0 +1,63 @@
+# Dependencies
+**/node_modules/
+pnpm-lock.yaml
+bun.lock
+deno.lock
+pnpm-workspace.yaml
+package-lock.json
+
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+
+
+# Environment variables
+.env
+
+__pycache__/
+.pytest_cache/
+
+
+# AI assistant files
+CLAUDE.md
+.ai/*
+cursor
+.gemini
+.mcp.json
+CLAUDE.local.md
+.serena/
+.claude/settings.local.json
+.junie/
+.agents/
+
+z*/
+
+.clinerules
+# .augment/ is gitignored except tracked config files — add exceptions explicitly
+.augment/*
+.codebuddy
+.crush
+.cursor
+.iflow
+.opencode
+.qwen
+.rovodev
+.kilocodemodes
+.claude
+.codex
+.github/chatmodes
+.github/agents
+.agent
+.agentvibes
+.kiro
+.roo
+.trae
+.windsurf
+
+
+dist/
+test-dist/

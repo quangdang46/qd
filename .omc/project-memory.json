@@ -1,0 +1,115 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776267767177,
+  "projectRoot": "/home/quangdang/projects/qd",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=20.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": "Node.js 20.0.0"
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {
+      "build:installer": "tsc -p tsconfig.json",
+      "bmad:install": "node dist/bmad-cli.js install",
+      "bmad:uninstall": "node dist/bmad-cli.js uninstall",
+      "install:bmad": "node dist/bmad-cli.js install",
+      "smoke:init": "node cli/smoke-init.js",
+      "build:test": "tsc -p tsconfig.json --rootDir . --outDir test-dist",
+      "test": "npm run build:test && node test-dist/test-installation-components.js"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src",
+      "test"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "cli": {
+      "path": "cli",
+      "purpose": null,
+      "fileCount": 10,
+      "lastAccessed": 1776267767127,
+      "keyFiles": [
+        "README.md",
+        "bmad-cli.ts",
+        "cli-utils.ts",
+        "file-ops.ts",
+        "fs-native.ts"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 8,
+      "lastAccessed": 1776267767133,
+      "keyFiles": [
+        "bmad-cli.js",
+        "cli-utils.js",
+        "file-ops.js",
+        "fs-native.js",
+        "project-root.js"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1776267767161,
+      "keyFiles": []
+    },
+    "test": {
+      "path": "test",
+      "purpose": "Test files",
+      "fileCount": 2,
+      "lastAccessed": 1776267767169,
+      "keyFiles": [
+        "README.md",
+        "test-installation-components.ts"
+      ]
+    },
+    "test-dist": {
+      "path": "test-dist",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776267767170,
+      "keyFiles": [
+        "test-installation-components.js"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}
