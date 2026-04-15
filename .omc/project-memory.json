@@ -154,6 +154,18 @@
       "type": "file"
     },
     {
+      "path": "test/test-installation-components.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776273339906,
+      "type": "file"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "accessCount": 3,
+      "lastAccessed": 1776273354681,
+      "type": "file"
+    },
+    {
       "path": "references/bmad-method-test-architecture-enterprise-main/src/module.yaml",
       "accessCount": 2,
       "lastAccessed": 1776269311091,
@@ -256,12 +268,6 @@
       "type": "file"
     },
     {
-      "path": "ARCHITECTURE.md",
-      "accessCount": 1,
-      "lastAccessed": 1776272040810,
-      "type": "file"
-    },
-    {
       "path": "artifacts/module.yaml",
       "accessCount": 1,
       "lastAccessed": 1776272120156,
@@ -295,12 +301,6 @@
       "path": "cli/platforms/cursor.ts",
       "accessCount": 1,
       "lastAccessed": 1776272199675,
-      "type": "file"
-    },
-    {
-      "path": "test/test-installation-components.ts",
-      "accessCount": 1,
-      "lastAccessed": 1776272441008,
       "type": "file"
     },
     {

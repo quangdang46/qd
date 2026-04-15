@@ -209,8 +209,8 @@ test/
 
 - Skill folders: kebab-case (`quick-dev`, `agent-builder`)
 - Agent names: kebab-case (`qd-tea`, `qd-quick-dev`)
-- Manifest file: `qd-skill-manifest.yaml` (not `bmad-`)
-- CLI config folder: `.qd/` (not `_bmad/`)
+- Manifest file: `qd-skill-manifest.yaml`
+- CLI config folder: `_qd/`
 
 ---
 

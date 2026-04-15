@@ -1,8 +1,7 @@
 /**
  * Installation Component Tests (TypeScript)
  *
- * Scope intentionally trimmed to behaviors that still exist
- * after the CLI refactor to `cli/` and legacy feature removal.
+ * Tests for QD installer components.
  */
 
 const os = require('node:os');
@@ -39,25 +38,25 @@ async function runCase(testCase: TestCase): Promise<void> {
   }
 }
 
-async function createTestBmadFixture(): Promise<string> {
-  const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bmad-fixture-'));
-  const fixtureDir = path.join(fixtureRoot, '_bmad');
+async function createTestQdFixture(): Promise<string> {
+  const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'qd-fixture-'));
+  const fixtureDir = path.join(fixtureRoot, '_qd');
   await fs.ensureDir(path.join(fixtureDir, '_config'));
 
   await fs.writeFile(
     path.join(fixtureDir, '_config', 'skill-manifest.csv'),
     [
       'canonicalId,name,description,module,path',
-      '"bmad-master","bmad-master","Minimal test skill","core","_bmad/core/bmad-master/SKILL.md"',
+      '"qd-master","qd-master","Minimal test skill","core","_qd/core/qd-master/SKILL.md"',
       '',
     ].join('\n'),
   );
 
-  const skillDir = path.join(fixtureDir, 'core', 'bmad-master');
+  const skillDir = path.join(fixtureDir, 'core', 'qd-master');
   await fs.ensureDir(skillDir);
   await fs.writeFile(
     path.join(skillDir, 'SKILL.md'),
-    ['---', 'name: bmad-master', 'description: Minimal test skill', '---', '', '<!-- agent-activation -->', 'You are a test agent.'].join(
+    ['---', 'name: qd-master', 'description: Minimal test skill', '---', '', '<!-- agent-activation -->', 'You are a test agent.'].join(
       '\n',
     ),
   );
@@ -87,28 +86,28 @@ const tests: TestCase[] = [
   {
     name: 'Ona setup writes SKILL.md into native destination',
     run: async () => {
-      const tempProjectDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bmad-ona-test-'));
-      const installedBmadDir = await createTestBmadFixture();
+      const tempProjectDir = await fs.mkdtemp(path.join(os.tmpdir(), 'qd-ona-test-'));
+      const installedQdDir = await createTestQdFixture();
       try {
         const ideManager = new IdeManager();
         await ideManager.ensureInitialized();
-        const result = await ideManager.setup('ona', tempProjectDir, installedBmadDir, {
+        const result = await ideManager.setup('ona', tempProjectDir, installedQdDir, {
           silent: true,
-          selectedModules: ['bmad'],
+          selectedModules: ['qd'],
         });
         ok(result.success === true, 'Expected Ona setup to succeed');
-        const skillFile = path.join(tempProjectDir, '.ona', 'skills', 'bmad-master', 'SKILL.md');
+        const skillFile = path.join(tempProjectDir, '.ona', 'skills', 'qd-master', 'SKILL.md');
         ok(await fs.pathExists(skillFile), 'Expected Ona to install SKILL.md');
       } finally {
         await fs.remove(tempProjectDir).catch(() => undefined);
-        await fs.remove(path.dirname(installedBmadDir)).catch(() => undefined);
+        await fs.remove(path.dirname(installedQdDir)).catch(() => undefined);
       }
     },
   },
   {
     name: 'ManifestGenerator.parseSkillMd validates frontmatter',
     run: async () => {
-      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bmad-skill-parse-'));
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'qd-skill-parse-'));
       try {
         const goodDir = path.join(tempDir, 'good-skill');
         const badDir = path.join(tempDir, 'bad-skill');
@@ -118,7 +117,7 @@ const tests: TestCase[] = [
         await fs.writeFile(path.join(badDir, 'SKILL.md'), '---\nname: wrong-name\ndescription: bad\n---\n\nBody\n');
 
         const generator = new ManifestGenerator();
-        (generator as any).bmadFolderName = '_bmad';
+        (generator as any).qdFolderName = '_qd';
         const good = await generator.parseSkillMd(path.join(goodDir, 'SKILL.md'), goodDir, 'good-skill');
         const bad = await generator.parseSkillMd(path.join(badDir, 'SKILL.md'), badDir, 'bad-skill');
 
