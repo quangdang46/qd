@@ -12,30 +12,30 @@ const ui = new UI();
 
 module.exports = {
   command: 'status',
-  description: 'Display BMAD installation status and module versions',
+  description: 'Display QD installation status and module versions',
   options: [],
   action: async (options) => {
     try {
-      // Find the bmad directory
+      // Find the qd directory
       const projectDir = process.cwd();
-      const { bmadDir } = await installer.findBmadDir(projectDir);
+      const { qdDir } = await installer.findQdDir(projectDir);
 
-      // Check if bmad directory exists
+      // Check if qd directory exists
       const fs = require('../fs-native');
-      if (!(await fs.pathExists(bmadDir))) {
-        await prompts.log.warn('No BMAD installation found in the current directory.');
-        await prompts.log.message(`Expected location: ${bmadDir}`);
-        await prompts.log.message('Run "bmad install" to set up a new installation.');
+      if (!(await fs.pathExists(qdDir))) {
+        await prompts.log.warn('No QD installation found in the current directory.');
+        await prompts.log.message(`Expected location: ${qdDir}`);
+        await prompts.log.message('Run "qd install" to set up a new installation.');
         process.exit(0);
         return;
       }
 
       // Read manifest
-      const manifestData = await manifest._readRaw(bmadDir);
+      const manifestData = await manifest._readRaw(qdDir);
 
       if (!manifestData) {
-        await prompts.log.warn('No BMAD installation manifest found.');
-        await prompts.log.message('Run "bmad install" to set up a new installation.');
+        await prompts.log.warn('No QD installation manifest found.');
+        await prompts.log.message('Run "qd install" to set up a new installation.');
         process.exit(0);
         return;
       }
@@ -47,13 +47,13 @@ module.exports = {
       await ui.displayStatus({
         installation,
         modules,
-        bmadDir,
+        qdDir,
       });
 
       process.exit(0);
     } catch (error) {
       await prompts.log.error(`Status check failed: ${error.message}`);
-      if (process.env.BMAD_DEBUG) {
+      if (process.env.QD_DEBUG) {
         await prompts.log.message(error.stack);
       }
       process.exit(1);

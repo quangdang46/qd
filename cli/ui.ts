@@ -32,10 +32,10 @@ class UI {
 
     const { Installer } = require('./core/installer');
     const installer = new Installer();
-    const { bmadDir } = await installer.findBmadDir(confirmedDirectory);
+    const { qdDir } = await installer.findQdDir(confirmedDirectory);
 
-    // Check if there's an existing BMAD installation
-    const hasExistingInstall = await fs.pathExists(bmadDir);
+    // Check if there's an existing QD installation
+    const hasExistingInstall = await fs.pathExists(qdDir);
 
     // Track action type (only set if there's an existing installation)
     let actionType;
@@ -43,7 +43,7 @@ class UI {
     // Only show action menu if there's an existing installation
     if (hasExistingInstall) {
       // Get version information
-      const { existingInstall, bmadDir } = await this.getExistingInstallation(confirmedDirectory);
+      const { existingInstall, qdDir } = await this.getExistingInstallation(confirmedDirectory);
 
       // Build menu choices dynamically
       const choices = [];
@@ -57,7 +57,7 @@ class UI {
       }
 
       // Common actions
-      choices.push({ name: 'Modify BMAD Installation', value: 'update' });
+      choices.push({ name: 'Modify QD Installation', value: 'update' });
 
       // Check if action is provided via command-line
       if (options.action) {
@@ -100,19 +100,19 @@ class UI {
 
         await prompts.log.message(`Found existing modules: ${[...installedModuleIds].join(', ')}`);
 
-        await prompts.log.info('Using BMAD profile');
+        await prompts.log.info('Using QD profile');
 
         // Get tool selection
         const toolSelection = await this.promptToolSelection(confirmedDirectory, options);
 
-        const moduleConfigs = await this.collectModuleConfigs(confirmedDirectory, 'bmad', options);
+        const moduleConfigs = await this.collectModuleConfigs(confirmedDirectory, 'qd', options);
 
         return {
           actionType: 'update',
           directory: confirmedDirectory,
           ides: toolSelection.ides,
           skipIde: toolSelection.skipIde,
-          bmadConfig: moduleConfigs.bmad || {},
+          qdConfig: moduleConfigs.qd || {},
           moduleConfigs: moduleConfigs,
           skipPrompts: options.yes || false,
         };
@@ -121,17 +121,17 @@ class UI {
 
     // This section is only for new installations (update returns early above)
 
-    await prompts.log.info('Using BMAD profile');
+    await prompts.log.info('Using QD profile');
 
     let toolSelection = await this.promptToolSelection(confirmedDirectory, options);
-    const moduleConfigs = await this.collectModuleConfigs(confirmedDirectory, 'bmad', options);
+    const moduleConfigs = await this.collectModuleConfigs(confirmedDirectory, 'qd', options);
 
     return {
       actionType: 'install',
       directory: confirmedDirectory,
       ides: toolSelection.ides,
       skipIde: toolSelection.skipIde,
-      bmadConfig: moduleConfigs.bmad || {},
+      qdConfig: moduleConfigs.qd || {},
       moduleConfigs: moduleConfigs,
       skipPrompts: options.yes || false,
     };
@@ -150,8 +150,8 @@ class UI {
     const { ExistingInstall } = require('./core/existing-install');
     const { Installer } = require('./core/installer');
     const installer = new Installer();
-    const { bmadDir } = await installer.findBmadDir(projectDir || process.cwd());
-    const existingInstall = await ExistingInstall.detect(bmadDir);
+    const { qdDir } = await installer.findQdDir(projectDir || process.cwd());
+    const existingInstall = await ExistingInstall.detect(qdDir);
     const configuredIdes = existingInstall.ides;
 
     // Get IDE manager to fetch available IDEs dynamically
@@ -382,17 +382,17 @@ class UI {
   /**
    * Get existing installation info and installed modules
    * @param {string} directory - Installation directory
-   * @returns {Object} Object with existingInstall, installedModuleIds, and bmadDir
+   * @returns {Object} Object with existingInstall, installedModuleIds, and qdDir
    */
   async getExistingInstallation(directory) {
     const { ExistingInstall } = require('./core/existing-install');
     const { Installer } = require('./core/installer');
     const installer = new Installer();
-    const { bmadDir } = await installer.findBmadDir(directory);
-    const existingInstall = await ExistingInstall.detect(bmadDir);
+    const { qdDir } = await installer.findQdDir(directory);
+    const existingInstall = await ExistingInstall.detect(qdDir);
     const installedModuleIds = new Set(existingInstall.moduleIds);
 
-    return { existingInstall, installedModuleIds, bmadDir };
+    return { existingInstall, installedModuleIds, qdDir };
   }
 
   /**
@@ -407,42 +407,42 @@ class UI {
     const { OfficialModules } = require('./modules/builtin-modules');
     const configCollector = new OfficialModules();
 
-    // Seed bmad config from CLI options if provided
+    // Seed qd config from CLI options if provided
     if (options.userName || options.communicationLanguage || options.documentOutputLanguage || options.outputFolder) {
-      const bmadConfig = {};
+      const qdConfig = {};
       if (options.userName) {
-        bmadConfig.user_name = options.userName;
+        qdConfig.user_name = options.userName;
         await prompts.log.info(`Using user name from command-line: ${options.userName}`);
       }
       if (options.communicationLanguage) {
-        bmadConfig.communication_language = options.communicationLanguage;
+        qdConfig.communication_language = options.communicationLanguage;
         await prompts.log.info(`Using communication language from command-line: ${options.communicationLanguage}`);
       }
       if (options.documentOutputLanguage) {
-        bmadConfig.document_output_language = options.documentOutputLanguage;
+        qdConfig.document_output_language = options.documentOutputLanguage;
         await prompts.log.info(`Using document output language from command-line: ${options.documentOutputLanguage}`);
       }
       if (options.outputFolder) {
-        bmadConfig.output_folder = options.outputFolder;
+        qdConfig.output_folder = options.outputFolder;
         await prompts.log.info(`Using output folder from command-line: ${options.outputFolder}`);
       }
 
       // Load existing config to merge with provided options
       await configCollector.loadExistingConfig(directory);
-      const existingConfig = configCollector.collectedConfig.bmad || {};
-      configCollector.collectedConfig.bmad = { ...existingConfig, ...bmadConfig };
+      const existingConfig = configCollector.collectedConfig.qd || {};
+      configCollector.collectedConfig.qd = { ...existingConfig, ...qdConfig };
 
       // If not all options are provided, collect the missing ones interactively (unless --yes flag)
       if (
         !options.yes &&
         (!options.userName || !options.communicationLanguage || !options.documentOutputLanguage || !options.outputFolder)
       ) {
-        await configCollector.collectModuleConfig('bmad', directory, false, true);
+        await configCollector.collectModuleConfig('qd', directory, false, true);
       }
     } else if (options.yes) {
       // Use all defaults when --yes flag is set
       await configCollector.loadExistingConfig(directory);
-      const existingConfig = configCollector.collectedConfig.bmad || {};
+      const existingConfig = configCollector.collectedConfig.qd || {};
 
       if (Object.keys(existingConfig).length === 0) {
         let safeUsername;
@@ -452,17 +452,17 @@ class UI {
           safeUsername = process.env.USER || process.env.USERNAME || 'User';
         }
         const defaultUsername = safeUsername.charAt(0).toUpperCase() + safeUsername.slice(1);
-        configCollector.collectedConfig.bmad = {
+        configCollector.collectedConfig.qd = {
           user_name: defaultUsername,
           communication_language: 'English',
           document_output_language: 'English',
-          output_folder: '_bmad-output',
+          output_folder: '_qd-output',
         };
         await prompts.log.info('Using default configuration (--yes flag)');
       }
     }
 
-    // Collect all module configs - bmad is skipped if already seeded above
+    // Collect all module configs - qd is skipped if already seeded above
     await configCollector.collectAllConfigurations([module], directory, {
       skipPrompts: options.yes || false,
     });
@@ -470,7 +470,7 @@ class UI {
     return configCollector.collectedConfig;
   }
 
-  // Module selection helpers removed: installer now supports only `bmad`.
+  // Module selection helpers removed: installer now supports only `qd`.
 
   /**
    * Prompt for directory selection
@@ -510,15 +510,15 @@ class UI {
       if (stats.isDirectory()) {
         const files = await fs.readdir(directory);
         if (files.length > 0) {
-          // Check for any bmad installation (any folder with _config/manifest.yaml)
+          // Check for any qd installation (any folder with _config/manifest.yaml)
           const { Installer } = require('./core/installer');
           const installer = new Installer();
-          const bmadResult = await installer.findBmadDir(directory);
-          const hasBmadInstall =
-            (await fs.pathExists(bmadResult.bmadDir)) && (await fs.pathExists(path.join(bmadResult.bmadDir, '_config', 'manifest.yaml')));
+          const qdResult = await installer.findQdDir(directory);
+          const hasQdInstall =
+            (await fs.pathExists(qdResult.qdDir)) && (await fs.pathExists(path.join(qdResult.qdDir, '_config', 'manifest.yaml')));
 
-          const bmadNote = hasBmadInstall ? ` including existing BMAD installation (${path.basename(bmadResult.bmadDir)})` : '';
-          await prompts.log.message(`Directory exists and contains ${files.length} item(s)${bmadNote}`);
+          const qdNote = hasQdInstall ? ` including existing QD installation (${path.basename(qdResult.qdDir)})` : '';
+          await prompts.log.message(`Directory exists and contains ${files.length} item(s)${qdNote}`);
         } else {
           await prompts.log.message('Directory exists and is empty');
         }
@@ -756,8 +756,8 @@ class UI {
     const { ExistingInstall } = require('./core/existing-install');
     const { Installer } = require('./core/installer');
     const installer = new Installer();
-    const { bmadDir } = await installer.findBmadDir(directory);
-    const existingInstall = await ExistingInstall.detect(bmadDir);
+    const { qdDir } = await installer.findQdDir(directory);
+    const existingInstall = await ExistingInstall.detect(qdDir);
     return existingInstall.ides;
   }
 
@@ -787,19 +787,19 @@ class UI {
 
   /**
    * Display status of all installed modules
-   * @param {Object} statusData - Installation info, modules list, bmad path
+   * @param {Object} statusData - Installation info, modules list, qd path
    */
   async displayStatus(statusData) {
-    const { installation, modules, bmadDir } = statusData;
+    const { installation, modules, qdDir } = statusData;
 
     const infoLines = [
       `Version:       ${installation.version || 'unknown'}`,
-      `Location:      ${bmadDir}`,
+      `Location:      ${qdDir}`,
       `Installed:     ${new Date(installation.installDate).toLocaleDateString()}`,
       `Last Updated:  ${installation.lastUpdated ? new Date(installation.lastUpdated).toLocaleDateString() : 'unknown'}`,
     ];
 
-    await prompts.note(infoLines.join('\n'), 'BMAD Status');
+    await prompts.note(infoLines.join('\n'), 'QD Status');
 
     await this.displayModuleVersions(modules);
     await prompts.log.success('Status complete');

@@ -3,12 +3,12 @@
 const path = require('node:path');
 const fs = require('../fs-native');
 const { getProjectRoot } = require('../project-root');
-const { BMAD_FOLDER_NAME } = require('../ide/shared/path-utils');
+const { QD_FOLDER_NAME } = require('../ide/shared/path-utils');
 
 class InstallPaths {
   static async create(config) {
     const srcDir = getProjectRoot();
-    await assertReadableDir(srcDir, 'BMAD source root');
+    await assertReadableDir(srcDir, 'QD source root');
 
     const pkgPath = path.join(srcDir, 'package.json');
     await assertReadableFile(pkgPath, 'package.json');
@@ -17,14 +17,14 @@ class InstallPaths {
     const projectRoot = path.resolve(config.directory);
     await ensureWritableDir(projectRoot, 'project root');
 
-    const bmadDir = path.join(projectRoot, BMAD_FOLDER_NAME);
-    const isUpdate = await fs.pathExists(bmadDir);
+    const qdDir = path.join(projectRoot, QD_FOLDER_NAME);
+    const isUpdate = await fs.pathExists(qdDir);
 
-    const configDir = path.join(bmadDir, '_config');
+    const configDir = path.join(qdDir, '_config');
     const agentsDir = path.join(configDir, 'agents');
 
     for (const [dir, label] of [
-      [bmadDir, 'bmad directory'],
+      [qdDir, 'qd directory'],
       [configDir, 'config directory'],
       [agentsDir, 'agents config directory'],
     ]) {
@@ -35,7 +35,7 @@ class InstallPaths {
       srcDir,
       version,
       projectRoot,
-      bmadDir,
+      qdDir,
       configDir,
       agentsDir,
       isUpdate,
@@ -57,13 +57,13 @@ class InstallPaths {
     return path.join(this.configDir, 'files-manifest.csv');
   }
   helpCatalog() {
-    return path.join(this.configDir, 'bmad-help.csv');
+    return path.join(this.configDir, 'qd-help.csv');
   }
   moduleDir(name) {
-    return path.join(this.bmadDir, name);
+    return path.join(this.qdDir, name);
   }
   moduleConfig(name) {
-    return path.join(this.bmadDir, name, 'config.yaml');
+    return path.join(this.qdDir, name, 'config.yaml');
   }
 }
 

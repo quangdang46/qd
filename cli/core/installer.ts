@@ -10,7 +10,7 @@ const { Config } = require('./config');
 const { getProjectRoot, getSourcePath } = require('../project-root');
 const { ManifestGenerator } = require('./manifest-generator');
 const prompts = require('../prompts');
-const { BMAD_FOLDER_NAME } = require('../ide/shared/path-utils');
+const { QD_FOLDER_NAME } = require('../ide/shared/path-utils');
 const { InstallPaths } = require('./install-paths');
 const { ExistingInstall } = require('./existing-install');
 
@@ -20,7 +20,7 @@ class Installer {
     this.ideManager = new IdeManager();
     this.fileOps = new FileOps();
     this.installedFiles = new Set(); // Track all installed files
-    this.bmadFolderName = BMAD_FOLDER_NAME;
+    this.qdFolderName = QD_FOLDER_NAME;
   }
 
   /**
@@ -65,7 +65,7 @@ class Installer {
    * Main installation method
    * @param {Object} config - Installation configuration
    * @param {string} config.directory - Target directory
-   * Single-module installer: always installs `bmad`.
+   * Single-module installer: always installs `qd`.
    * @param {string[]} config.ides - IDEs to configure
    */
   async install(originalConfig) {
@@ -75,7 +75,7 @@ class Installer {
       const config = Config.build(originalConfig);
       const paths = await InstallPaths.create(config);
       const officialModules = await OfficialModules.build(config, paths);
-      const existingInstall = await ExistingInstall.detect(paths.bmadDir);
+      const existingInstall = await ExistingInstall.detect(paths.qdDir);
 
       if (existingInstall.installed) {
         await this._removeDeselectedModules(existingInstall, config, paths);
@@ -88,7 +88,7 @@ class Installer {
       // Capture pre-install module versions for from->to display
       const preInstallVersions = new Map();
       if (existingInstall.installed) {
-        const existingModules = await this.manifest.getAllModuleVersions(paths.bmadDir);
+        const existingModules = await this.manifest.getAllModuleVersions(paths.qdDir);
         for (const mod of existingModules) {
           if (mod.name && mod.version) {
             preInstallVersions.set(mod.name, mod.version);
@@ -102,7 +102,7 @@ class Installer {
 
       // Capture previously installed skill IDs before they get overwritten
       const previousSkillIds = new Set();
-      const prevCsvPath = path.join(paths.bmadDir, '_config', 'skill-manifest.csv');
+      const prevCsvPath = path.join(paths.qdDir, '_config', 'skill-manifest.csv');
       if (await fs.pathExists(prevCsvPath)) {
         try {
           const csvParse = require('csv-parse/sync');
@@ -116,22 +116,22 @@ class Installer {
         }
       }
 
-      const allModules = ['bmad'];
+      const allModules = ['qd'];
 
       await this._installAndConfigure(config, originalConfig, paths, allModules, allModules, addResult, officialModules);
 
       await this._setupIdes(config, allModules, paths, addResult, previousSkillIds);
 
-      // Skills are now in IDE directories - remove redundant copies from _bmad/.
+      // Skills are now in IDE directories - remove redundant copies from _qd/.
       // Also cleans up skill dirs left by older installer versions.
-      await this._cleanupSkillDirs(paths.bmadDir);
+      await this._cleanupSkillDirs(paths.qdDir);
 
       const restoreResult = await this._restoreUserFiles(paths, updateState);
 
       // Render consolidated summary
       await this.renderInstallSummary(results, {
-        bmadDir: paths.bmadDir,
-        module: 'bmad',
+        qdDir: paths.qdDir,
+        module: 'qd',
         ides: config.ides,
         customFiles: restoreResult.customFiles.length > 0 ? restoreResult.customFiles : undefined,
         modifiedFiles: restoreResult.modifiedFiles.length > 0 ? restoreResult.modifiedFiles : undefined,
@@ -140,8 +140,8 @@ class Installer {
 
       return {
         success: true,
-        path: paths.bmadDir,
-        module: 'bmad',
+        path: paths.qdDir,
+        module: 'qd',
         ides: config.ides,
         projectDir: paths.projectRoot,
       };
@@ -170,7 +170,7 @@ class Installer {
    */
   async _removeDeselectedModules(existingInstall, config, paths) {
     const previouslyInstalled = new Set(existingInstall.moduleIds);
-    const newlySelected = new Set(['bmad']);
+    const newlySelected = new Set(['qd']);
     const toRemove = [...previouslyInstalled].filter((m) => !newlySelected.has(m));
 
     for (const moduleId of toRemove) {
@@ -203,7 +203,7 @@ class Installer {
         await prompts.log.error(`${handler.displayName || ide}: ${handler.platformConfig.suspended}`);
       }
       throw new Error(
-        `All selected tool(s) are suspended: ${suspendedIdes.join(', ')}. Installation aborted to prevent upgrading _bmad/ without a working IDE configuration.`,
+        `All selected tool(s) are suspended: ${suspendedIdes.join(', ')}. Installation aborted to prevent upgrading _qd/ without a working IDE configuration.`,
       );
     }
   }
@@ -262,20 +262,20 @@ class Installer {
     installTasks.push({
       title: 'Creating module directories',
       task: async (message) => {
-        const verboseMode = process.env.BMAD_VERBOSE_INSTALL === 'true' || config.verbose;
+        const verboseMode = process.env.QD_VERBOSE_INSTALL === 'true' || config.verbose;
         const moduleLogger = {
           log: async (msg) => (verboseMode ? await prompts.log.message(msg) : undefined),
           error: async (msg) => await prompts.log.error(msg),
           warn: async (msg) => await prompts.log.warn(msg),
         };
 
-        const moduleName = 'bmad';
+        const moduleName = 'qd';
         message(`Setting up ${moduleName}...`);
-        const result = await officialModules.createModuleDirectories(moduleName, paths.bmadDir, {
+        const result = await officialModules.createModuleDirectories(moduleName, paths.qdDir, {
           installedIDEs: config.ides || [],
           moduleConfig: moduleConfigs[moduleName] || {},
           existingModuleConfig: officialModules.existingConfig?.[moduleName] || {},
-          coreConfig: moduleConfigs.bmad || {},
+          coreConfig: moduleConfigs.qd || {},
           logger: moduleLogger,
           silent: true,
         });
@@ -293,7 +293,7 @@ class Installer {
     const configTask = {
       title: 'Generating configurations',
       task: async (message) => {
-        await this.generateModuleConfigs(paths.bmadDir, moduleConfigs);
+        await this.generateModuleConfigs(paths.qdDir, moduleConfigs);
         addResult('Configurations', 'ok', 'generated');
 
         this.installedFiles.add(paths.manifestFile());
@@ -315,13 +315,13 @@ class Installer {
           modulesForCsvPreserve = originalConfig._preserveModules ? [...allModules, ...originalConfig._preserveModules] : allModules;
         }
 
-        await manifestGen.generateManifests(paths.bmadDir, allModulesForManifest, [...this.installedFiles], {
+        await manifestGen.generateManifests(paths.qdDir, allModulesForManifest, [...this.installedFiles], {
           ides: config.ides || [],
           preservedModules: modulesForCsvPreserve,
         });
 
         message('Generating help catalog...');
-        await this.mergeModuleHelpCatalogs(paths.bmadDir);
+        await this.mergeModuleHelpCatalogs(paths.qdDir);
         addResult('Help catalog', 'ok');
 
         return 'Configurations generated';
@@ -365,7 +365,7 @@ class Installer {
     }
 
     for (const ide of validIdes) {
-      const setupResult = await this.ideManager.setup(ide, paths.projectRoot, paths.bmadDir, {
+      const setupResult = await this.ideManager.setup(ide, paths.projectRoot, paths.qdDir, {
         selectedModules: allModules || [],
         verbose: config.verbose,
         previousSkillIds,
@@ -380,26 +380,26 @@ class Installer {
   }
 
   /**
-   * Remove skill directories from _bmad/ after IDE installation.
-   * Skills are self-contained in IDE directories, so _bmad/ only needs
+   * Remove skill directories from _qd/ after IDE installation.
+   * Skills are self-contained in IDE directories, so _qd/ only needs
    * module-level files (config.yaml, _config/, etc.).
    * Also cleans up skill dirs left by older installer versions.
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    */
-  async _cleanupSkillDirs(bmadDir) {
+  async _cleanupSkillDirs(qdDir) {
     const csv = require('csv-parse/sync');
-    const csvPath = path.join(bmadDir, '_config', 'skill-manifest.csv');
+    const csvPath = path.join(qdDir, '_config', 'skill-manifest.csv');
     if (!(await fs.pathExists(csvPath))) return;
 
     const csvContent = await fs.readFile(csvPath, 'utf8');
     const records = csv.parse(csvContent, { columns: true, skip_empty_lines: true });
-    const bmadFolderName = path.basename(bmadDir);
-    const bmadPrefix = bmadFolderName + '/';
+    const qdFolderName = path.basename(qdDir);
+    const qdPrefix = qdFolderName + '/';
 
     for (const record of records) {
       if (!record.path) continue;
-      const relativePath = record.path.startsWith(bmadPrefix) ? record.path.slice(bmadPrefix.length) : record.path;
-      const sourceDir = path.dirname(path.join(bmadDir, relativePath));
+      const relativePath = record.path.startsWith(qdPrefix) ? record.path.slice(qdPrefix.length) : record.path;
+      const sourceDir = path.dirname(path.join(qdDir, relativePath));
       if (await fs.pathExists(sourceDir)) {
         await fs.remove(sourceDir);
       }
@@ -431,7 +431,7 @@ class Installer {
             message(`Restoring ${updateState.customFiles.length} custom files...`);
 
             for (const originalPath of updateState.customFiles) {
-              const relativePath = path.relative(paths.bmadDir, originalPath);
+              const relativePath = path.relative(paths.qdDir, originalPath);
               const backupPath = path.join(updateState.tempBackupDir, relativePath);
 
               if (await fs.pathExists(backupPath)) {
@@ -454,7 +454,7 @@ class Installer {
               message(`Restoring ${restoredModifiedFiles.length} modified files as .bak...`);
 
               for (const modifiedFile of restoredModifiedFiles) {
-                const relativePath = path.relative(paths.bmadDir, modifiedFile.path);
+                const relativePath = path.relative(paths.qdDir, modifiedFile.path);
                 const tempBackupPath = path.join(updateState.tempModifiedBackupDir, relativePath);
                 const bakPath = modifiedFile.path + '.bak';
 
@@ -479,29 +479,29 @@ class Installer {
   /**
    * Common update preparation: detect files, preserve core config, back up.
    * @param {Object} paths - InstallPaths instance
-   * @param {Object} config - Clean config (may have bmadConfig updated)
+   * @param {Object} config - Clean config (may have qdConfig updated)
    * @param {Object} existingInstall - Detection result
    * @param {Object} officialModules - OfficialModules instance
    * @returns {Object} Update state: { customFiles, modifiedFiles, tempBackupDir, tempModifiedBackupDir }
    */
   async _prepareUpdateState(paths, config, existingInstall, officialModules) {
     // Detect custom and modified files BEFORE updating (compare current files vs files-manifest.csv)
-    const existingFilesManifest = await this.readFilesManifest(paths.bmadDir);
-    const { customFiles, modifiedFiles } = await this.detectCustomFiles(paths.bmadDir, existingFilesManifest);
+    const existingFilesManifest = await this.readFilesManifest(paths.qdDir);
+    const { customFiles, modifiedFiles } = await this.detectCustomFiles(paths.qdDir, existingFilesManifest);
 
-    // Preserve existing bmad configuration during updates
-    // (no-op for quick-update which already has bmad config from collectModuleConfigQuick)
-    const bmadConfigPath = paths.moduleConfig('bmad');
-    if ((await fs.pathExists(bmadConfigPath)) && (!config.bmadConfig || Object.keys(config.bmadConfig).length === 0)) {
+    // Preserve existing qd configuration during updates
+    // (no-op for quick-update which already has qd config from collectModuleConfigQuick)
+    const qdConfigPath = paths.moduleConfig('qd');
+    if ((await fs.pathExists(qdConfigPath)) && (!config.qdConfig || Object.keys(config.qdConfig).length === 0)) {
       try {
         const yaml = require('yaml');
-        const bmadConfigContent = await fs.readFile(bmadConfigPath, 'utf8');
-        const existingBmadConfig = yaml.parse(bmadConfigContent);
+        const qdConfigContent = await fs.readFile(qdConfigPath, 'utf8');
+        const existingQdConfig = yaml.parse(qdConfigContent);
 
-        config.bmadConfig = existingBmadConfig;
-        officialModules.moduleConfigs.bmad = existingBmadConfig;
+        config.qdConfig = existingQdConfig;
+        officialModules.moduleConfigs.qd = existingQdConfig;
       } catch (error) {
-        await prompts.log.warn(`Warning: Could not read existing bmad config: ${error.message}`);
+        await prompts.log.warn(`Warning: Could not read existing qd config: ${error.message}`);
       }
     }
 
@@ -528,11 +528,11 @@ class Installer {
     let tempModifiedBackupDir;
 
     if (customFiles.length > 0) {
-      tempBackupDir = path.join(paths.projectRoot, '_bmad-custom-backup-temp');
+      tempBackupDir = path.join(paths.projectRoot, '_qd-custom-backup-temp');
       await fs.ensureDir(tempBackupDir);
 
       for (const customFile of customFiles) {
-        const relativePath = path.relative(paths.bmadDir, customFile);
+        const relativePath = path.relative(paths.qdDir, customFile);
         const backupPath = path.join(tempBackupDir, relativePath);
         await fs.ensureDir(path.dirname(backupPath));
         await fs.copy(customFile, backupPath);
@@ -540,11 +540,11 @@ class Installer {
     }
 
     if (modifiedFiles.length > 0) {
-      tempModifiedBackupDir = path.join(paths.projectRoot, '_bmad-modified-backup-temp');
+      tempModifiedBackupDir = path.join(paths.projectRoot, '_qd-modified-backup-temp');
       await fs.ensureDir(tempModifiedBackupDir);
 
       for (const modifiedFile of modifiedFiles) {
-        const relativePath = path.relative(paths.bmadDir, modifiedFile.path);
+        const relativePath = path.relative(paths.qdDir, modifiedFile.path);
         const tempBackupPath = path.join(tempModifiedBackupDir, relativePath);
         await fs.ensureDir(path.dirname(tempBackupPath));
         await fs.copy(modifiedFile.path, tempBackupPath, { overwrite: true });
@@ -574,7 +574,7 @@ class Installer {
       const moduleConfig = officialModules.moduleConfigs[moduleName] || {};
       const installResult = await officialModules.install(
         moduleName,
-        paths.bmadDir,
+        paths.qdDir,
         (filePath) => {
           this.installedFiles.add(filePath);
         },
@@ -598,11 +598,11 @@ class Installer {
 
   /**
    * Read files-manifest.csv
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @returns {Array} Array of file entries from files-manifest.csv
    */
-  async readFilesManifest(bmadDir) {
-    const filesManifestPath = path.join(bmadDir, '_config', 'files-manifest.csv');
+  async readFilesManifest(qdDir) {
+    const filesManifestPath = path.join(qdDir, '_config', 'files-manifest.csv');
     if (!(await fs.pathExists(filesManifestPath))) {
       return [];
     }
@@ -654,16 +654,16 @@ class Installer {
 
   /**
    * Detect custom and modified files
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @param {Array} existingFilesManifest - Previous files from files-manifest.csv
    * @returns {Object} Object with customFiles and modifiedFiles arrays
    */
-  async detectCustomFiles(bmadDir, existingFilesManifest) {
+  async detectCustomFiles(qdDir, existingFilesManifest) {
     const customFiles = [];
     const modifiedFiles = [];
 
-    // Memory is always in _bmad/_memory
-    const bmadMemoryPath = '_memory';
+    // Memory is always in _qd/_memory
+    const qdMemoryPath = '_memory';
 
     // Check if the manifest has hashes - if not, we can't detect modifications
     let manifestHasHashes = false;
@@ -675,7 +675,7 @@ class Installer {
     const installedFilesMap = new Map();
     for (const fileEntry of existingFilesManifest) {
       if (fileEntry.path) {
-        const absolutePath = path.join(bmadDir, fileEntry.path);
+        const absolutePath = path.join(qdDir, fileEntry.path);
         installedFilesMap.set(path.normalize(absolutePath), {
           hash: fileEntry.hash,
           relativePath: fileEntry.path,
@@ -683,7 +683,7 @@ class Installer {
       }
     }
 
-    // Recursively scan bmadDir for all files
+    // Recursively scan qdDir for all files
     const scanDirectory = async (dir) => {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -701,7 +701,7 @@ class Installer {
             const fileInfo = installedFilesMap.get(normalizedPath);
 
             // Skip certain system files that are auto-generated
-            const relativePath = path.relative(bmadDir, fullPath);
+            const relativePath = path.relative(qdDir, fullPath);
             const fileName = path.basename(fullPath);
 
             // Skip _config directory EXCEPT for modified agent customizations
@@ -709,7 +709,7 @@ class Installer {
               // Special handling for .customize.yaml files - only preserve if modified
               if (relativePath.includes('/agents/') && fileName.endsWith('.customize.yaml')) {
                 // Check if the customization file has been modified from manifest
-                const manifestPath = path.join(bmadDir, '_config', 'manifest.yaml');
+                const manifestPath = path.join(qdDir, '_config', 'manifest.yaml');
                 if (await fs.pathExists(manifestPath)) {
                   const crypto = require('node:crypto');
                   const currentContent = await fs.readFile(fullPath, 'utf8');
@@ -729,7 +729,7 @@ class Installer {
               continue;
             }
 
-            if (relativePath.startsWith(bmadMemoryPath + '/') && path.dirname(relativePath).includes('-sidecar')) {
+            if (relativePath.startsWith(qdMemoryPath + '/') && path.dirname(relativePath).includes('-sidecar')) {
               continue;
             }
 
@@ -763,30 +763,30 @@ class Installer {
       }
     };
 
-    await scanDirectory(bmadDir);
+    await scanDirectory(qdDir);
     return { customFiles, modifiedFiles };
   }
 
   /**
    * Generate clean config.yaml files for each installed module
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @param {Object} moduleConfigs - Collected configuration values
    */
-  async generateModuleConfigs(bmadDir, moduleConfigs) {
+  async generateModuleConfigs(qdDir, moduleConfigs) {
     const yaml = require('yaml');
 
     // Extract core config values to share with other modules
-    const coreConfig = moduleConfigs.bmad || {};
+    const coreConfig = moduleConfigs.qd || {};
 
     // Get all installed module directories
-    const entries = await fs.readdir(bmadDir, { withFileTypes: true });
+    const entries = await fs.readdir(qdDir, { withFileTypes: true });
     const installedModules = entries
       .filter((entry) => entry.isDirectory() && entry.name !== '_config' && entry.name !== 'docs')
       .map((entry) => entry.name);
 
     // Generate config.yaml for each installed module
     for (const moduleName of installedModules) {
-      const modulePath = path.join(bmadDir, moduleName);
+      const modulePath = path.join(qdDir, moduleName);
 
       // Get module-specific config or use empty object if none
       const config = moduleConfigs[moduleName] || {};
@@ -797,7 +797,7 @@ class Installer {
         // Create header
         const packageJson = require(path.join(getProjectRoot(), 'package.json'));
         const header = `# ${moduleName.toUpperCase()} Module Configuration
-# Generated by BMAD installer
+# Generated by QD installer
 # Version: ${packageJson.version}
 # Date: ${new Date().toISOString()}
 
@@ -807,7 +807,7 @@ class Installer {
         let finalConfig = { ...config };
         let coreSection = '';
 
-        if (moduleName !== 'bmad' && coreConfig && Object.keys(coreConfig).length > 0) {
+        if (moduleName !== 'qd' && coreConfig && Object.keys(coreConfig).length > 0) {
           // Add core values directly to the module config
           // These will be available for reference in the module
           finalConfig = {
@@ -830,7 +830,7 @@ class Installer {
         });
 
         // If we have core values, reorganize the YAML to group them with their comment
-        if (coreSection && moduleName !== 'bmad') {
+        if (coreSection && moduleName !== 'qd') {
           // Split the YAML into lines
           const lines = yamlContent.split('\n');
           const moduleConfigLines = [];
@@ -864,19 +864,19 @@ class Installer {
   }
 
   /**
-   * Merge all module-help.csv files into a single bmad-help.csv
+   * Merge all module-help.csv files into a single qd-help.csv
    * Scans all installed modules for module-help.csv and merges them
    * Enriches agent info from agent-manifest.csv
-   * Output is written to _bmad/_config/bmad-help.csv
-   * @param {string} bmadDir - BMAD installation directory
+   * Output is written to _qd/_config/qd-help.csv
+   * @param {string} qdDir - QD installation directory
    */
-  async mergeModuleHelpCatalogs(bmadDir) {
+  async mergeModuleHelpCatalogs(qdDir) {
     const allRows = [];
     const headerRow =
       'module,phase,name,code,sequence,workflow-file,command,required,agent-name,agent-command,agent-display-name,agent-title,options,description,output-location,outputs';
 
     // Load agent manifest for agent info lookup
-    const agentManifestPath = path.join(bmadDir, '_config', 'agent-manifest.csv');
+    const agentManifestPath = path.join(qdDir, '_config', 'agent-manifest.csv');
     const agentInfo = new Map(); // agent-name -> {command, displayName, title+icon}
 
     if (await fs.pathExists(agentManifestPath)) {
@@ -894,8 +894,8 @@ class Installer {
           const icon = cols[3].replaceAll('"', '').trim();
           const module = cols[10] ? cols[10].replaceAll('"', '').trim() : '';
 
-          // Build agent command: bmad:module:agent:name
-          const agentCommand = module ? `bmad:${module}:agent:${agentName}` : `bmad:agent:${agentName}`;
+          // Build agent command: qd:module:agent:name
+          const agentCommand = module ? `qd:${module}:agent:${agentName}` : `qd:agent:${agentName}`;
 
           agentInfo.set(agentName, {
             command: agentCommand,
@@ -907,7 +907,7 @@ class Installer {
     }
 
     // Get all installed module directories
-    const entries = await fs.readdir(bmadDir, { withFileTypes: true });
+    const entries = await fs.readdir(qdDir, { withFileTypes: true });
     const installedModules = entries
       .filter((entry) => entry.isDirectory() && entry.name !== '_config' && entry.name !== 'docs' && entry.name !== '_memory')
       .map((entry) => entry.name);
@@ -916,7 +916,7 @@ class Installer {
 
     // Map installed module paths
     for (const moduleName of installedModules) {
-      const modulePath = path.join(bmadDir, moduleName);
+      const modulePath = path.join(qdDir, moduleName);
       modulePaths.set(moduleName, modulePath);
     }
 
@@ -997,7 +997,7 @@ class Installer {
             }
           }
 
-          if (process.env.BMAD_VERBOSE_INSTALL === 'true') {
+          if (process.env.QD_VERBOSE_INSTALL === 'true') {
             await prompts.log.message(`  Merged module-help from: ${moduleName}`);
           }
         } catch (error) {
@@ -1032,9 +1032,9 @@ class Installer {
     });
 
     // Write merged catalog
-    const outputDir = path.join(bmadDir, '_config');
+    const outputDir = path.join(qdDir, '_config');
     await fs.ensureDir(outputDir);
-    const outputPath = path.join(outputDir, 'bmad-help.csv');
+    const outputPath = path.join(outputDir, 'qd-help.csv');
 
     const mergedContent = [headerRow, ...allRows].join('\n');
     await fs.writeFile(outputPath, mergedContent, 'utf8');
@@ -1042,15 +1042,15 @@ class Installer {
     // Track the installed file
     this.installedFiles.add(outputPath);
 
-    if (process.env.BMAD_VERBOSE_INSTALL === 'true') {
-      await prompts.log.message(`  Generated bmad-help.csv: ${allRows.length} workflows`);
+    if (process.env.QD_VERBOSE_INSTALL === 'true') {
+      await prompts.log.message(`  Generated qd-help.csv: ${allRows.length} workflows`);
     }
   }
 
   /**
    * Render a consolidated install summary using prompts.note()
    * @param {Array} results - Array of {step, status: 'ok'|'error'|'warn', detail}
-   * @param {Object} context - {bmadDir, modules, ides, customFiles, modifiedFiles}
+   * @param {Object} context - {qdDir, modules, ides, customFiles, modifiedFiles}
    */
   async renderInstallSummary(results, context = {}) {
     const color = await prompts.getColor();
@@ -1089,13 +1089,13 @@ class Installer {
     }
 
     if ((context.ides || []).length === 0) {
-      lines.push(`  ${color.green('\u2713')}  No IDE selected (installed in _bmad only)`);
+      lines.push(`  ${color.green('\u2713')}  No IDE selected (installed in _qd only)`);
     }
 
     // Context and warnings
     lines.push('');
-    if (context.bmadDir) {
-      lines.push(`  Installed to: ${context.bmadDir}`);
+    if (context.qdDir) {
+      lines.push(`  Installed to: ${context.qdDir}`);
     }
     if (context.customFiles && context.customFiles.length > 0) {
       lines.push(`  ${color.cyan(`Custom files preserved: ${context.customFiles.length}`)}`);
@@ -1109,10 +1109,10 @@ class Installer {
       '',
       '  Get started:',
       `    1. Launch your AI agent from your project folder`,
-      `    2. Not sure what to do? Invoke the ${color.cyan('bmad-help')} skill and ask it what to do!`,
+      `    2. Not sure what to do? Invoke the ${color.cyan('qd-help')} skill and ask it what to do!`,
     );
 
-    await prompts.box(lines.join('\n'), 'BMAD is ready to use!', {
+    await prompts.box(lines.join('\n'), 'QD is ready to use!', {
       rounded: true,
       formatBorder: color.green,
     });
@@ -1125,18 +1125,18 @@ class Installer {
    */
   async quickUpdate(config) {
     const projectDir = path.resolve(config.directory);
-    const { bmadDir } = await this.findBmadDir(projectDir);
+    const { qdDir } = await this.findQdDir(projectDir);
 
-    // Check if bmad directory exists
-    if (!(await fs.pathExists(bmadDir))) {
-      throw new Error(`BMAD not installed at ${bmadDir}. Use regular install for first-time setup.`);
+    // Check if qd directory exists
+    if (!(await fs.pathExists(qdDir))) {
+      throw new Error(`QD not installed at ${qdDir}. Use regular install for first-time setup.`);
     }
 
     // Detect existing installation
-    const existingInstall = await ExistingInstall.detect(bmadDir);
+    const existingInstall = await ExistingInstall.detect(qdDir);
     const installedModules = existingInstall.moduleIds;
     const configuredIdes = existingInstall.ides;
-    const projectRoot = path.dirname(bmadDir);
+    const projectRoot = path.dirname(qdDir);
 
     // Get available modules (what we have source for)
     const availableModulesData = await new OfficialModules().listAvailable();
@@ -1181,7 +1181,7 @@ class Installer {
       directory: projectDir,
       modules: modulesToUpdate,
       ides: configuredIdes,
-      bmadConfig: quickModules.collectedConfig.bmad,
+      qdConfig: quickModules.collectedConfig.qd,
       moduleConfigs: quickModules.collectedConfig,
       actionType: 'install',
       _quickUpdate: true,
@@ -1202,29 +1202,29 @@ class Installer {
   }
 
   /**
-   * Uninstall BMAD with selective removal options
+   * Uninstall QD with selective removal options
    * @param {string} directory - Project directory
    * @param {Object} options - Uninstall options
-   * @param {boolean} [options.removeModules=true] - Remove _bmad/ directory
+   * @param {boolean} [options.removeModules=true] - Remove _qd/ directory
    * @param {boolean} [options.removeIdeConfigs=true] - Remove IDE configurations
    * @param {boolean} [options.removeOutputFolder=false] - Remove user artifacts output folder
    * @returns {Object} Result with success status and removed components
    */
   async uninstall(directory, options = {}) {
     const projectDir = path.resolve(directory);
-    const { bmadDir } = await this.findBmadDir(projectDir);
+    const { qdDir } = await this.findQdDir(projectDir);
 
-    if (!(await fs.pathExists(bmadDir))) {
+    if (!(await fs.pathExists(qdDir))) {
       return { success: false, reason: 'not-installed' };
     }
 
     // 1. DETECT: Read state BEFORE deleting anything
-    const existingInstall = await ExistingInstall.detect(bmadDir);
-    const outputFolder = await this._readOutputFolder(bmadDir);
+    const existingInstall = await ExistingInstall.detect(qdDir);
+    const outputFolder = await this._readOutputFolder(qdDir);
 
     const removed = { modules: false, ideConfigs: false, outputFolder: false };
 
-    // 2. IDE CLEANUP (before _bmad/ deletion so configs are accessible)
+    // 2. IDE CLEANUP (before _qd/ deletion so configs are accessible)
     if (options.removeIdeConfigs !== false) {
       await this.uninstallIdeConfigs(projectDir, existingInstall, { silent: options.silent });
       removed.ideConfigs = true;
@@ -1235,7 +1235,7 @@ class Installer {
       removed.outputFolder = await this.uninstallOutputFolder(projectDir, outputFolder);
     }
 
-    // 4. BMAD DIRECTORY (last, after everything that needs it)
+    // 4. QD DIRECTORY (last, after everything that needs it)
     if (options.removeModules !== false) {
       removed.modules = await this.uninstallModules(projectDir);
     }
@@ -1281,14 +1281,14 @@ class Installer {
   }
 
   /**
-   * Remove the _bmad/ directory
+   * Remove the _qd/ directory
    * @param {string} projectDir - Project directory
    * @returns {Promise<boolean>} Whether the directory was removed
    */
   async uninstallModules(projectDir) {
-    const { bmadDir } = await this.findBmadDir(projectDir);
-    if (await fs.pathExists(bmadDir)) {
-      await fs.remove(bmadDir);
+    const { qdDir } = await this.findQdDir(projectDir);
+    if (await fs.pathExists(qdDir)) {
+      await fs.remove(qdDir);
       return true;
     }
     return false;
@@ -1299,8 +1299,8 @@ class Installer {
    */
   async getStatus(directory) {
     const projectDir = path.resolve(directory);
-    const { bmadDir } = await this.findBmadDir(projectDir);
-    return await ExistingInstall.detect(bmadDir);
+    const { qdDir } = await this.findQdDir(projectDir);
+    return await ExistingInstall.detect(qdDir);
   }
 
   /**
@@ -1312,40 +1312,40 @@ class Installer {
 
   /**
    * Get the configured output folder name for a project
-   * Resolves bmadDir internally from projectDir
+   * Resolves qdDir internally from projectDir
    * @param {string} projectDir - Project directory
-   * @returns {string} Output folder name (relative, default: '_bmad-output')
+   * @returns {string} Output folder name (relative, default: '_qd-output')
    */
   async getOutputFolder(projectDir) {
-    const { bmadDir } = await this.findBmadDir(projectDir);
-    return this._readOutputFolder(bmadDir);
+    const { qdDir } = await this.findQdDir(projectDir);
+    return this._readOutputFolder(qdDir);
   }
 
   /**
-   * Find the bmad installation directory in a project
-   * Always uses the standard _bmad folder name
+   * Find the qd installation directory in a project
+   * Always uses the standard _qd folder name
    * @param {string} projectDir - Project directory
-   * @returns {Promise<Object>} { bmadDir: string }
+   * @returns {Promise<Object>} { qdDir: string }
    */
-  async findBmadDir(projectDir) {
-    const bmadDir = path.join(projectDir, BMAD_FOLDER_NAME);
-    return { bmadDir };
+  async findQdDir(projectDir) {
+    const qdDir = path.join(projectDir, QD_FOLDER_NAME);
+    return { qdDir };
   }
 
   /**
    * Read the output_folder setting from module config files
-   * Checks bmad/config.yaml first, then other module configs
-   * @param {string} bmadDir - BMAD installation directory
+   * Checks qd/config.yaml first, then other module configs
+   * @param {string} qdDir - QD installation directory
    * @returns {string} Output folder path or default
    */
-  async _readOutputFolder(bmadDir) {
+  async _readOutputFolder(qdDir) {
     const yaml = require('yaml');
 
-    // Check bmad/config.yaml first (single-module layout)
-    const bmadConfigPath = path.join(bmadDir, 'bmad', 'config.yaml');
-    if (await fs.pathExists(bmadConfigPath)) {
+    // Check qd/config.yaml first (single-module layout)
+    const qdConfigPath = path.join(qdDir, 'qd', 'config.yaml');
+    if (await fs.pathExists(qdConfigPath)) {
       try {
-        const content = await fs.readFile(bmadConfigPath, 'utf8');
+        const content = await fs.readFile(qdConfigPath, 'utf8');
         const config = yaml.parse(content);
         if (config && config.output_folder) {
           // Strip {project-root}/ prefix if present
@@ -1358,10 +1358,10 @@ class Installer {
 
     // Scan other module config.yaml files
     try {
-      const entries = await fs.readdir(bmadDir, { withFileTypes: true });
+      const entries = await fs.readdir(qdDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (!entry.isDirectory() || entry.name === 'bmad' || entry.name.startsWith('_')) continue;
-        const configPath = path.join(bmadDir, entry.name, 'config.yaml');
+        if (!entry.isDirectory() || entry.name === 'qd' || entry.name.startsWith('_')) continue;
+        const configPath = path.join(qdDir, entry.name, 'config.yaml');
         if (await fs.pathExists(configPath)) {
           try {
             const content = await fs.readFile(configPath, 'utf8');
@@ -1379,7 +1379,7 @@ class Installer {
     }
 
     // Default fallback
-    return '_bmad-output';
+    return '_qd-output';
   }
 
   /**

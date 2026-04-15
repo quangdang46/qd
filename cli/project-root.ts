@@ -4,21 +4,21 @@ const path = require('node:path');
 const fs = require('./fs-native');
 
 /**
- * Find the BMAD project root directory by looking for package.json
- * or specific BMAD markers
+ * Find the QD project root directory by looking for package.json
+ * or specific QD markers
  */
 function findProjectRoot(startPath = path.join(__dirname, '..')) {
   let currentPath = path.resolve(startPath);
 
-  // Keep going up until we find package.json with BMAD package markers
+  // Keep going up until we find package.json with QD package markers
   while (currentPath !== path.dirname(currentPath)) {
     const packagePath = path.join(currentPath, 'package.json');
 
     if (fs.existsSync(packagePath)) {
       try {
         const pkg = fs.readJsonSync(packagePath);
-        // Check if this is the BMAD project
-        if ((pkg.name === 'bmad' || pkg.name === 'bmad-method') || fs.existsSync(path.join(currentPath, 'src', 'core-skills'))) {
+        // Check if this is the QD project
+        if ((pkg.name === 'qd' || pkg.name === 'qd-method') || fs.existsSync(path.join(currentPath, 'src', 'core-skills'))) {
           return currentPath;
         }
       } catch {
@@ -57,12 +57,12 @@ function getSourcePath(...segments) {
 
 /**
  * Get path to a module's directory under src/
- * Built-in modules: bmad -> bmm-skills (unified BMAD module).
+ * Built-in modules: qd -> bmm-skills (unified QD module).
  * Legacy aliases kept for backward compatibility: core -> core-skills, bmm -> bmm-skills.
  * Any other name resolves under src/modules/{name} (legacy layout).
  */
 function getModulePath(moduleName, ...segments) {
-  if (moduleName === 'bmad') {
+  if (moduleName === 'qd') {
     return getSourcePath('bmm-skills', ...segments);
   }
   if (moduleName === 'core') {

@@ -10,11 +10,11 @@ const ui = new UI();
 
 module.exports = {
   command: 'install',
-  description: 'Install BMAD Core agents and tools',
+  description: 'Install QD Core agents and tools',
   options: [
     ['-d, --debug', 'Enable debug output for manifest generation'],
     ['--directory <path>', 'Installation directory (default: current directory)'],
-    ['--modules <modules>', 'Comma-separated list of module IDs to install (e.g., "bmad")'],
+    ['--modules <modules>', 'Comma-separated list of module IDs to install (e.g., "qd")'],
     [
       '--tools <tools>',
       'Comma-separated list of tool/IDE IDs to configure (e.g., "claude-code,cursor"). Use "none" to skip tool configuration.',
@@ -23,14 +23,14 @@ module.exports = {
     ['--user-name <name>', 'Name for agents to use (default: system username)'],
     ['--communication-language <lang>', 'Language for agent communication (default: English)'],
     ['--document-output-language <lang>', 'Language for document output (default: English)'],
-    ['--output-folder <path>', 'Output folder path relative to project root (default: _bmad-output)'],
+    ['--output-folder <path>', 'Output folder path relative to project root (default: _qd-output)'],
     ['-y, --yes', 'Accept all defaults and skip prompts where possible'],
   ],
   action: async (options) => {
     try {
       // Set debug flag as environment variable for all components
       if (options.debug) {
-        process.env.BMAD_DEBUG_MANIFEST = 'true';
+        process.env.QD_DEBUG_MANIFEST = 'true';
         await prompts.log.info('Debug mode enabled');
       }
 

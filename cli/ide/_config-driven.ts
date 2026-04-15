@@ -6,12 +6,12 @@ const fs = require('../fs-native');
 const yaml = require('yaml');
 const prompts = require('../prompts');
 const csv = require('csv-parse/sync');
-const { BMAD_FOLDER_NAME } = require('./shared/path-utils');
+const { QD_FOLDER_NAME } = require('./shared/path-utils');
 
 /**
  * Config-driven IDE setup handler
  *
- * This class provides a standardized way to install BMAD artifacts to IDEs
+ * This class provides a standardized way to install QD artifacts to IDEs
  * based on configuration in platform-codes.yaml. It eliminates the need for
  * individual installer files for each IDE.
  *
@@ -27,19 +27,19 @@ class ConfigDrivenIdeSetup {
     this.preferred = platformConfig.preferred || false;
     this.platformConfig = platformConfig;
     this.installerConfig = platformConfig.installer || null;
-    this.bmadFolderName = BMAD_FOLDER_NAME;
+    this.qdFolderName = QD_FOLDER_NAME;
 
     // Set configDir from target_dir so detect() works
     this.configDir = this.installerConfig?.target_dir || null;
   }
 
-  setBmadFolderName(bmadFolderName) {
-    this.bmadFolderName = bmadFolderName;
+  setQdFolderName(qdFolderName) {
+    this.qdFolderName = qdFolderName;
   }
 
   /**
    * Detect whether this IDE already has configuration in the project.
-   * Checks for bmad-prefixed entries in target_dir.
+   * Checks for qd-prefixed entries in target_dir.
    * @param {string} projectDir - Project directory
    * @returns {Promise<boolean>}
    */
@@ -50,7 +50,7 @@ class ConfigDrivenIdeSetup {
     if (await fs.pathExists(dir)) {
       try {
         const entries = await fs.readdir(dir);
-        return entries.some((e) => typeof e === 'string' && e.startsWith('bmad'));
+        return entries.some((e) => typeof e === 'string' && e.startsWith('qd'));
       } catch {
         return false;
       }
@@ -61,20 +61,20 @@ class ConfigDrivenIdeSetup {
   /**
    * Main setup method - called by IdeManager
    * @param {string} projectDir - Project directory
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @param {Object} options - Setup options
    * @returns {Promise<Object>} Setup result
    */
-  async setup(projectDir, bmadDir, options = {}) {
-    // Check for BMAD files in ancestor directories that would cause duplicates
+  async setup(projectDir, qdDir, options = {}) {
+    // Check for QD files in ancestor directories that would cause duplicates
     if (this.installerConfig?.ancestor_conflict_check) {
       const conflict = await this.findAncestorConflict(projectDir);
       if (conflict) {
         await prompts.log.error(
-          `Found existing BMAD skills in ancestor installation: ${conflict}\n` +
+          `Found existing QD skills in ancestor installation: ${conflict}\n` +
             `  ${this.name} inherits skills from parent directories, so this would cause duplicates.\n` +
-            `  Please remove the BMAD files from that directory first:\n` +
-            `    rm -rf "${conflict}"/bmad*`,
+            `  Please remove the QD files from that directory first:\n` +
+            `    rm -rf "${conflict}"/qd*`,
         );
         return {
           success: false,
@@ -87,15 +87,15 @@ class ConfigDrivenIdeSetup {
 
     if (!options.silent) await prompts.log.info(`Setting up ${this.name}...`);
 
-    // Clean up any old BMAD installation first
-    await this.cleanup(projectDir, options, bmadDir);
+    // Clean up any old QD installation first
+    await this.cleanup(projectDir, options, qdDir);
 
     if (!this.installerConfig) {
       return { success: false, reason: 'no-config' };
     }
 
     if (this.installerConfig.target_dir) {
-      return this.installToTarget(projectDir, bmadDir, this.installerConfig, options);
+      return this.installToTarget(projectDir, qdDir, this.installerConfig, options);
     }
 
     return { success: false, reason: 'invalid-config' };
@@ -104,12 +104,12 @@ class ConfigDrivenIdeSetup {
   /**
    * Install to a single target directory
    * @param {string} projectDir - Project directory
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @param {Object} config - Installation configuration
    * @param {Object} options - Setup options
    * @returns {Promise<Object>} Installation result
    */
-  async installToTarget(projectDir, bmadDir, config, options) {
+  async installToTarget(projectDir, qdDir, config, options) {
     const { target_dir } = config;
     const targetPath = path.join(projectDir, target_dir);
     await fs.ensureDir(targetPath);
@@ -117,7 +117,7 @@ class ConfigDrivenIdeSetup {
     this.skillWriteTracker = new Set();
     const results = { skills: 0 };
 
-    results.skills = await this.installVerbatimSkills(projectDir, bmadDir, targetPath, config);
+    results.skills = await this.installVerbatimSkills(projectDir, qdDir, targetPath, config);
     results.skillDirectories = this.skillWriteTracker.size;
 
     await this.printSummary(results, target_dir, options);
@@ -130,15 +130,15 @@ class ConfigDrivenIdeSetup {
    * Copies the entire source directory as-is into the IDE skill directory.
    * The source SKILL.md is used directly - no frontmatter transformation or file generation.
    * @param {string} projectDir - Project directory
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @param {string} targetPath - Target skills directory
    * @param {Object} config - Installation configuration
    * @returns {Promise<number>} Count of skills installed
    */
-  async installVerbatimSkills(projectDir, bmadDir, targetPath, config) {
-    const bmadFolderName = path.basename(bmadDir);
-    const bmadPrefix = bmadFolderName + '/';
-    const csvPath = path.join(bmadDir, '_config', 'skill-manifest.csv');
+  async installVerbatimSkills(projectDir, qdDir, targetPath, config) {
+    const qdFolderName = path.basename(qdDir);
+    const qdPrefix = qdFolderName + '/';
+    const csvPath = path.join(qdDir, '_config', 'skill-manifest.csv');
 
     if (!(await fs.pathExists(csvPath))) return 0;
 
@@ -155,10 +155,10 @@ class ConfigDrivenIdeSetup {
       if (!canonicalId) continue;
 
       // Derive source directory from path column
-      // path is like "_bmad/bmm/workflows/bmad-quick-flow/bmad-quick-dev-new-preview/SKILL.md"
-      // Strip bmadFolderName prefix and join with bmadDir, then get dirname
-      const relativePath = record.path.startsWith(bmadPrefix) ? record.path.slice(bmadPrefix.length) : record.path;
-      const sourceFile = path.join(bmadDir, relativePath);
+      // path is like "_qd/bmm/workflows/qd-quick-flow/qd-quick-dev-new-preview/SKILL.md"
+      // Strip qdFolderName prefix and join with qdDir, then get dirname
+      const relativePath = record.path.startsWith(qdPrefix) ? record.path.slice(qdPrefix.length) : record.path;
+      const sourceFile = path.join(qdDir, relativePath);
       const sourceDir = path.dirname(sourceFile);
 
       if (!(await fs.pathExists(sourceDir))) continue;
@@ -205,21 +205,21 @@ class ConfigDrivenIdeSetup {
    * Cleanup IDE configuration
    * @param {string} projectDir - Project directory
    */
-  async cleanup(projectDir, options = {}, bmadDir = null) {
-    const resolvedBmadDir = bmadDir || (await this._findBmadDir(projectDir));
+  async cleanup(projectDir, options = {}, qdDir = null) {
+    const resolvedQdDir = qdDir || (await this._findQdDir(projectDir));
 
     // Build removal set: previously installed skills + removals.txt entries
     let removalSet;
     if (options.previousSkillIds && options.previousSkillIds.size > 0) {
       // Install/update flow: use pre-captured skill IDs (before manifest was overwritten)
       removalSet = new Set(options.previousSkillIds);
-      if (resolvedBmadDir) {
-        const removals = await this.loadRemovalLists(resolvedBmadDir);
+      if (resolvedQdDir) {
+        const removals = await this.loadRemovalLists(resolvedQdDir);
         for (const entry of removals) removalSet.add(entry);
       }
-    } else if (resolvedBmadDir) {
+    } else if (resolvedQdDir) {
       // Uninstall flow: read from current skill-manifest.csv + removals.txt
-      removalSet = await this._buildUninstallSet(resolvedBmadDir);
+      removalSet = await this._buildUninstallSet(resolvedQdDir);
     } else {
       removalSet = new Set();
     }
@@ -245,17 +245,17 @@ class ConfigDrivenIdeSetup {
       }
     }
 
-    // Strip BMAD markers from copilot-instructions.md if present
+    // Strip QD markers from copilot-instructions.md if present
     if (this.name === 'github-copilot') {
       await this.cleanupCopilotInstructions(projectDir, options);
     }
 
-    // Strip BMAD modes from .kilocodemodes if present
+    // Strip QD modes from .kilocodemodes if present
     if (this.name === 'kilo') {
       await this.cleanupKiloModes(projectDir, options);
     }
 
-    // Strip BMAD entries from .rovodev/prompts.yml if present
+    // Strip QD entries from .rovodev/prompts.yml if present
     if (this.name === 'rovo-dev') {
       await this.cleanupRovoDevPrompts(projectDir, options);
     }
@@ -276,7 +276,7 @@ class ConfigDrivenIdeSetup {
   }
 
   /**
-   * Warn about stale BMAD files in a global legacy directory (never auto-deletes)
+   * Warn about stale QD files in a global legacy directory (never auto-deletes)
    * @param {string} legacyDir - Legacy directory path (may start with ~)
    * @param {Object} options - Options (silent, etc.)
    */
@@ -291,10 +291,10 @@ class ConfigDrivenIdeSetup {
       if (!(await fs.pathExists(expanded))) return;
 
       const entries = await fs.readdir(expanded);
-      const bmadFiles = entries.filter((e) => typeof e === 'string' && e.startsWith('bmad'));
+      const qdFiles = entries.filter((e) => typeof e === 'string' && e.startsWith('qd'));
 
-      if (bmadFiles.length > 0 && !options.silent) {
-        await prompts.log.warn(`Found ${bmadFiles.length} stale BMAD file(s) in ${expanded}. Remove manually: rm ${expanded}/bmad-*`);
+      if (qdFiles.length > 0 && !options.silent) {
+        await prompts.log.warn(`Found ${qdFiles.length} stale QD file(s) in ${expanded}. Remove manually: rm ${expanded}/qd-*`);
       }
     } catch {
       // Errors reading global paths are silently ignored
@@ -302,26 +302,26 @@ class ConfigDrivenIdeSetup {
   }
 
   /**
-   * Find the _bmad directory in a project
+   * Find the _qd directory in a project
    * @param {string} projectDir - Project directory
-   * @returns {string|null} Path to bmad dir or null
+   * @returns {string|null} Path to qd dir or null
    */
-  async _findBmadDir(projectDir) {
-    const bmadDir = path.join(projectDir, BMAD_FOLDER_NAME);
-    return (await fs.pathExists(bmadDir)) ? bmadDir : null;
+  async _findQdDir(projectDir) {
+    const qdDir = path.join(projectDir, QD_FOLDER_NAME);
+    return (await fs.pathExists(qdDir)) ? qdDir : null;
   }
 
   /**
    * Build the full set of entries to remove for uninstall.
    * Reads skill-manifest.csv to know exactly what was installed, plus removal lists.
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @returns {Set<string>} Set of entries to remove
    */
-  async _buildUninstallSet(bmadDir) {
-    const removals = await this.loadRemovalLists(bmadDir);
+  async _buildUninstallSet(qdDir) {
+    const removals = await this.loadRemovalLists(qdDir);
 
     // Also add all currently installed skills from skill-manifest.csv
-    const csvPath = path.join(bmadDir, '_config', 'skill-manifest.csv');
+    const csvPath = path.join(qdDir, '_config', 'skill-manifest.csv');
     try {
       if (await fs.pathExists(csvPath)) {
         const content = await fs.readFile(csvPath, 'utf8');
@@ -340,12 +340,12 @@ class ConfigDrivenIdeSetup {
   }
 
   /**
-   * Load removal lists from all module sources in the bmad directory.
+   * Load removal lists from all module sources in the qd directory.
    * Each module can have an optional removals.txt listing entries to remove.
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @returns {Set<string>} Set of entries to remove
    */
-  async loadRemovalLists(bmadDir) {
+  async loadRemovalLists(qdDir) {
     const removals = new Set();
     const { getProjectRoot } = require('../project-root');
 
@@ -355,14 +355,14 @@ class ConfigDrivenIdeSetup {
 
     // Read per-module removals.txt from installed module directories
     try {
-      const entries = await fs.readdir(bmadDir);
+      const entries = await fs.readdir(qdDir);
       for (const entry of entries) {
         if (entry.startsWith('_')) continue;
-        const removalPath = path.join(bmadDir, entry, 'removals.txt');
+        const removalPath = path.join(qdDir, entry, 'removals.txt');
         await this._readRemovalFile(removalPath, removals);
       }
     } catch {
-      // bmadDir may not exist yet on fresh install
+      // qdDir may not exist yet on fresh install
     }
 
     return removals;
@@ -392,7 +392,7 @@ class ConfigDrivenIdeSetup {
   /**
    * Cleanup a specific target directory.
    * When removalSet is provided, only removes entries in that set.
-   * When removalSet is null (legacy dirs), removes all bmad-prefixed entries.
+   * When removalSet is null (legacy dirs), removes all qd-prefixed entries.
    * @param {string} projectDir - Project directory
    * @param {string} targetDir - Target directory to clean
    * @param {Object} options - Cleanup options
@@ -425,11 +425,11 @@ class ConfigDrivenIdeSetup {
     for (const entry of entries) {
       if (!entry || typeof entry !== 'string') continue;
 
-      // Always preserve bmad-os-* utility skills regardless of cleanup mode
-      if (entry.startsWith('bmad-os-')) continue;
+      // Always preserve qd-os-* utility skills regardless of cleanup mode
+      if (entry.startsWith('qd-os-')) continue;
 
       // Surgical removal from set, or legacy prefix matching when set is null
-      const shouldRemove = removalSet ? removalSet.has(entry) : entry.startsWith('bmad');
+      const shouldRemove = removalSet ? removalSet.has(entry) : entry.startsWith('qd');
 
       if (shouldRemove) {
         try {
@@ -458,8 +458,8 @@ class ConfigDrivenIdeSetup {
   }
 
   /**
-   * Strip BMAD-owned content from .github/copilot-instructions.md.
-   * The old custom installer injected content between <!-- BMAD:START --> and <!-- BMAD:END --> markers.
+   * Strip QD-owned content from .github/copilot-instructions.md.
+   * The old custom installer injected content between <!-- QD:START --> and <!-- QD:END --> markers.
    * Deletes the file if nothing remains. Restores .bak backup if one exists.
    */
   async cleanupCopilotInstructions(projectDir, options = {}) {
@@ -469,12 +469,12 @@ class ConfigDrivenIdeSetup {
 
     try {
       const content = await fs.readFile(filePath, 'utf8');
-      const startIdx = content.indexOf('<!-- BMAD:START -->');
-      const endIdx = content.indexOf('<!-- BMAD:END -->');
+      const startIdx = content.indexOf('<!-- QD:START -->');
+      const endIdx = content.indexOf('<!-- QD:END -->');
 
       if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return;
 
-      const cleaned = content.slice(0, startIdx) + content.slice(endIdx + '<!-- BMAD:END -->'.length);
+      const cleaned = content.slice(0, startIdx) + content.slice(endIdx + '<!-- QD:END -->'.length);
 
       if (cleaned.trim().length === 0) {
         await fs.remove(filePath);
@@ -489,16 +489,16 @@ class ConfigDrivenIdeSetup {
         if (await fs.pathExists(backupPath)) await fs.remove(backupPath);
       }
 
-      if (!options.silent) await prompts.log.message('  Cleaned BMAD markers from copilot-instructions.md');
+      if (!options.silent) await prompts.log.message('  Cleaned QD markers from copilot-instructions.md');
     } catch {
-      if (!options.silent) await prompts.log.warn('  Warning: Could not clean BMAD markers from copilot-instructions.md');
+      if (!options.silent) await prompts.log.warn('  Warning: Could not clean QD markers from copilot-instructions.md');
     }
   }
 
   /**
-   * Strip BMAD-owned modes from .kilocodemodes.
-   * The old custom kilo.js installer added modes with slug starting with 'bmad-'.
-   * Parses YAML, filters out BMAD modes, rewrites. Leaves file as-is on parse failure.
+   * Strip QD-owned modes from .kilocodemodes.
+   * The old custom kilo.js installer added modes with slug starting with 'qd-'.
+   * Parses YAML, filters out QD modes, rewrites. Leaves file as-is on parse failure.
    */
   async cleanupKiloModes(projectDir, options = {}) {
     const kiloModesPath = path.join(projectDir, '.kilocodemodes');
@@ -518,13 +518,13 @@ class ConfigDrivenIdeSetup {
     if (!Array.isArray(config.customModes)) return;
 
     const originalCount = config.customModes.length;
-    config.customModes = config.customModes.filter((mode) => mode && (!mode.slug || !mode.slug.startsWith('bmad-')));
+    config.customModes = config.customModes.filter((mode) => mode && (!mode.slug || !mode.slug.startsWith('qd-')));
     const removedCount = originalCount - config.customModes.length;
 
     if (removedCount > 0) {
       try {
         await fs.writeFile(kiloModesPath, yaml.stringify(config, { lineWidth: 0 }));
-        if (!options.silent) await prompts.log.message(`  Removed ${removedCount} BMAD modes from .kilocodemodes`);
+        if (!options.silent) await prompts.log.message(`  Removed ${removedCount} QD modes from .kilocodemodes`);
       } catch {
         if (!options.silent) await prompts.log.warn('  Warning: Could not write .kilocodemodes during cleanup');
       }
@@ -532,9 +532,9 @@ class ConfigDrivenIdeSetup {
   }
 
   /**
-   * Strip BMAD-owned entries from .rovodev/prompts.yml.
+   * Strip QD-owned entries from .rovodev/prompts.yml.
    * The old custom rovodev.js installer registered workflows in prompts.yml.
-   * Parses YAML, filters out entries with name starting with 'bmad-', rewrites.
+   * Parses YAML, filters out entries with name starting with 'qd-', rewrites.
    * Removes the file if no entries remain.
    */
   async cleanupRovoDevPrompts(projectDir, options = {}) {
@@ -555,7 +555,7 @@ class ConfigDrivenIdeSetup {
     if (!Array.isArray(config.prompts)) return;
 
     const originalCount = config.prompts.length;
-    config.prompts = config.prompts.filter((entry) => entry && (!entry.name || !entry.name.startsWith('bmad-')));
+    config.prompts = config.prompts.filter((entry) => entry && (!entry.name || !entry.name.startsWith('qd-')));
     const removedCount = originalCount - config.prompts.length;
 
     if (removedCount > 0) {
@@ -565,7 +565,7 @@ class ConfigDrivenIdeSetup {
         } else {
           await fs.writeFile(promptsPath, yaml.stringify(config, { lineWidth: 0 }));
         }
-        if (!options.silent) await prompts.log.message(`  Removed ${removedCount} BMAD entries from prompts.yml`);
+        if (!options.silent) await prompts.log.message(`  Removed ${removedCount} QD entries from prompts.yml`);
       } catch {
         if (!options.silent) await prompts.log.warn('  Warning: Could not write prompts.yml during cleanup');
       }
@@ -573,7 +573,7 @@ class ConfigDrivenIdeSetup {
   }
 
   /**
-   * Check ancestor directories for existing BMAD files in the same target_dir.
+   * Check ancestor directories for existing QD files in the same target_dir.
    * IDEs like Claude Code inherit commands from parent directories, so an existing
    * installation in an ancestor would cause duplicate commands.
    * @param {string} projectDir - Project directory being installed to
@@ -592,10 +592,10 @@ class ConfigDrivenIdeSetup {
       try {
         if (await fs.pathExists(candidatePath)) {
           const entries = await fs.readdir(candidatePath);
-          const hasBmad = entries.some(
-            (e) => typeof e === 'string' && e.toLowerCase().startsWith('bmad') && !e.toLowerCase().startsWith('bmad-os-'),
+          const hasQd = entries.some(
+            (e) => typeof e === 'string' && e.toLowerCase().startsWith('qd') && !e.toLowerCase().startsWith('qd-os-'),
           );
-          if (hasBmad) {
+          if (hasQd) {
             return candidatePath;
           }
         }

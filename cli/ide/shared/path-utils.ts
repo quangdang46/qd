@@ -6,66 +6,66 @@
  * Provides utilities to convert hierarchical paths to flat naming conventions.
  *
  * DASH-BASED NAMING (new standard):
- * - Agents: bmad-agent-module-name.md (with bmad-agent- prefix)
- * - Workflows/Tasks/Tools: bmad-module-name.md
+ * - Agents: qd-agent-module-name.md (with qd-agent- prefix)
+ * - Workflows/Tasks/Tools: qd-module-name.md
  *
  * Example outputs:
- * - bmm/agents/pm.md -> bmad-agent-bmm-pm.md
- * - bmm/workflows/plan-project.md -> bmad-bmm-plan-project.md
- * - bmm/tasks/create-story.md -> bmad-bmm-create-story.md
- * - core/agents/brainstorming.md -> bmad-agent-brainstorming.md (core agents skip module name)
- * - standalone/agents/fred.md -> bmad-agent-standalone-fred.md
+ * - bmm/agents/pm.md -> qd-agent-bmm-pm.md
+ * - bmm/workflows/plan-project.md -> qd-bmm-plan-project.md
+ * - bmm/tasks/create-story.md -> qd-bmm-create-story.md
+ * - core/agents/brainstorming.md -> qd-agent-brainstorming.md (core agents skip module name)
+ * - standalone/agents/fred.md -> qd-agent-standalone-fred.md
  */
 
 const AGENT_SEGMENT = 'agents';
 
-// BMAD installation folder name - centralized constant for all installers
-const BMAD_FOLDER_NAME = '_bmad';
+// QD installation folder name - centralized constant for all installers
+const QD_FOLDER_NAME = '_qd';
 
 /**
  * Convert hierarchical path to flat dash-separated name (NEW STANDARD)
- * Converts: 'bmm', 'agents', 'pm' -> 'bmad-agent-bmm-pm.md'
- * Converts: 'bmm', 'workflows', 'correct-course' -> 'bmad-bmm-correct-course.md'
- * Converts: 'core', 'agents', 'brainstorming' -> 'bmad-agent-brainstorming.md' (core agents skip module name)
- * Converts: 'standalone', 'agents', 'fred' -> 'bmad-agent-standalone-fred.md'
+ * Converts: 'bmm', 'agents', 'pm' -> 'qd-agent-bmm-pm.md'
+ * Converts: 'bmm', 'workflows', 'correct-course' -> 'qd-bmm-correct-course.md'
+ * Converts: 'core', 'agents', 'brainstorming' -> 'qd-agent-brainstorming.md' (core agents skip module name)
+ * Converts: 'standalone', 'agents', 'fred' -> 'qd-agent-standalone-fred.md'
  *
  * @param {string} module - Module name (e.g., 'bmm', 'core', 'standalone')
  * @param {string} type - Artifact type ('agents', 'workflows', 'tasks', 'tools')
  * @param {string} name - Artifact name (e.g., 'pm', 'brainstorming')
- * @returns {string} Flat filename like 'bmad-agent-bmm-pm.md' or 'bmad-bmm-correct-course.md'
+ * @returns {string} Flat filename like 'qd-agent-bmm-pm.md' or 'qd-bmm-correct-course.md'
  */
 function toDashName(module, type, name) {
   const isAgent = type === AGENT_SEGMENT;
 
-  // For core module, skip the module name: use 'bmad-agent-name.md' instead of 'bmad-agent-core-name.md'
+  // For core module, skip the module name: use 'qd-agent-name.md' instead of 'qd-agent-core-name.md'
   if (module === 'core') {
-    return isAgent ? `bmad-agent-${name}.md` : `bmad-${name}.md`;
+    return isAgent ? `qd-agent-${name}.md` : `qd-${name}.md`;
   }
   // For standalone module, include 'standalone' in the name
   if (module === 'standalone') {
-    return isAgent ? `bmad-agent-standalone-${name}.md` : `bmad-standalone-${name}.md`;
+    return isAgent ? `qd-agent-standalone-${name}.md` : `qd-standalone-${name}.md`;
   }
 
-  // Module artifacts: bmad-module-name.md or bmad-agent-module-name.md
+  // Module artifacts: qd-module-name.md or qd-agent-module-name.md
   // eslint-disable-next-line unicorn/prefer-string-replace-all -- regex replace is intentional here
   const dashName = name.replace(/\//g, '-'); // Flatten nested paths
-  return isAgent ? `bmad-agent-${module}-${dashName}.md` : `bmad-${module}-${dashName}.md`;
+  return isAgent ? `qd-agent-${module}-${dashName}.md` : `qd-${module}-${dashName}.md`;
 }
 
 /**
  * Convert relative path to flat dash-separated name
- * Converts: 'bmm/agents/pm.md' -> 'bmad-agent-bmm-pm.md'
- * Converts: 'bmm/agents/tech-writer/tech-writer.md' -> 'bmad-agent-bmm-tech-writer.md' (uses folder name)
- * Converts: 'bmm/workflows/correct-course.md' -> 'bmad-bmm-correct-course.md'
- * Converts: 'core/agents/brainstorming.md' -> 'bmad-agent-brainstorming.md' (core agents skip module name)
+ * Converts: 'bmm/agents/pm.md' -> 'qd-agent-bmm-pm.md'
+ * Converts: 'bmm/agents/tech-writer/tech-writer.md' -> 'qd-agent-bmm-tech-writer.md' (uses folder name)
+ * Converts: 'bmm/workflows/correct-course.md' -> 'qd-bmm-correct-course.md'
+ * Converts: 'core/agents/brainstorming.md' -> 'qd-agent-brainstorming.md' (core agents skip module name)
  *
  * @param {string} relativePath - Path like 'bmm/agents/pm.md'
- * @returns {string} Flat filename like 'bmad-agent-bmm-pm.md' or 'bmad-brainstorming.md'
+ * @returns {string} Flat filename like 'qd-agent-bmm-pm.md' or 'qd-brainstorming.md'
  */
 function toDashPath(relativePath) {
   if (!relativePath || typeof relativePath !== 'string') {
     // Return a safe default for invalid input
-    return 'bmad-unknown.md';
+    return 'qd-unknown.md';
   }
 
   // Strip common file extensions to avoid double extensions in generated filenames
@@ -92,13 +92,13 @@ function toDashPath(relativePath) {
 
 /**
  * Create custom agent dash name
- * Creates: 'bmad-custom-agent-fred-commit-poet.md'
+ * Creates: 'qd-custom-agent-fred-commit-poet.md'
  *
  * @param {string} agentName - Custom agent name
- * @returns {string} Flat filename like 'bmad-custom-agent-fred-commit-poet.md'
+ * @returns {string} Flat filename like 'qd-custom-agent-fred-commit-poet.md'
  */
 function customAgentDashName(agentName) {
-  return `bmad-custom-agent-${agentName}.md`;
+  return `qd-custom-agent-${agentName}.md`;
 }
 
 /**
@@ -107,17 +107,17 @@ function customAgentDashName(agentName) {
  * @returns {boolean} True if filename uses dash format
  */
 function isDashFormat(filename) {
-  return filename.startsWith('bmad-') && filename.includes('-');
+  return filename.startsWith('qd-') && filename.includes('-');
 }
 
 /**
  * Extract parts from a dash-formatted filename
- * Parses: 'bmad-agent-bmm-pm.md' -> { prefix: 'bmad', module: 'bmm', type: 'agents', name: 'pm' }
- * Parses: 'bmad-bmm-correct-course.md' -> { prefix: 'bmad', module: 'bmm', type: 'workflows', name: 'correct-course' }
- * Parses: 'bmad-agent-brainstorming.md' -> { prefix: 'bmad', module: 'core', type: 'agents', name: 'brainstorming' } (core agents)
- * Parses: 'bmad-brainstorming.md' -> { prefix: 'bmad', module: 'core', type: 'workflows', name: 'brainstorming' } (core workflows)
- * Parses: 'bmad-agent-standalone-fred.md' -> { prefix: 'bmad', module: 'standalone', type: 'agents', name: 'fred' }
- * Parses: 'bmad-standalone-foo.md' -> { prefix: 'bmad', module: 'standalone', type: 'workflows', name: 'foo' }
+ * Parses: 'qd-agent-bmm-pm.md' -> { prefix: 'qd', module: 'bmm', type: 'agents', name: 'pm' }
+ * Parses: 'qd-bmm-correct-course.md' -> { prefix: 'qd', module: 'bmm', type: 'workflows', name: 'correct-course' }
+ * Parses: 'qd-agent-brainstorming.md' -> { prefix: 'qd', module: 'core', type: 'agents', name: 'brainstorming' } (core agents)
+ * Parses: 'qd-brainstorming.md' -> { prefix: 'qd', module: 'core', type: 'workflows', name: 'brainstorming' } (core workflows)
+ * Parses: 'qd-agent-standalone-fred.md' -> { prefix: 'qd', module: 'standalone', type: 'agents', name: 'fred' }
+ * Parses: 'qd-standalone-foo.md' -> { prefix: 'qd', module: 'standalone', type: 'workflows', name: 'foo' }
  *
  * @param {string} filename - Dash-formatted filename
  * @returns {Object|null} Parsed parts or null if invalid format
@@ -126,7 +126,7 @@ function parseDashName(filename) {
   const withoutExt = filename.replace('.md', '');
   const parts = withoutExt.split('-');
 
-  if (parts.length < 2 || parts[0] !== 'bmad') {
+  if (parts.length < 2 || parts[0] !== 'qd') {
     return null;
   }
 
@@ -135,9 +135,9 @@ function parseDashName(filename) {
 
   if (isAgent) {
     // This is an agent file
-    // Format: bmad-agent-name (core) or bmad-agent-standalone-name or bmad-agent-module-name
+    // Format: qd-agent-name (core) or qd-agent-standalone-name or qd-agent-module-name
     if (parts.length >= 4 && parts[2] === 'standalone') {
-      // Standalone agent: bmad-agent-standalone-name
+      // Standalone agent: qd-agent-standalone-name
       return {
         prefix: parts[0],
         module: 'standalone',
@@ -146,7 +146,7 @@ function parseDashName(filename) {
       };
     }
     if (parts.length === 3) {
-      // Core agent: bmad-agent-name
+      // Core agent: qd-agent-name
       return {
         prefix: parts[0],
         module: 'core',
@@ -154,7 +154,7 @@ function parseDashName(filename) {
         name: parts[2],
       };
     } else {
-      // Module agent: bmad-agent-module-name
+      // Module agent: qd-agent-module-name
       return {
         prefix: parts[0],
         module: parts[2],
@@ -165,7 +165,7 @@ function parseDashName(filename) {
   }
 
   // Not an agent file - must be a workflow/tool/task
-  // If only 2 parts (bmad-name), it's a core workflow/tool/task
+  // If only 2 parts (qd-name), it's a core workflow/tool/task
   if (parts.length === 2) {
     return {
       prefix: parts[0],
@@ -175,7 +175,7 @@ function parseDashName(filename) {
     };
   }
 
-  // Check for standalone non-agent: bmad-standalone-name
+  // Check for standalone non-agent: qd-standalone-name
   if (parts[1] === 'standalone') {
     return {
       prefix: parts[0],
@@ -185,7 +185,7 @@ function parseDashName(filename) {
     };
   }
 
-  // Otherwise, it's a module workflow/tool/task (bmad-module-name)
+  // Otherwise, it's a module workflow/tool/task (qd-module-name)
   return {
     prefix: parts[0],
     module: parts[1],
@@ -196,11 +196,11 @@ function parseDashName(filename) {
 
 /**
  * Resolve the skill name for an artifact.
- * Prefers canonicalId from a bmad-skill-manifest.yaml sidecar when available,
+ * Prefers canonicalId from a qd-skill-manifest.yaml sidecar when available,
  * falling back to the path-derived name from toDashPath().
  *
  * @param {Object} artifact - Artifact object (must have relativePath; may have canonicalId)
- * @returns {string} Filename like 'bmad-create-prd.md' or 'bmad-agent-bmm-pm.md'
+ * @returns {string} Filename like 'qd-create-prd.md' or 'qd-agent-bmm-pm.md'
  */
 function resolveSkillName(artifact) {
   if (artifact.canonicalId) {
@@ -217,5 +217,5 @@ module.exports = {
   isDashFormat,
   parseDashName,
   AGENT_SEGMENT,
-  BMAD_FOLDER_NAME,
+  QD_FOLDER_NAME,
 };

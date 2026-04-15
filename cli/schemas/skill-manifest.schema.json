@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QD Skill Manifest",
+  "description": "Schema for qd-skill-manifest.yaml",
+  "type": "object",
+  "required": ["type", "name"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["agent", "skill", "command", "workflow"],
+      "description": "Type of artifact"
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique name of the artifact"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Display name shown to users"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title with icon"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji icon"
+    },
+    "platforms": {
+      "description": "Platform restrictions",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "supported": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of supported platform codes"
+            }
+          },
+          "required": ["supported"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "unsupported": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of unsupported platform codes"
+            }
+          },
+          "required": ["unsupported"]
+        }
+      ]
+    },
+    "capabilities": {
+      "type": "string",
+      "description": "Comma-separated list of capabilities"
+    },
+    "canonicalId": {
+      "type": "string",
+      "description": "Unique canonical identifier"
+    },
+    "role": {
+      "type": "string",
+      "description": "Role description for agents"
+    },
+    "identity": {
+      "type": "string",
+      "description": "Identity description for agents"
+    },
+    "communicationStyle": {
+      "type": "string",
+      "description": "Communication style for agents"
+    },
+    "principles": {
+      "type": "string",
+      "description": "Operating principles for agents"
+    },
+    "module": {
+      "type": "string",
+      "description": "Module this artifact belongs to"
+    },
+    "webskip": {
+      "type": "boolean",
+      "description": "Skip web search for this artifact"
+    },
+    "hasSidecar": {
+      "type": "boolean",
+      "description": "Has sidecar memory files"
+    }
+  }
+}

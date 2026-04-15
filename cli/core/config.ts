@@ -5,13 +5,13 @@
  * User input comes from either UI answers or headless CLI flags.
  */
 class Config {
-  constructor({ directory, ides, skipPrompts, verbose, actionType, bmadConfig, moduleConfigs, quickUpdate }) {
+  constructor({ directory, ides, skipPrompts, verbose, actionType, qdConfig, moduleConfigs, quickUpdate }) {
     this.directory = directory;
     this.ides = Object.freeze([...ides]);
     this.skipPrompts = skipPrompts;
     this.verbose = verbose;
     this.actionType = actionType;
-    this.bmadConfig = bmadConfig;
+    this.qdConfig = qdConfig;
     this.moduleConfigs = moduleConfigs;
     this._quickUpdate = quickUpdate;
     Object.freeze(this);
@@ -29,14 +29,14 @@ class Config {
       skipPrompts: userInput.skipPrompts || false,
       verbose: userInput.verbose || false,
       actionType: userInput.actionType,
-      bmadConfig: userInput.bmadConfig || userInput.coreConfig || {},
+      qdConfig: userInput.qdConfig || userInput.coreConfig || {},
       moduleConfigs: userInput.moduleConfigs || null,
       quickUpdate: userInput._quickUpdate || false,
     });
   }
 
-  hasBmadConfig() {
-    return this.bmadConfig && Object.keys(this.bmadConfig).length > 0;
+  hasQdConfig() {
+    return this.qdConfig && Object.keys(this.qdConfig).length > 0;
   }
 
   isQuickUpdate() {

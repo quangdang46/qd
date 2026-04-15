@@ -1,18 +1,18 @@
-# BMad CLI Tool
+# QD CLI Tool
 
 ## Development (TypeScript)
 
 - Sources live in `cli/`. Build outputs go to `dist/` (`npm run build:installer`).
-- The published `bin` entry points at `dist/bmad-cli.js`. After editing `.ts` files, rebuild before running `bmad` locally.
+- The published `bin` entry points at `dist/qd-cli.js`. After editing `.ts` files, rebuild before running `qd` locally.
 - Static data such as `cli/ide/platform-codes.yaml` stays in `cli/ide/` (not emitted to `dist/`); loaders resolve paths for both source and built runtime.
 
 ## Modules
 
-The CLI installs one built-in module from this repository: `bmad` (source stored under `src/bmm-skills`).
+The CLI installs artifacts from the `artifacts/` directory into provider-specific directories.
 
 ## Post-Install Notes
 
-Modules can display setup guidance to users after configuration is collected during `npx bmad install`. Notes are defined in the module's own `module.yaml` - no changes to the installer are needed.
+Modules can display setup guidance to users after configuration is collected during `npx qd install`. Notes are defined in the module's own `module.yaml` - no changes to the installer are needed.
 
 ### Simple Format
 

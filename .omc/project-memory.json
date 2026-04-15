@@ -110,6 +110,223 @@
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "package.json",
+      "accessCount": 6,
+      "lastAccessed": 1776272787843,
+      "type": "file"
+    },
+    {
+      "path": "cli/schemas/skill-manifest.schema.json",
+      "accessCount": 4,
+      "lastAccessed": 1776272596390,
+      "type": "file"
+    },
+    {
+      "path": "cli/README.md",
+      "accessCount": 3,
+      "lastAccessed": 1776272352072,
+      "type": "file"
+    },
+    {
+      "path": "cli/schemas/platforms.schema.json",
+      "accessCount": 3,
+      "lastAccessed": 1776272607126,
+      "type": "file"
+    },
+    {
+      "path": "cli/platforms/adapter.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776272713000,
+      "type": "file"
+    },
+    {
+      "path": "test/test-platform-filter.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776272747446,
+      "type": "file"
+    },
+    {
+      "path": "test/test-uninstall.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776273099848,
+      "type": "file"
+    },
+    {
+      "path": "references/bmad-method-test-architecture-enterprise-main/src/module.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1776269311091,
+      "type": "file"
+    },
+    {
+      "path": "references/bmad-module-creative-intelligence-suite-main/src/module.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1776269324546,
+      "type": "file"
+    },
+    {
+      "path": "cli/schemas/module.schema.json",
+      "accessCount": 2,
+      "lastAccessed": 1776272448853,
+      "type": "file"
+    },
+    {
+      "path": "cli/core/installer.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776272455875,
+      "type": "file"
+    },
+    {
+      "path": "test/test-schema-validation.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776272569438,
+      "type": "file"
+    },
+    {
+      "path": "test/README.md",
+      "accessCount": 2,
+      "lastAccessed": 1776272808200,
+      "type": "file"
+    },
+    {
+      "path": "test/run-tests.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776273117716,
+      "type": "file"
+    },
+    {
+      "path": "src/bmm-skills/module.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776268584974,
+      "type": "file"
+    },
+    {
+      "path": "src/skills/module.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776268585102,
+      "type": "file"
+    },
+    {
+      "path": "references/bmad-method-test-architecture-enterprise-main/src/module-help.csv",
+      "accessCount": 1,
+      "lastAccessed": 1776269311488,
+      "type": "file"
+    },
+    {
+      "path": "references/bmad-module-creative-intelligence-suite-main/src/module-help.csv",
+      "accessCount": 1,
+      "lastAccessed": 1776269324487,
+      "type": "file"
+    },
+    {
+      "path": "references/bmad-method-test-architecture-enterprise-main/src/agents/bmad-tea/SKILL.md",
+      "accessCount": 1,
+      "lastAccessed": 1776269334659,
+      "type": "file"
+    },
+    {
+      "path": "references/bmad-method-test-architecture-enterprise-main/src/agents/bmad-tea/bmad-skill-manifest.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776269334759,
+      "type": "file"
+    },
+    {
+      "path": "cli/ide/platform-codes.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776269644543,
+      "type": "file"
+    },
+    {
+      "path": "cli/ide/manager.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776269644647,
+      "type": "file"
+    },
+    {
+      "path": "cli/ide/platform-codes.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776269644694,
+      "type": "file"
+    },
+    {
+      "path": "cli/ide/_config-driven.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776269652914,
+      "type": "file"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "accessCount": 1,
+      "lastAccessed": 1776272040810,
+      "type": "file"
+    },
+    {
+      "path": "artifacts/module.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776272120156,
+      "type": "file"
+    },
+    {
+      "path": "artifacts/module-help.csv",
+      "accessCount": 1,
+      "lastAccessed": 1776272120587,
+      "type": "file"
+    },
+    {
+      "path": "cli/platforms/claude-code.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776272198744,
+      "type": "file"
+    },
+    {
+      "path": "cli/platforms/opencode.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776272199058,
+      "type": "file"
+    },
+    {
+      "path": "cli/platforms/codex.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776272199385,
+      "type": "file"
+    },
+    {
+      "path": "cli/platforms/cursor.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776272199675,
+      "type": "file"
+    },
+    {
+      "path": "test/test-installation-components.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776272441008,
+      "type": "file"
+    },
+    {
+      "path": "test/adversarial-review-tests/test-cases.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1776272465594,
+      "type": "file"
+    },
+    {
+      "path": "test/adversarial-review-tests/README.md",
+      "accessCount": 1,
+      "lastAccessed": 1776272465656,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1776272548460,
+      "type": "file"
+    },
+    {
+      "path": "cli/fs-native.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776273091712,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

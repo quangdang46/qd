@@ -56,20 +56,20 @@ class ManifestGenerator {
 
   /**
    * Generate all manifests for the installation
-   * @param {string} bmadDir - _bmad
+   * @param {string} qdDir - _qd
    * @param {Array} selectedModules - Selected modules for installation
    * @param {Array} installedFiles - All installed files (optional, for hash tracking)
    */
-  async generateManifests(bmadDir, selectedModules, installedFiles = [], options = {}) {
+  async generateManifests(qdDir, selectedModules, installedFiles = [], options = {}) {
     // Create _config directory if it doesn't exist
-    const cfgDir = path.join(bmadDir, '_config');
+    const cfgDir = path.join(qdDir, '_config');
     await fs.ensureDir(cfgDir);
 
     // Store modules list (all modules including preserved ones)
     const preservedModules = options.preservedModules || [];
 
-    // Scan the bmad directory to find all actually installed modules
-    const installedModules = await this.scanInstalledModules(bmadDir);
+    // Scan the qd directory to find all actually installed modules
+    const installedModules = await this.scanInstalledModules(qdDir);
 
     // Since custom modules are now installed the same way as regular modules,
     // we don't need to exclude them from manifest generation
@@ -78,8 +78,8 @@ class ManifestGenerator {
     this.modules = allModules;
     this.updatedModules = allModules; // Include ALL modules (including custom) for scanning
 
-    this.bmadDir = bmadDir;
-    this.bmadFolderName = path.basename(bmadDir); // Get the actual folder name (e.g., '_bmad' or 'bmad')
+    this.qdDir = qdDir;
+    this.qdFolderName = path.basename(qdDir); // Get the actual folder name (e.g., '_qd' or 'qd')
     this.allInstalledFiles = installedFiles;
 
     if (!Object.prototype.hasOwnProperty.call(options, 'ides')) {
@@ -129,10 +129,10 @@ class ManifestGenerator {
   async collectSkills() {
     this.skills = [];
     this.skillClaimedDirs = new Set();
-    const debug = process.env.BMAD_DEBUG_MANIFEST === 'true';
+    const debug = process.env.QD_DEBUG_MANIFEST === 'true';
 
     for (const moduleName of this.updatedModules) {
-      const modulePath = path.join(this.bmadDir, moduleName);
+      const modulePath = path.join(this.qdDir, moduleName);
       if (!(await fs.pathExists(modulePath))) continue;
 
       // Recursive walk skipping . and _ prefixed dirs
@@ -159,15 +159,15 @@ class ManifestGenerator {
           // Build path relative from module root (points to SKILL.md - the permanent entrypoint)
           const relativePath = path.relative(modulePath, dir).split(path.sep).join('/');
           const installPath = relativePath
-            ? `${this.bmadFolderName}/${moduleName}/${relativePath}/${skillFile}`
-            : `${this.bmadFolderName}/${moduleName}/${skillFile}`;
+            ? `${this.qdFolderName}/${moduleName}/${relativePath}/${skillFile}`
+            : `${this.qdFolderName}/${moduleName}/${skillFile}`;
 
           // Native SKILL.md entrypoints derive canonicalId from directory name.
           // Agent entrypoints may keep canonicalId metadata for compatibility, so
           // only warn for non-agent SKILL.md directories.
           if (manifest && manifest.__single && manifest.__single.canonicalId && artifactType !== 'agent') {
             console.warn(
-              `Warning: Native entrypoint manifest at ${dir}/bmad-skill-manifest.yaml contains canonicalId - this field is ignored for SKILL.md directories (directory name is the canonical ID)`,
+              `Warning: Native entrypoint manifest at ${dir}/qd-skill-manifest.yaml contains canonicalId - this field is ignored for SKILL.md directories (directory name is the canonical ID)`,
             );
           }
           const canonicalId = dirName;
@@ -269,19 +269,19 @@ class ManifestGenerator {
    */
   async collectAgents(selectedModules) {
     this.agents = [];
-    const debug = process.env.BMAD_DEBUG_MANIFEST === 'true';
+    const debug = process.env.QD_DEBUG_MANIFEST === 'true';
 
     // Walk each module's full directory tree looking for type:agent manifests
     for (const moduleName of this.updatedModules) {
-      const modulePath = path.join(this.bmadDir, moduleName);
+      const modulePath = path.join(this.qdDir, moduleName);
       if (!(await fs.pathExists(modulePath))) continue;
 
       const moduleAgents = await this.getAgentsFromDirRecursive(modulePath, moduleName, '', debug);
       this.agents.push(...moduleAgents);
     }
 
-    // Get standalone agents from bmad/agents/ directory
-    const standaloneAgentsDir = path.join(this.bmadDir, 'agents');
+    // Get standalone agents from qd/agents/ directory
+    const standaloneAgentsDir = path.join(this.qdDir, 'agents');
     if (await fs.pathExists(standaloneAgentsDir)) {
       const standaloneAgents = await this.getAgentsFromDirRecursive(standaloneAgentsDir, 'standalone', '', debug);
       this.agents.push(...standaloneAgents);
@@ -294,7 +294,7 @@ class ManifestGenerator {
 
   /**
    * Recursively walk a directory tree collecting agents.
-   * Discovers agents via directory with bmad-skill-manifest.yaml containing type: agent
+   * Discovers agents via directory with qd-skill-manifest.yaml containing type: agent
    *
    * @param {string} dirPath - Current directory being scanned
    * @param {string} moduleName - Module this directory belongs to
@@ -324,7 +324,7 @@ class ManifestGenerator {
         const m = dirManifest.__single;
         const dirRelativePath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
         const agentModule = m.module || moduleName;
-        const installPath = `${this.bmadFolderName}/${agentModule}/${dirRelativePath}`;
+        const installPath = `${this.qdFolderName}/${agentModule}/${dirRelativePath}`;
 
         agents.push({
           name: m.name || entry.name,
@@ -411,7 +411,7 @@ class ManifestGenerator {
 
     for (const moduleName of this.modules) {
       // Get fresh version info from source
-      const versionInfo = await manifestObj.getModuleVersionInfo(moduleName, this.bmadDir);
+      const versionInfo = await manifestObj.getModuleVersionInfo(moduleName, this.qdDir);
 
       // Get existing install date if available
       const existing = existingModulesMap.get(moduleName);
@@ -581,8 +581,8 @@ class ManifestGenerator {
     if (this.allInstalledFiles && this.allInstalledFiles.length > 0) {
       // Process all installed files
       for (const filePath of this.allInstalledFiles) {
-        // Store paths relative to bmadDir (no folder prefix)
-        const relativePath = filePath.replace(this.bmadDir, '').replaceAll('\\', '/').replace(/^\//, '');
+        // Store paths relative to qdDir (no folder prefix)
+        const relativePath = filePath.replace(this.qdDir, '').replaceAll('\\', '/').replace(/^\//, '');
         const ext = path.extname(filePath).toLowerCase();
         const fileName = path.basename(filePath, ext);
 
@@ -605,8 +605,8 @@ class ManifestGenerator {
       // Fallback: use the collected workflows/agents/tasks
       for (const file of this.files) {
         // Strip the folder prefix if present (for consistency)
-        const relPath = file.path.replace(this.bmadFolderName + '/', '');
-        const filePath = path.join(this.bmadDir, relPath);
+        const relPath = file.path.replace(this.qdFolderName + '/', '');
+        const filePath = path.join(this.qdDir, relPath);
         const hash = await this.calculateFileHash(filePath);
         allFiles.push({
           ...file,
@@ -633,15 +633,15 @@ class ManifestGenerator {
   }
 
   /**
-   * Scan the bmad directory to find all installed modules
-   * @param {string} bmadDir - Path to bmad directory
+   * Scan the qd directory to find all installed modules
+   * @param {string} qdDir - Path to qd directory
    * @returns {Array} List of module names
    */
-  async scanInstalledModules(bmadDir) {
+  async scanInstalledModules(qdDir) {
     const modules = [];
 
     try {
-      const entries = await fs.readdir(bmadDir, { withFileTypes: true });
+      const entries = await fs.readdir(qdDir, { withFileTypes: true });
 
       for (const entry of entries) {
         // Skip if not a directory or is a special directory
@@ -650,7 +650,7 @@ class ManifestGenerator {
         }
 
         // Check if this looks like a module (has agents directory or skill manifests)
-        const modulePath = path.join(bmadDir, entry.name);
+        const modulePath = path.join(qdDir, entry.name);
         const hasAgents = await fs.pathExists(path.join(modulePath, 'agents'));
         const hasSkills = await this._hasSkillMdRecursive(modulePath);
 

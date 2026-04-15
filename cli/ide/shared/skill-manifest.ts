@@ -5,14 +5,14 @@ const fs = require('../../fs-native');
 const yaml = require('yaml');
 
 /**
- * Load bmad-skill-manifest.yaml from a directory.
+ * Load qd-skill-manifest.yaml from a directory.
  * Single-entry manifests (canonicalId at top level) apply to all files in the directory.
  * Multi-entry manifests are keyed by source filename.
- * @param {string} dirPath - Directory to check for bmad-skill-manifest.yaml
+ * @param {string} dirPath - Directory to check for qd-skill-manifest.yaml
  * @returns {Object|null} Parsed manifest or null
  */
 async function loadSkillManifest(dirPath) {
-  const manifestPath = path.join(dirPath, 'bmad-skill-manifest.yaml');
+  const manifestPath = path.join(dirPath, 'qd-skill-manifest.yaml');
   try {
     if (!(await fs.pathExists(manifestPath))) return null;
     const content = await fs.readFile(manifestPath, 'utf8');
@@ -21,7 +21,7 @@ async function loadSkillManifest(dirPath) {
     if (parsed.canonicalId || parsed.type) return { __single: parsed };
     return parsed;
   } catch (error) {
-    console.warn(`Warning: Failed to parse bmad-skill-manifest.yaml in ${dirPath}: ${error.message}`);
+    console.warn(`Warning: Failed to parse qd-skill-manifest.yaml in ${dirPath}: ${error.message}`);
     return null;
   }
 }

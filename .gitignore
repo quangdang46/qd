@@ -61,3 +61,5 @@ z*/
 
 dist/
 test-dist/
+references/
+.omc/

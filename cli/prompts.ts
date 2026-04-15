@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 /**
- * @clack/prompts wrapper for BMAD CLI
+ * @clack/prompts wrapper for QD CLI
  *
  * This module provides a unified interface for CLI prompts using @clack/prompts.
  * It replaces Inquirer.js to fix Windows arrow key navigation issues (libuv #852).

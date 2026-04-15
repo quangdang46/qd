@@ -9,26 +9,26 @@ const prompts = require('../prompts');
 class Manifest {
   /**
    * Create a new manifest
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @param {Object} data - Manifest data
    * @param {Array} installedFiles - List of installed files (no longer used, files tracked in files-manifest.csv)
    */
-  async create(bmadDir, data, installedFiles = []) {
-    const manifestPath = path.join(bmadDir, '_config', 'manifest.yaml');
+  async create(qdDir, data, installedFiles = []) {
+    const manifestPath = path.join(qdDir, '_config', 'manifest.yaml');
     const yaml = require('yaml');
 
     // Ensure _config directory exists
     await fs.ensureDir(path.dirname(manifestPath));
 
     // Get the BMad version from package.json
-    const bmadVersion = data.version || require(path.join(process.cwd(), 'package.json')).version;
+    const qdVersion = data.version || require(path.join(process.cwd(), 'package.json')).version;
 
     // Convert module list to new detailed format
     const moduleDetails = [];
     if (data.modules && Array.isArray(data.modules)) {
       for (const moduleName of data.modules) {
-        // Unified BMAD module uses the package version
-        const moduleVersion = moduleName === 'bmad' ? bmadVersion : null;
+        // Unified QD module uses the package version
+        const moduleVersion = moduleName === 'qd' ? qdVersion : null;
         const now = data.installDate || new Date().toISOString();
 
         moduleDetails.push({
@@ -36,7 +36,7 @@ class Manifest {
           version: moduleVersion,
           installDate: now,
           lastUpdated: now,
-          source: moduleName === 'bmad' ? 'built-in' : 'unknown',
+          source: moduleName === 'qd' ? 'built-in' : 'unknown',
         });
       }
     }
@@ -44,7 +44,7 @@ class Manifest {
     // Structure the manifest data
     const manifestData = {
       installation: {
-        version: bmadVersion,
+        version: qdVersion,
         installDate: data.installDate || new Date().toISOString(),
         lastUpdated: data.lastUpdated || new Date().toISOString(),
       },
@@ -70,11 +70,11 @@ class Manifest {
 
   /**
    * Read existing manifest
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @returns {Object|null} Manifest data or null if not found
    */
-  async read(bmadDir) {
-    const yamlPath = path.join(bmadDir, '_config', 'manifest.yaml');
+  async read(qdDir) {
+    const yamlPath = path.join(qdDir, '_config', 'manifest.yaml');
     const yaml = require('yaml');
 
     if (await fs.pathExists(yamlPath)) {
@@ -111,11 +111,11 @@ class Manifest {
 
   /**
    * Read raw manifest data without flattening
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @returns {Object|null} Raw manifest data or null if not found
    */
-  async _readRaw(bmadDir) {
-    const yamlPath = path.join(bmadDir, '_config', 'manifest.yaml');
+  async _readRaw(qdDir) {
+    const yamlPath = path.join(qdDir, '_config', 'manifest.yaml');
     const yaml = require('yaml');
 
     if (await fs.pathExists(yamlPath)) {
@@ -153,12 +153,12 @@ class Manifest {
   /**
    * Add a module to the manifest with optional version info
    * If module already exists, update its version info
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @param {string} moduleName - Module name to add
    * @param {Object} options - Optional version info
    */
-  async addModule(bmadDir, moduleName, options = {}) {
-    let manifest = await this._readRaw(bmadDir);
+  async addModule(qdDir, moduleName, options = {}) {
+    let manifest = await this._readRaw(qdDir);
     if (!manifest) {
       // Bootstrap a minimal manifest if it doesn't exist yet
       // (e.g., skill-only modules with no agents to compile)
@@ -194,16 +194,16 @@ class Manifest {
       manifest.modules[existingIndex] = updated;
     }
 
-    await this._writeRaw(bmadDir, manifest);
+    await this._writeRaw(qdDir, manifest);
   }
 
   /**
    * Get all modules with their version info
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @returns {Array} Array of module info objects
    */
-  async getAllModuleVersions(bmadDir) {
-    const manifest = await this._readRaw(bmadDir);
+  async getAllModuleVersions(qdDir) {
+    const manifest = await this._readRaw(qdDir);
     if (!manifest || !manifest.modules) {
       return [];
     }
@@ -213,12 +213,12 @@ class Manifest {
 
   /**
    * Write raw manifest data to file
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @param {Object} manifestData - Raw manifest data to write
    */
-  async _writeRaw(bmadDir, manifestData) {
+  async _writeRaw(qdDir, manifestData) {
     const yaml = require('yaml');
-    const manifestPath = path.join(bmadDir, '_config', 'manifest.yaml');
+    const manifestPath = path.join(qdDir, '_config', 'manifest.yaml');
 
     await fs.ensureDir(path.dirname(manifestPath));
 
@@ -251,12 +251,12 @@ class Manifest {
   /**
    * Get module version info from source
    * @param {string} moduleName - Module name/code
-   * @param {string} bmadDir - Path to bmad directory
+   * @param {string} qdDir - Path to qd directory
    * @param {string} moduleSourcePath - Optional source tree path for marketplace.json walk-up
    * @returns {Object} Version info: { version, source }
    */
-  async getModuleVersionInfo(moduleName, bmadDir, moduleSourcePath = null) {
-    if (moduleName === 'bmad') {
+  async getModuleVersionInfo(moduleName, qdDir, moduleSourcePath = null) {
+    if (moduleName === 'qd') {
       const version = await this._readMarketplaceVersion(moduleName, moduleSourcePath);
       return {
         version,
@@ -279,7 +279,7 @@ class Manifest {
   async _readMarketplaceVersion(moduleName, moduleSourcePath = null) {
     let marketplacePath;
 
-    if (moduleName === 'bmad') {
+    if (moduleName === 'qd') {
       marketplacePath = path.join(getProjectRoot(), '.claude-plugin', 'marketplace.json');
     } else if (moduleSourcePath) {
       let dir = moduleSourcePath;

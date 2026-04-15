@@ -10,17 +10,17 @@
     "development",
     "methodology",
     "agents",
-    "bmad"
+    "qd"
   ],
-  "main": "dist/bmad-cli.js",
+  "main": "dist/qd-cli.js",
   "bin": {
-    "bmad": "dist/bmad-cli.js"
+    "qd": "dist/qd-cli.js"
   },
   "scripts": {
     "build:installer": "tsc -p tsconfig.json",
-    "bmad:install": "node dist/bmad-cli.js install",
-    "bmad:uninstall": "node dist/bmad-cli.js uninstall",
-    "install:bmad": "node dist/bmad-cli.js install",
+    "qd:install": "node dist/qd-cli.js install",
+    "qd:uninstall": "node dist/qd-cli.js uninstall",
+    "install:qd": "node dist/qd-cli.js install",
     "smoke:init": "node cli/smoke-init.js",
     "build:test": "tsc -p tsconfig.json --rootDir . --outDir test-dist",
     "test": "npm run build:test && node test-dist/test-installation-components.js"
@@ -48,6 +48,8 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
     "typescript": "^6.0.2"
   }
 }

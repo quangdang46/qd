@@ -9,9 +9,9 @@ const installer = new Installer();
 
 module.exports = {
   command: 'uninstall',
-  description: 'Remove BMAD installation from the current project',
+  description: 'Remove QD installation from the current project',
   options: [
-    ['-y, --yes', 'Remove all BMAD components without prompting (preserves user artifacts)'],
+    ['-y, --yes', 'Remove all QD components without prompting (preserves user artifacts)'],
     ['--directory <path>', 'Project directory (default: current directory)'],
   ],
   action: async (options) => {
@@ -28,7 +28,7 @@ module.exports = {
         // Interactive: ask user which directory to uninstall from
         // select() handles cancellation internally (exits process)
         const dirChoice = await prompts.select({
-          message: 'Where do you want to uninstall BMAD from?',
+          message: 'Where do you want to uninstall QD from?',
           choices: [
             { value: 'cwd', name: `Current directory (${process.cwd()})` },
             { value: 'other', name: 'Another directory...' },
@@ -56,10 +56,10 @@ module.exports = {
         process.exit(1);
       }
 
-      const { bmadDir } = await installer.findBmadDir(projectDir);
+      const { qdDir } = await installer.findQdDir(projectDir);
 
-      if (!(await fs.pathExists(bmadDir))) {
-        await prompts.log.warn('No BMAD installation found.');
+      if (!(await fs.pathExists(qdDir))) {
+        await prompts.log.warn('No QD installation found.');
         process.exit(0);
       }
 
@@ -70,7 +70,7 @@ module.exports = {
 
       const outputFolder = await installer.getOutputFolder(projectDir);
 
-      await prompts.intro('BMAD Uninstall');
+      await prompts.intro('QD Uninstall');
       await prompts.note(`Version: ${version}\nModules: ${modules}\nIDE integrations: ${ides}`, 'Current Installation');
 
       let removeModules = true;
@@ -84,7 +84,7 @@ module.exports = {
           options: [
             {
               value: 'modules',
-              label: `BMAD Modules & data (${installer.bmadFolderName}/)`,
+              label: `QD Modules & data (${installer.qdFolderName}/)`,
               hint: 'Core installation, agents, workflows, config',
             },
             { value: 'ide', label: 'IDE integrations', hint: ides || 'No IDEs configured' },
@@ -135,10 +135,10 @@ module.exports = {
         s.stop('User artifacts removed');
       }
 
-      // Phase 3: BMAD modules & data (last - other phases may need _bmad/)
+      // Phase 3: QD modules & data (last - other phases may need _qd/)
       if (removeModules) {
         const s = await prompts.spinner();
-        s.start(`Removing BMAD modules & data (${installer.bmadFolderName}/)...`);
+        s.start(`Removing QD modules & data (${installer.qdFolderName}/)...`);
         await installer.uninstallModules(projectDir);
         s.stop('Modules & data removed');
       }
@@ -150,7 +150,7 @@ module.exports = {
       if (!removeOutputFolder) summary.push(`User artifacts preserved in ${outputFolder}/`);
 
       await prompts.note(summary.join('\n'), 'Summary');
-      await prompts.outro('To reinstall, run: npx bmad install');
+      await prompts.outro('To reinstall, run: npx qd install');
 
       process.exit(0);
     } catch (error) {

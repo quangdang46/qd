@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-const { BMAD_FOLDER_NAME } = require('./shared/path-utils');
+const { QD_FOLDER_NAME } = require('./shared/path-utils');
 const prompts = require('../prompts');
 
 /**
@@ -14,19 +14,19 @@ class IdeManager {
   constructor() {
     this.handlers = new Map();
     this._initialized = false;
-    this.bmadFolderName = BMAD_FOLDER_NAME; // Default, can be overridden
+    this.qdFolderName = QD_FOLDER_NAME; // Default, can be overridden
   }
 
   /**
-   * Set the bmad folder name for all IDE handlers
-   * @param {string} bmadFolderName - The bmad folder name
+   * Set the qd folder name for all IDE handlers
+   * @param {string} qdFolderName - The qd folder name
    */
-  setBmadFolderName(bmadFolderName) {
-    this.bmadFolderName = bmadFolderName;
+  setQdFolderName(qdFolderName) {
+    this.qdFolderName = qdFolderName;
     // Update all loaded handlers
     for (const handler of this.handlers.values()) {
-      if (typeof handler.setBmadFolderName === 'function') {
-        handler.setBmadFolderName(bmadFolderName);
+      if (typeof handler.setQdFolderName === 'function') {
+        handler.setQdFolderName(qdFolderName);
       }
     }
   }
@@ -63,8 +63,8 @@ class IdeManager {
       if (!platformInfo.installer) continue;
 
       const handler = new ConfigDrivenIdeSetup(platformCode, platformInfo);
-      if (typeof handler.setBmadFolderName === 'function') {
-        handler.setBmadFolderName(this.bmadFolderName);
+      if (typeof handler.setQdFolderName === 'function') {
+        handler.setQdFolderName(this.qdFolderName);
       }
       this.handlers.set(platformCode, handler);
     }
@@ -128,10 +128,10 @@ class IdeManager {
    * Setup IDE configuration
    * @param {string} ideName - Name of the IDE
    * @param {string} projectDir - Project directory
-   * @param {string} bmadDir - BMAD installation directory
+   * @param {string} qdDir - QD installation directory
    * @param {Object} options - Setup options
    */
-  async setup(ideName, projectDir, bmadDir, options = {}) {
+  async setup(ideName, projectDir, qdDir, options = {}) {
     const handler = this.handlers.get(ideName.toLowerCase());
 
     if (!handler) {
@@ -157,7 +157,7 @@ class IdeManager {
     }
 
     try {
-      const handlerResult = await handler.setup(projectDir, bmadDir, options);
+      const handlerResult = await handler.setup(projectDir, qdDir, options);
       // Build detail string from handler-returned data
       let detail = '';
       if (handlerResult && handlerResult.results) {
