@@ -230,9 +230,21 @@ class Installer {
     }
 
     if (sourceDir === typeRootDir) {
-      // Direct file in type root (e.g., artifacts/agents/atlas.md) -> copy file directly
-      const targetFile = path.join(targetPath, path.basename(artifact.sourcePath));
-      await fs.copy(artifact.sourcePath, targetFile, { overwrite: true });
+      // Direct file in type root (e.g., artifacts/agents/atlas.md) -> copy or convert
+      const sourceFile = artifact.sourcePath;
+      const fileName = path.basename(sourceFile);
+      const baseName = path.basename(fileName, path.extname(fileName));
+
+      // Check if format conversion is needed (e.g., codex agents -> toml)
+      if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
+        const content = await fs.readFile(sourceFile, 'utf8');
+        const tomlContent = this.mdToToml(content);
+        const targetFile = path.join(targetPath, `${baseName}.toml`);
+        await fs.writeFile(targetFile, tomlContent, 'utf8');
+      } else {
+        const targetFile = path.join(targetPath, fileName);
+        await fs.copy(sourceFile, targetFile, { overwrite: true });
+      }
       return;
     }
 
@@ -245,19 +257,31 @@ class Installer {
     }
     await fs.ensureDir(destSkillDir);
 
-    // Copy all files in skill directory, filtering OS/editor artifacts
-    const skipPatterns = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
-    const skipSuffixes = ['~', '.swp', '.swo', '.bak'];
-    const filter = (src) => {
-      const name = path.basename(src);
-      if (src === sourceDir) return true;
-      if (skipPatterns.has(name)) return false;
-      if (name.startsWith('.') && name !== '.gitkeep') return false;
-      if (skipSuffixes.some((s) => name.endsWith(s))) return false;
-      return true;
-    };
-
-    await fs.copy(sourceDir, destSkillDir, { filter, overwrite: true });
+    // Apply format conversion if configured for this IDE
+    if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
+      // Convert to TOML: extract frontmatter fields and write TOML file
+      const mdFile = path.join(sourceDir, 'SKILL.md');
+      if (await fs.pathExists(mdFile)) {
+        const content = await fs.readFile(mdFile, 'utf8');
+        const tomlContent = this.mdToToml(content);
+        const baseName = path.basename(mdFile, '.md');
+        const targetFile = path.join(destSkillDir, `${baseName}.toml`);
+        await fs.writeFile(targetFile, tomlContent, 'utf8');
+      }
+    } else {
+      // Copy all files in skill directory, filtering OS/editor artifacts
+      const skipPatterns = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
+      const skipSuffixes = ['~', '.swp', '.swo', '.bak'];
+      const filter = (src) => {
+        const name = path.basename(src);
+        if (src === sourceDir) return true;
+        if (skipPatterns.has(name)) return false;
+        if (name.startsWith('.') && name !== '.gitkeep') return false;
+        if (skipSuffixes.some((s) => name.endsWith(s))) return false;
+        return true;
+      };
+      await fs.copy(sourceDir, destSkillDir, { filter, overwrite: true });
+    }
   }
 
   getArtifactType(relativePath) {
@@ -276,27 +300,60 @@ class Installer {
 
   mdToToml(mdContent) {
     let content = mdContent;
+    let frontmatter = {};
+
+    // Extract frontmatter
     if (content.startsWith('---')) {
       const endIdx = content.indexOf('---', 3);
       if (endIdx !== -1) {
+        const fmContent = content.slice(3, endIdx).trim();
         content = content.slice(endIdx + 3).trim();
+
+        // Parse frontmatter lines
+        for (const line of fmContent.split('\n')) {
+          const colonIdx = line.indexOf(':');
+          if (colonIdx > 0) {
+            const key = line.slice(0, colonIdx).trim();
+            const value = line.slice(colonIdx + 1).trim().replace(/^"/, '').replace(/"$/, '');
+            frontmatter[key] = value;
+          }
+        }
       }
     }
 
-    const lines = content.split('\n');
     const tomlLines = [];
+
+    // Add frontmatter fields (required for Codex subagents)
+    if (frontmatter.name) {
+      tomlLines.push(`name = "${frontmatter.name}"`);
+    }
+    if (frontmatter.description) {
+      tomlLines.push(`description = "${frontmatter.description}"`);
+    }
+    if (frontmatter.name || frontmatter.description) {
+      tomlLines.push('');
+    }
+
+    // Process markdown content
+    const lines = content.split('\n');
     let inSection = null;
 
     for (const line of lines) {
       if (line.startsWith('# ')) {
-        tomlLines.push(`title = "${line.slice(2).trim()}"`);
+        // Main title - use as developer_instructions header
+        if (tomlLines.length > 0 && tomlLines[tomlLines.length - 1] !== '') {
+          tomlLines.push('');
+        }
+        tomlLines.push('# ' + line.slice(2).trim());
       } else if (line.startsWith('## ')) {
-        const sectionName = line.slice(3).trim().toLowerCase().replace(/\s+/g, '_');
-        tomlLines.push(`[${sectionName}]`);
-        inSection = sectionName;
-      } else if (line.trim()) {
+        const sectionName = line.slice(3).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        if (sectionName) {
+          tomlLines.push(`[${sectionName}]`);
+          inSection = sectionName;
+        }
+      } else if (line.trim() && inSection) {
         const trimmed = line.trim();
-        if (inSection) {
+        if (!trimmed.startsWith('```') && !trimmed.startsWith('|')) {
           tomlLines.push(`${inSection}.${trimmed}`);
         }
       }
@@ -412,9 +469,16 @@ class Installer {
     for (const ide of ides) {
       const platform = platformConfig.platforms[ide];
       if (platform?.installer?.target_dir) {
-        const targetDir = path.join(projectDir, platform.installer.target_dir);
-        if (await fs.pathExists(targetDir)) {
-          await fs.remove(targetDir);
+        // Only remove artifact type subdirectories that QD created, not the entire IDE directory
+        // This preserves user's own files in the same parent directory
+        const ideDir = path.join(projectDir, platform.installer.target_dir);
+        const artifactTypes = ['skills', 'commands', 'agents', 'subagents'];
+
+        for (const type of artifactTypes) {
+          const typeDir = path.join(ideDir, type);
+          if (await fs.pathExists(typeDir)) {
+            await fs.remove(typeDir);
+          }
         }
       }
     }
