@@ -373,10 +373,42 @@ class Installer {
     await fs.ensureDir(path.join(qdDir, '_config'));
 
     const manifest = new Manifest();
-    const artifactEntries = artifacts.map(a => ({
-      path: a.relativePath,
-      targetIdes: a.targetIdes,
-    }));
+    const artifactEntries = [];
+
+    for (const artifact of artifacts) {
+      if (artifact.targetIdes.length === 0) continue;
+
+      for (const ide of artifact.targetIdes) {
+        const platform = this.platformConfig?.platforms?.[ide];
+        if (!platform?.installer) continue;
+
+        const { target_dir } = platform.installer;
+        const artifactType = this.getArtifactType(artifact.relativePath);
+        const targetPath = path.join(projectDir, target_dir, artifactType);
+
+        // Determine actual installed file path (may have different extension for TOML)
+        const sourceFile = artifact.sourcePath;
+        const fileName = path.basename(sourceFile);
+        const baseName = path.basename(fileName, path.extname(fileName));
+        let installedFile;
+
+        if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
+          installedFile = path.join(targetPath, `${baseName}.toml`);
+        } else {
+          installedFile = path.join(targetPath, fileName);
+        }
+
+        // Store relative path from projectDir for portability
+        const relativeInstalledPath = path.relative(projectDir, installedFile);
+
+        artifactEntries.push({
+          source: artifact.relativePath,
+          installed: relativeInstalledPath,
+          ide,
+          artifactType,
+        });
+      }
+    }
 
     await manifest.write(qdDir, {
       version: '1.0.0',
@@ -462,22 +494,39 @@ class Installer {
     const { qdDir } = await this.findQdDir(projectDir);
     const manifest = new Manifest();
     const manifestData = await manifest.read(qdDir);
-    const ides = manifestData?.ides || existingInstall.ides || [];
 
+    // Use IDEs from manifest if available, otherwise fall back to existingInstall
+    const ides = manifestData?.ides || existingInstall?.ides || [];
+    const installedFiles = manifestData?.artifacts || [];
+
+    // Only delete files that QD actually installed (from manifest)
+    // This preserves user's custom files in the same directories
+    for (const entry of installedFiles) {
+      const targetPath = path.join(projectDir, entry.installed);
+      if (await fs.pathExists(targetPath)) {
+        await fs.remove(targetPath);
+      }
+    }
+
+    // Clean up empty artifact type directories after removing files
     const platformConfig = await loadPlatformCodes();
+    const cleanedDirs = new Set();
 
-    for (const ide of ides) {
-      const platform = platformConfig.platforms[ide];
-      if (platform?.installer?.target_dir) {
-        // Only remove artifact type subdirectories that QD created, not the entire IDE directory
-        // This preserves user's own files in the same parent directory
-        const ideDir = path.join(projectDir, platform.installer.target_dir);
+    for (const entry of installedFiles) {
+      const dir = path.dirname(path.join(projectDir, entry.installed));
+      if (!cleanedDirs.has(dir)) {
+        cleanedDirs.add(dir);
+        // Only remove if it's an artifact type directory and empty
         const artifactTypes = ['skills', 'commands', 'agents', 'subagents'];
-
-        for (const type of artifactTypes) {
-          const typeDir = path.join(ideDir, type);
-          if (await fs.pathExists(typeDir)) {
-            await fs.remove(typeDir);
+        const dirName = path.basename(dir);
+        if (artifactTypes.includes(dirName)) {
+          try {
+            const entries = await fs.readdir(dir);
+            if (entries.length === 0) {
+              await fs.remove(dir);
+            }
+          } catch {
+            // Ignore errors - directory might not exist or not be empty
           }
         }
       }
