@@ -1,51 +1,21 @@
 # QD Project Structure
 
-## Before QD Install (Typical Project)
+## QD Vision
+
+**QD là một CLI để init nhiều IDE từ một artifacts source duy nhất.**
+
+- Một artifacts source → nhiều IDE targets (`.claude`, `.cursor`, `.windsurf`, etc.)
+- Không cần config.json cho username, language
+- `_qd-output/` cho Khuym workflow outputs (exploring → planning → validating → swarming → executing → reviewing → compounding)
+- Học hỏi Claudekit CLI về phase-based architecture
+- Học hỏi BMAD method về config-driven IDE setup
+
+---
+
+## Before QD Init (Typical Project)
 
 ```
 project/
-├── .git/
-├── .gitignore
-├── node_modules/
-├── package.json
-├── package-lock.json
-└── src/                          # (user code, varies by project)
-```
-
-## After QD Install (`qd install`)
-
-Running `npx qd install` or `qd install` creates:
-
-```
-project/
-├── _qd/                         # QD framework root
-│   ├── _config/                 # Installation metadata
-│   │   ├── manifest.yaml         # Module/IDE inventory
-│   │   ├── agent-manifest.csv    # Agent definitions
-│   │   ├── skill-manifest.csv    # Skill registry
-│   │   ├── qd-help.csv           # Merged help catalog
-│   │   └── files-manifest.csv    # Installed file tracking
-│   ├── qd/                      # Core module
-│   │   └── config.yaml           # Core configuration
-│   ├── agents/                  # (optional) Custom agents
-│   │   └── *.customize.yaml     # Agent customizations
-│   └── _memory/                 # (optional) Memory storage
-├── _qd-output/                  # User artifacts output (configurable)
-├── .claude/                    # (if Claude Code selected)
-│   └── skills/                  # 11 skills copied verbatim
-│       ├── agent-browser/SKILL.md
-│       ├── ai-slop-remover/SKILL.md
-│       ├── dev-browser/SKILL.md
-│       ├── frontend-ui-ux/SKILL.md
-│       ├── git-master/SKILL.md
-│       ├── github-triage/SKILL.md
-│       ├── playwright-cli/SKILL.md
-│       ├── playwright/SKILL.md
-│       ├── pre-publish-review/SKILL.md
-│       ├── review-work/SKILL.md
-│       └── work-with-pr/SKILL.md
-├── .cursor/                    # (if Cursor selected)
-│   └── skills/                  # Same 11 skills
 ├── .git/
 ├── .gitignore
 ├── node_modules/
@@ -54,180 +24,294 @@ project/
 └── src/
 ```
 
+## After QD Init (`qd init`)
+
+Running `qd init` creates:
+
+```
+project/
+├── _qd-output/                  # QD outputs (Khuym workflow)
+│   └── learnings/
+├── .claude/                    # (if Claude Code selected)
+│   ├── skills/
+│   ├── commands/
+│   └── agents/
+├── .cursor/                    # (if Cursor selected)
+│   ├── rules/                  # Cursor uses "rules" instead of "skills/commands/agents"
+│   └── ...
+├── .windsurf/                  # (if Windsurf selected)
+│   ├── skills/
+│   ├── commands/
+│   └── agents/
+└── ... (other IDEs as selected)
+```
+
+---
+
+## Key Architecture Decisions
+
+| Decision | Status | Notes |
+|----------|--------|-------|
+| `_qd/` internal only | CHOSED | Not exposed to users |
+| `_qd-output/` for workflow | CHOSED | Khuym pattern - workflow outputs only |
+| No config.json | CHOSED | No username, language, project_name prompts |
+| CLI IDE handling logic | KEEP | Current implementation in cli/ide/ is good |
+| schema.yaml per folder + overrides | CHOSED | IDE selection per artifact folder + file-level |
+| module.yaml for conversion | CHOSED | Format conversion (MD → TOML for Codex) |
+| Glob pattern for convert paths | CHOSED | Clear path matching for format conversion |
+| Conflict = throw error | CHOSED | supported_ides + ignored_ides cannot coexist |
+| platform-codes.yaml subdir mapping | CHOSED | Per-IDE artifact type → target dir mapping |
+
+---
+
 ## Directory Breakdown
 
-### `_qd/` — QD Framework Root
+### `_qd-output/` — Khuym Workflow Outputs
 
 | Path | Description |
 |------|-------------|
-| `_qd/_config/` | Installation metadata, manifests, catalogs |
-| `_qd/qd/` | Core `qd` module (always installed) |
-| `_qd/agents/` | User-customized agent configurations |
-| `_qd/_memory/` | Persistent memory/sidecar data |
+| `CONTEXT.md` | Locked decisions from exploring phase |
+| `discovery.md` | Research findings |
+| `approach.md` | Chosen approach |
+| `phase-plan.md` | Phase breakdown |
+| `learnings/` | Dated learnings (YYYY-MM-DD-*.md) |
 
-### `_qd/_config/` — Configuration & Manifests
+**Note:** `_qd-output/` is created at phase 5, excluded from artifacts walk.
 
-| File | Purpose |
-|------|---------|
-| `manifest.yaml` | Module inventory with versions and paths |
-| `agent-manifest.csv` | All available agents (built-in + installed) |
-| `skill-manifest.csv` | All available skills (built-in + installed) |
-| `qd-help.csv` | Merged help from all modules |
-| `files-manifest.csv` | SHA hashes of installed files (for update detection) |
+---
 
-### `_qd/qd/` — Core Module
-
-| File | Source | Purpose |
-|------|--------|---------|
-| `config.yaml` | Generated from `module.yaml` + user input | User configuration (user_name, output_folder, etc.) |
-
-## What Gets Copied During Install
-
-### From `artifacts/` (Source) → `_qd/` (Target)
-
-| Source | Destination |
-|--------|-------------|
-| `artifacts/agents/*.md` | `_qd/agents/` |
-| `artifacts/skills/*/SKILL.md` | `_qd/skills/<name>/SKILL.md` |
-| `artifacts/commands/*.md` | (IDE-specific, not in `_qd/`) |
-| `artifacts/module.yaml` | Drives config prompts |
-| `artifacts/module-help.csv` | Merged into `_qd/_config/qd-help.csv` |
-
-### From `_qd/` → IDE Skill Directories
-
-The `ManifestGenerator` creates `skill-manifest.csv` listing all skills with their paths. Then `ConfigDrivenIdeSetup` copies each skill **verbatim** to every selected IDE's target directory:
+## Artifacts Structure
 
 ```
-_qd/_config/skill-manifest.csv  →  determines what gets installed
-     ↓
-For each skill: copy _qd/<module>/<skill>/SKILL.md
-     ↓
-.claude/skills/<skill-id>/SKILL.md   (Claude Code)
-.cursor/skills/<skill-id>/SKILL.md   (Cursor)
-... (all selected IDEs)
+artifacts/
+├── module.yaml                 # Module config + format conversion
+├── schema.yaml               # (optional) root-level IDE selection
+├── skills/
+│   ├── schema.yaml           # override cho skills folder
+│   └── ...
+├── commands/
+│   └── schema.yaml
+├── agents/
+│   └── schema.yaml
+└── subagents/
+    └── schema.yaml
 ```
 
-Each skill directory is copied as-is (flat, SKILL.md only for QD skills).
+---
 
-### Generated Files
+## schema.yaml — IDE Selection
 
-| File | Generated By |
-|------|-------------|
-| `_qd/_config/manifest.yaml` | `ManifestGenerator.writeMainManifest()` |
-| `_qd/_config/agent-manifest.csv` | `ManifestGenerator.writeAgentManifest()` |
-| `_qd/_config/skill-manifest.csv` | `ManifestGenerator.writeSkillManifest()` |
-| `_qd/_config/qd-help.csv` | `Installer.mergeModuleHelpCatalogs()` |
-| `_qd/_config/files-manifest.csv` | `ManifestGenerator.writeFilesManifest()` |
-| `_qd/qd/config.yaml` | `Installer.generateModuleConfigs()` |
-| `.claude/skills/*/SKILL.md` | `ConfigDrivenIdeSetup.installVerbatimSkills()` |
+Each folder can have a `schema.yaml` to control which IDEs receive its contents.
 
-## Installation Prompts (Interactive Mode)
-
-The `qd` module prompts for:
-
-1. **What should agents call you?** — `user_name` (default: `Developer`)
-2. **What language should agents use?** — `communication_language` (default: `English`)
-3. **Preferred document output language?** — `document_output_language` (default: `English`)
-4. **Where should output files be saved?** — `output_folder` (default: `_qd-output`)
-5. **What is your project called?** — `project_name` (default: directory name)
-
-## Auto Mode (`--yes --modules qd`)
-
-When running with `--yes` flag, all prompts use defaults. However, there is a **bug** where the `qd` module forces interactive prompting regardless of `--yes` flag.
-
-See: [`cli/modules/builtin-modules.ts:882-883`](cli/modules/builtin-modules.ts)
-
-```javascript
-// BUG: This forces prompting for 'qd' even when skipPrompts is true
-if (moduleName === 'qd') {
-  useDefaults = false;
-}
-```
-
-**Workaround:** Use interactive mode or wait for the prompts.
-
-## IDE Integration
-
-QD can configure tools/IDEs. Each IDE (e.g., Claude Code, Cursor) gets its own skill directory under the IDE's own config folder. Skills are **not** stored in `_qd/` — they live in IDE-specific locations and are registered via `skill-manifest.csv`.
-
-### `.claude/` — Claude Code Integration
-
-When **Claude Code** is selected during install, skills are copied verbatim to `.claude/skills/`:
+### Placement & Inheritance
 
 ```
-.claude/
-└── skills/
-    ├── agent-browser/          # Browser automation
-    │   └── SKILL.md
-    ├── ai-slop-remover/        # AI slop cleanup
-    │   └── SKILL.md
-    ├── dev-browser/            # Dev browser automation
-    │   └── SKILL.md
-    ├── frontend-ui-ux/         # Frontend UI/UX design
-    │   └── SKILL.md
-    ├── git-master/              # Git operations
-    │   └── SKILL.md
-    ├── github-triage/           # GitHub triage
-    │   └── SKILL.md
-    ├── playwright-cli/          # Playwright CLI
-    │   └── SKILL.md
-    ├── playwright/               # Playwright testing
-    │   └── SKILL.md
-    ├── pre-publish-review/      # Pre-publish review
-    │   └── SKILL.md
-    ├── review-work/             # Code review
-    │   └── SKILL.md
-    └── work-with-pr/            # PR workflow
-        └── SKILL.md
+artifacts/
+├── schema.yaml                # Root-level (cascade down)
+├── skills/
+│   ├── schema.yaml           # Override root + apply to all in skills/
+│   ├── exploring/
+│   │   └── SKILL.md         # inherits skills/schema.yaml
+│   └── NESTED/
+│       ├── schema.yaml       # Override skills/schema.yaml
+│       └── file.md           # inherits NESTED/schema.yaml
+└── commands/
+    └── schema.yaml
 ```
 
-> **Note:** `.claude/skills/` is only created if Claude Code is selected during `qd install`. Skills are copied from `_qd/` based on `skill-manifest.csv` by `ConfigDrivenIdeSetup`.
+### Supported IDEs
 
-### Other IDE Target Directories
+```yaml
+# artifacts/FOLDER/schema.yaml
 
-| IDE | Target Directory |
-|-----|-----------------|
-| Claude Code | `.claude/skills/` |
-| Cursor | `.cursor/skills/` |
-| Windsurf | `.windsurf/skills/` |
-| GitHub Copilot | `.github/skills/` |
-| VS Code (Cline) | `.cline/skills/` |
-| OpenCode | `.opencode/skills/` |
-| Roo Code | `.roo/skills/` |
-| ... | See [`cli/ide/platform-codes.yaml`](cli/ide/platform-codes.yaml) |
+# IDE selection (chọn 1 trong 2)
+supported_ides: [claude, cursor]   # Chỉ này được init
+# hoặc
+ignored_ides: [codex]             # Tất cả NGOs trừ này được init
 
-Skills are installed to **all selected IDEs** simultaneously during install.
+# File-level override
+overrides:
+  fileYYYY.md:
+    supported_ides: []              # exclude file này
+  fileZZZZ.md:
+    supported_ides: [claude]        # override - chỉ claude
+```
 
-## Update vs Fresh Install
+### Default Rules
 
-| Action | Trigger | Behavior |
-|--------|---------|----------|
-| Fresh install | No `_qd/` exists | Full prompt flow, create all files |
-| Update | `_qd/` exists | Detect custom/modified files, backup, regenerate |
-| Quick update | `qd install --action quick-update` | Preserve settings, only collect new config fields |
+| Condition | Behavior |
+|-----------|----------|
+| No schema.yaml | Init ALL IDEs (copy as-is) |
+| schema.yaml, no `supported_ides`/`ignored_ides` | Init ALL IDEs |
+| `supported_ides: []` | Skip - don't init anywhere |
+| `supported_ides: [a, b]` | Init only to a, b |
+| `ignored_ides: [x]` | Init to all EXCEPT x |
+| Both `supported_ides` AND `ignored_ides` | **ERROR** - throw error |
 
-### Custom File Detection
+### 5 Trường Hợp
 
-- Files **not** in `files-manifest.csv` → preserved
-- Files **modified** (hash mismatch) → backed up as `.bak`
-- `_config/agents/*.customize.yaml` → checked against manifest hash
+| # | Trường hợp | Giải pháp |
+|---|------------|------------|
+| 1 | Folder không init cho IDE nào | `supported_ides: []` |
+| 2 | Folder chỉ init cho 1 số IDE | `supported_ides: [claude]` |
+| 3 | File trong folder không init cho IDE nào | `overrides: { file.md: { supported_ides: [] } }` |
+| 4 | Nested folder không init cho IDE nào | `supported_ides: []` trong nested/schema.yaml |
+| 5 | Format MD → TOML cho Codex agents | module.yaml convert |
 
-## Example: Fresh Install Flow
+---
+
+## module.yaml — Module Config + Format Conversion
+
+```yaml
+# artifacts/module.yaml
+
+name: "QD Framework"
+version: 1.0.0
+
+# Format conversion (chỉ khi CẦN convert)
+# Default = copy as-is (không cần định nghĩa)
+convert:
+  codex:
+    "agents/**": toml     # artifacts/agents/**/*.md → TOML
+    "subagents/**": toml  # artifacts/subagents/**/*.md → TOML
+  # Tất cả others = copy as-is (default)
+```
+
+**Path matching:** Glob patterns relative to `artifacts/` root.
+
+---
+
+## platform-codes.yaml — IDE Target Mapping
+
+Each IDE has its own target directory and artifact type mappings.
+
+```yaml
+# cli/ide/platform-codes.yaml
+
+platforms:
+  claude-code:
+    name: "Claude Code"
+    preferred: true
+    installer:
+      target_dir: ".claude"
+      mappings:
+        skills: "skills"
+        commands: "commands"
+        agents: "agents"
+        subagents: "agents"
+
+  cursor:
+    name: "Cursor"
+    preferred: true
+    installer:
+      target_dir: ".cursor"
+      mappings:
+        skills: "rules"
+        commands: "rules"
+        agents: "rules"
+        subagents: "rules"
+
+  windsurf:
+    name: "Windsurf"
+    installer:
+      target_dir: ".windsurf"
+      mappings:
+        skills: "skills"
+        commands: "commands"
+        agents: "agents"
+        subagents: "agents"
+
+  codex:
+    name: "Codex"
+    installer:
+      target_dir: ".codex"
+      mappings:
+        skills: "skills"
+        commands: "commands"
+        agents: "agents"
+        subagents: "agents"
+```
+
+### Mapping Rules
+
+- `mappings.<type>: <target>` — maps `artifacts/<type>/` to `<target>/` in IDE dir
+- Default target = `type` name if not specified
+- Cursor merges skills/commands/agents into `rules/`
+
+---
+
+## Phase-Based Init (Claudekit Pattern)
 
 ```
-$ qd install --directory myproject
-↓ Create _qd/, _qd/_config/, _qd/_config/agents/
-↓ Copy artifacts/agents/*.md → _qd/agents/
-↓ Generate _qd/qd/config.yaml from module.yaml + defaults
-↓ Generate manifests via ManifestGenerator
-↓ Merge help catalogs into _qd/_config/qd-help.csv
-↓ Setup IDE integrations (if selected)
-↓ Display summary
+qd init
+  → Phase 1: Collect config from module.yaml
+  → Phase 2: Detect selected IDEs + load platform-codes.yaml
+  → Phase 3: Walk artifacts tree
+       ├── Read schema.yaml at each level (cascade + override)
+       ├── Apply overrides for individual files
+       └── Skip _qd-output/ (hardcoded exclude)
+  → Phase 4: Copy/convert to IDE targets
+       ├── Apply mappings from platform-codes.yaml
+       ├── Convert format if convert rule exists (MD → TOML)
+       └── Skip files with supported_ides: [] or ignored_ides excludes
+  → Phase 5: Create _qd-output/ directory
+  → Phase 6: Display summary
 ```
+
+---
+
+## Example: After `qd init --ides claude,cursor`
+
+```
+myproject/
+├── _qd-output/                     # Khuym workflow outputs
+│   └── learnings/
+├── .claude/
+│   ├── skills/                     # artifacts/skills/** → .claude/skills/
+│   ├── commands/                   # artifacts/commands/** → .claude/commands/
+│   └── agents/                     # artifacts/agents/** → .claude/agents/
+├── .cursor/
+│   └── rules/                     # ALL artifacts types → .cursor/rules/
+│       ├── skills/
+│       ├── commands/
+│       └── agents/
+└── src/
+```
+
+---
+
+## File System
+
+```
+artifacts/
+├── module.yaml              # Global: name, version, convert rules
+├── schema.yaml             # (optional) root-level IDE selection
+├── skills/
+│   ├── schema.yaml         # override cho skills folder
+│   ├── exploring/
+│   │   └── SKILL.md
+│   └── planning/
+│       └── SKILL.md
+├── commands/
+│   └── schema.yaml
+├── agents/
+│   └── schema.yaml
+└── subagents/
+    └── schema.yaml
+
+cli/ide/
+└── platform-codes.yaml     # IDE → target dir + artifact type mappings
+
+_qd-output/                 # (created at phase 5, excluded from walk)
+```
+
+---
 
 ## See Also
 
-- [`cli/commands/install.ts`](cli/commands/install.ts) — Install command entry
-- [`cli/core/installer.ts`](cli/core/installer.ts) — Main installer logic
-- [`cli/modules/builtin-modules.ts`](cli/modules/builtin-modules.ts) — Module configuration prompts
-- [`cli/core/manifest-generator.ts`](cli/core/manifest-generator.ts) — Manifest generation
+- `cli/ide/manager.ts` — IDE discovery and setup
+- `cli/ide/_config-driven.ts` — Config-driven skill installation
+- `cli/ide/platform-codes.yaml` — IDE target directory + mapping
+- `artifacts/module.yaml` — Module configuration + convert rules
+- `references/BMAD-METHOD-main/tools/installer/` — BMAD config-driven IDE setup reference
+- `references/claudekit-engineer-main/` — Claudekit phase-based architecture reference

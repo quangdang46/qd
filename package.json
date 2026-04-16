@@ -12,18 +12,18 @@
     "agents",
     "qd"
   ],
-  "main": "dist/qd-cli.js",
+  "main": "dist/index.js",
   "bin": {
-    "qd": "dist/qd-cli.js"
+    "qd": "dist/index.js"
   },
   "scripts": {
     "build:installer": "tsc -p tsconfig.json",
-    "qd:install": "node dist/qd-cli.js install",
-    "qd:uninstall": "node dist/qd-cli.js uninstall",
-    "install:qd": "node dist/qd-cli.js install",
-    "smoke:init": "node cli/smoke-init.js",
-    "build:test": "tsc -p tsconfig.json --rootDir . --outDir test-dist",
-    "test": "npm run build:test && node test-dist/test-installation-components.js"
+    "qd:install": "node dist/index.js install",
+    "qd:uninstall": "node dist/index.js uninstall",
+    "install:qd": "node dist/index.js install",
+    "smoke:init": "node test/smoke-init.js",
+    "test": "jest --config jest.config.ts",
+    "test:watch": "jest --config jest.config.ts --watch"
   },
   "dependencies": {
     "@clack/core": "^1.0.0",
@@ -47,9 +47,12 @@
     "access": "public"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.5.2",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
     "typescript": "^6.0.2"
   }
 }

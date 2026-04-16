@@ -62,4 +62,4 @@ z*/
 dist/
 test-dist/
 references/
-.omc/
+.omc/*
