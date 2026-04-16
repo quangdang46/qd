@@ -291,7 +291,8 @@ class Installer {
     for (const ide of this.selectedIdes) {
       const platform = platformConfig.platforms[ide];
       if (platform?.installer?.target_dir) {
-        ideTargets.push(`${platform.name} → ${platform.installer.target_dir}`);
+        const star = platform.preferred ? ' ★' : '';
+        ideTargets.push(`${platform.name}${star} → ${platform.installer.target_dir}`);
       }
     }
 
