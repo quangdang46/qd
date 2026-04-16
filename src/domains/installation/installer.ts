@@ -16,6 +16,7 @@ const fs = require('../../shared/fs-native');
 const yaml = require('yaml');
 const { loadPlatformCodes } = require('../ide/platform-codes');
 const { getProjectRoot } = require('./project-root');
+const { Manifest } = require('./manifest');
 const prompts = require('../../shared/prompts');
 
 const OUTPUT_FOLDER = '_qd-output';
@@ -38,6 +39,7 @@ class Installer {
       const artifacts = await this.phase3WalkArtifacts(projectDir, config);
       await this.phase4CopyToTargets(projectDir, platformConfig, artifacts, config);
       await this.phase5CreateOutputDir(projectDir);
+      await this.phase6WriteManifest(projectDir, artifacts);
       await this.phase6DisplaySummary(platformConfig);
 
       return { success: true, projectDir, ides: this.selectedIdes };
@@ -280,6 +282,24 @@ class Installer {
     await fs.ensureDir(path.join(outputPath, 'learnings'));
   }
 
+  async phase6WriteManifest(projectDir, artifacts) {
+    const { qdDir } = await this.findQdDir(projectDir);
+    await fs.ensureDir(path.join(qdDir, '_config'));
+
+    const manifest = new Manifest();
+    const artifactEntries = artifacts.map(a => ({
+      path: a.relativePath,
+      targetIdes: a.targetIdes,
+    }));
+
+    await manifest.write(qdDir, {
+      version: '1.0.0',
+      installDate: new Date().toISOString(),
+      ides: this.selectedIdes,
+      artifacts: artifactEntries,
+    });
+  }
+
   async phase6DisplaySummary(platformConfig) {
     const color = await prompts.getColor();
 
@@ -327,11 +347,24 @@ class Installer {
   async getStatus(projectDir) {
     const { qdDir } = await this.findQdDir(projectDir);
     const exists = await fs.pathExists(qdDir);
+
+    if (!exists) {
+      return {
+        installed: false,
+        version: '1.0.0',
+        moduleIds: [],
+        ides: [],
+      };
+    }
+
+    const manifest = new Manifest();
+    const manifestData = await manifest.read(qdDir);
+
     return {
-      installed: exists,
-      version: '1.0.0',
+      installed: true,
+      version: manifestData?.installation?.version || '1.0.0',
       moduleIds: [],
-      ides: [],
+      ides: manifestData?.ides || [],
     };
   }
 
@@ -340,7 +373,22 @@ class Installer {
   }
 
   async uninstallIdeConfigs(projectDir, existingInstall, options) {
-    // TODO: implement
+    const { qdDir } = await this.findQdDir(projectDir);
+    const manifest = new Manifest();
+    const manifestData = await manifest.read(qdDir);
+    const ides = manifestData?.ides || existingInstall.ides || [];
+
+    const platformConfig = await loadPlatformCodes();
+
+    for (const ide of ides) {
+      const platform = platformConfig.platforms[ide];
+      if (platform?.installer?.target_dir) {
+        const targetDir = path.join(projectDir, platform.installer.target_dir);
+        if (await fs.pathExists(targetDir)) {
+          await fs.remove(targetDir);
+        }
+      }
+    }
   }
 
   async uninstallOutputFolder(projectDir, outputFolder) {
