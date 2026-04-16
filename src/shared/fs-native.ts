@@ -46,19 +46,31 @@ const _fs = {
   },
 
   async copy(src, dest, options = {}) {
-    const { overwrite = true } = options;
-    await fs.mkdir(path.dirname(dest), { recursive: true });
-    try {
-      await fs.copyFile(src, dest);
-      if (overwrite) {
-        // Already copied
+    const filterFn = options.filter;
+    const overwrite = options.overwrite !== false;
+    const srcStat = await fs.stat(src);
+
+    if (srcStat.isFile()) {
+      if (filterFn && !(await filterFn(src, dest))) return;
+      await fs.mkdir(path.dirname(dest), { recursive: true });
+      if (!overwrite) {
+        try {
+          await fs.access(dest);
+          return;
+        } catch {
+          // dest doesn't exist, proceed
+        }
       }
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        await fs.mkdir(path.dirname(dest), { recursive: true });
-        await fs.copyFile(src, dest);
-      } else {
-        throw err;
+      await fs.copyFile(src, dest);
+      return;
+    }
+
+    if (srcStat.isDirectory()) {
+      if (filterFn && !(await filterFn(src, dest))) return;
+      await fs.mkdir(dest, { recursive: true });
+      const entries = await fs.readdir(src, { withFileTypes: true });
+      for (const entry of entries) {
+        await this.copy(path.join(src, entry.name), path.join(dest, entry.name), options);
       }
     }
   },

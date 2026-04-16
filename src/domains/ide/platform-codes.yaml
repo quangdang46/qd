@@ -19,45 +19,32 @@ platforms:
     name: "Claude Code"
     preferred: true
     installer:
-      target_dir: ".claude"
-      mappings:
-        skills: "skills"
-        commands: "commands"
-        agents: "agents"
-        subagents: "agents"
+      legacy_targets:
+        - .claude/commands
+      target_dir: .claude
 
   cursor:
     name: "Cursor"
     preferred: true
     installer:
-      target_dir: ".cursor"
-      mappings:
-        skills: "rules"
-        commands: "rules"
-        agents: "rules"
-        subagents: "rules"
+      legacy_targets:
+        - .cursor/commands
+      target_dir: .cursor
 
   windsurf:
     name: "Windsurf"
     preferred: false
     installer:
-      target_dir: ".windsurf"
-      mappings:
-        skills: "skills"
-        commands: "commands"
-        agents: "agents"
-        subagents: "agents"
+      target_dir: .windsurf
 
   codex:
     name: "Codex"
     preferred: false
     installer:
-      target_dir: ".codex"
-      mappings:
-        skills: "skills"
-        commands: "commands"
-        agents: "agents"
-        subagents: "agents"
+      legacy_targets:
+        - .codex/prompts
+        - ~/.codex/prompts
+      target_dir: .codex
 
   # Additional platforms (simplified - default mappings)
   antigravity:

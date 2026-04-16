@@ -1,33 +1,11 @@
 code: qd
 name: "QD Framework"
 description: "Quick Development Framework - AI-driven development methodology"
-default_selected: true
 
-user_name:
-  prompt: "What should agents call you?"
-  default: "Developer"
-  result: "{value}"
-
-communication_language:
-  prompt: "What language should agents use when chatting with you?"
-  default: "English"
-  result: "{value}"
-
-document_output_language:
-  prompt: "Preferred document output language?"
-  default: "English"
-  result: "{value}"
-
-output_folder:
-  prompt: "Where should output files be saved?"
-  default: "_qd-output"
-  result: "{project-root}/{value}"
-
-project_name:
-  prompt: "What is your project called?"
-  default: "{directory_name}"
-  result: "{value}"
-
-# Directories to create during installation
-directories:
-  - "{output_folder}"
+# Format conversion rules
+# Key: IDE platform code (e.g., codex)
+# Value: Object with glob pattern → target format mappings
+# Glob patterns are relative to artifacts/ root
+convert:
+  codex:
+    "agents/**": toml

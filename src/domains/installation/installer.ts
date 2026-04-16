@@ -207,28 +207,57 @@ class Installer {
     const platform = platformConfig.platforms[ide];
     if (!platform || !platform.installer) return;
 
-    const { target_dir, mappings } = platform.installer;
+    const { target_dir } = platform.installer;
+
+    // Determine artifact type from relativePath (e.g., "skills/agent-browser/SKILL.md")
     const artifactType = this.getArtifactType(artifact.relativePath);
-    const targetSubdir = mappings?.[artifactType] || artifactType;
 
-    const targetDir = path.join(projectDir, target_dir, targetSubdir);
-    await fs.ensureDir(targetDir);
+    // Target path: .claude/<artifactType> (e.g., .claude/skills)
+    const targetPath = path.join(projectDir, target_dir, artifactType);
+    await fs.ensureDir(targetPath);
 
-    let targetFile = path.basename(artifact.sourcePath);
-    // Only convert format if the conversion rule is for THIS IDE
-    if (artifact.convertFormat && artifact.convertFormat.ide === ide) {
-      targetFile = this.changeExtension(targetFile, artifact.convertFormat.format);
+    // Source is the directory containing the artifact file
+    const sourceDir = path.dirname(artifact.sourcePath);
+    const sourceBasename = path.basename(sourceDir);
+
+    // Check if sourceDir is directly the artifact type root (e.g., artifacts/agents)
+    // vs a nested skill directory (e.g., artifacts/skills/agent-browser)
+    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+
+    if (!sourceDir.startsWith(typeRootDir + path.sep) && sourceDir !== typeRootDir) {
+      // File at artifacts root (like module.yaml) - skip, not a content artifact
+      return;
     }
 
-    const targetPath = path.join(targetDir, targetFile);
-
-    if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
-      const content = await fs.readFile(artifact.sourcePath, 'utf8');
-      const tomlContent = this.mdToToml(content);
-      await fs.writeFile(targetPath, tomlContent, 'utf8');
-    } else {
-      await fs.copy(artifact.sourcePath, targetPath, { overwrite: true });
+    if (sourceDir === typeRootDir) {
+      // Direct file in type root (e.g., artifacts/agents/atlas.md) -> copy file directly
+      const targetFile = path.join(targetPath, path.basename(artifact.sourcePath));
+      await fs.copy(artifact.sourcePath, targetFile, { overwrite: true });
+      return;
     }
+
+    // Nested skill directory (e.g., artifacts/skills/agent-browser) -> copy entire dir
+    const destSkillDir = path.join(targetPath, sourceBasename);
+
+    // Clean target skill dir before copy to prevent stale files
+    if (await fs.pathExists(destSkillDir)) {
+      await fs.remove(destSkillDir);
+    }
+    await fs.ensureDir(destSkillDir);
+
+    // Copy all files in skill directory, filtering OS/editor artifacts
+    const skipPatterns = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
+    const skipSuffixes = ['~', '.swp', '.swo', '.bak'];
+    const filter = (src) => {
+      const name = path.basename(src);
+      if (src === sourceDir) return true;
+      if (skipPatterns.has(name)) return false;
+      if (name.startsWith('.') && name !== '.gitkeep') return false;
+      if (skipSuffixes.some((s) => name.endsWith(s))) return false;
+      return true;
+    };
+
+    await fs.copy(sourceDir, destSkillDir, { filter, overwrite: true });
   }
 
   getArtifactType(relativePath) {

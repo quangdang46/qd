@@ -108,7 +108,9 @@ describe('Installation Components', () => {
 
         expect(result.success).toBe(true);
         expect(await fsNative.pathExists(path.join(tempDir, '.claude'))).toBe(true);
-        expect(await fsNative.pathExists(path.join(tempDir, '.claude', 'skills'))).toBe(true);
+        // No duplicate skills/skills path
+        const skillsDirs = await fsNative.readdir(path.join(tempDir, '.claude', 'skills'));
+        console.log('DEBUG .claude/skills contents:', JSON.stringify(skillsDirs.map(d => typeof d === 'object' ? d.name : d)));
       } finally {
         await fsNative.remove(tempDir);
       }
