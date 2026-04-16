@@ -4,7 +4,11 @@
 
 ## Overview
 
-QD is a multi-agent development framework that installs skill-based artifacts into AI coding tools (providers) like Claude Code, OpenCode, Codex, Cursor, etc.
+QD is a multi-agent development framework that installs artifacts (agents, skills, commands, workflows) into AI coding tools (providers) like Claude Code, OpenCode, Codex, Cursor, etc.
+
+The framework uses a **module-based installation** system where:
+- `artifacts/` — contains all installable artifacts
+- `module.yaml` — defines module configuration and directories to create
 
 ## Core Concepts
 
@@ -35,105 +39,61 @@ Modules are groups of artifacts with shared configuration. Each module has:
 
 ```
 artifacts/
-├── module.yaml                 # Root module config
-├── module-help.csv            # Root skill registry
+├── module.yaml                 # Module configuration
+├── module-help.csv            # Module help/registry
 │
-├── agents/                   # Agent artifacts
-│   └── <agent-name>/
-│       ├── SKILL.md
-│       ├── qd-skill-manifest.yaml
-│       │   └── platforms: [claude-code]
-│       └── resources/
-│           ├── knowledge/    # Fragments
-│           │   ├── fragment.md
-│           │   └── ...
-│           └── <agent>-index.csv
+├── agents/                   # Agent artifacts (flat .md files)
+│   ├── atlas.md
+│   ├── hephaestus.md
+│   └── sisyphus.md
 │
-├── skills/                   # Skill artifacts
+├── skills/                   # Skill artifacts (folder + SKILL.md)
 │   └── <skill-name>/
-│       ├── SKILL.md
-│       ├── qd-skill-manifest.yaml
-│       ├── platforms.yaml    # Path → platform mapping
-│       ├── assets/
-│       │   └── <path>/.qd-platforms.yaml  # File-level override
-│       ├── references/
-│       └── scripts/
+│       └── SKILL.md
 │
-├── commands/                 # Command artifacts
-│   └── <command-name>/
-│       └── ...
+├── commands/                 # Command artifacts (flat .md files)
+│   ├── cancel-ralph.md
+│   ├── handoff.md
+│   └── ...
 │
-└── workflows/               # Workflow artifacts
+└── workflows/               # Workflow artifacts (folder structure)
     └── <workflow-name>/
-        ├── workflow.yaml
-        ├── workflow.md
-        └── steps/
-            └── step-*.md
+        └── ...
 ```
 
 ---
 
 ## Manifest Files
 
-### `qd-skill-manifest.yaml`
+Skills use Markdown with YAML frontmatter:
 
-```yaml
-type: agent | skill | command | workflow
-name: <name>
-displayName: <display>
-title: <title>
-icon: "<emoji>"
-platforms:
-  supported: [claude-code, cursor]
-  # OR
-  unsupported: [opencode]
-capabilities: "<list of capabilities>"
-canonicalId: <unique-id>
+```markdown
+---
+name: skill-name
+description: "Skill description"
+---
+
+# Skill Name
+
+Content...
 ```
 
-### `platforms.yaml` (skill root)
+### Frontmatter Fields
 
 ```yaml
-# Path → platform mapping
-paths:
-  <relative-path>:
-    platforms: [claude-code]  # or ["*"] for all
-  <another-path>:
-    platforms: ["*"]
-```
-
-### `.qd-platforms.yaml` (file-level override)
-
-```yaml
-platforms:
-  supported: [claude-code]
-  # OR
-  unsupported: [opencode, codex]
+---
+name: <name>                    # Required - unique identifier
+description: "<description>"    # Required - brief description
+argumentHint: <hint>           # Optional - for commands
+agentType: <type>             # Optional - for agents
+---
 ```
 
 ---
 
 ## Content Transform
 
-SKILL.md content uses IF/ENDIF preprocessor:
-
-```markdown
-## Usage
-
-<!-- IF claude-code -->
-Run: /qd:skill-name
-<!-- END -->
-
-<!-- IF opencode -->
-Run: skill({ name: "skill-name" })
-<!-- END -->
-
-<!-- IF codex -->
-Run: $skill-name
-<!-- END -->
-```
-
-Adapter transforms content at install time based on target provider.
+Artifacts use Markdown with YAML frontmatter for metadata. Content is provider-agnostic.
 
 ---
 
@@ -147,50 +107,15 @@ cli/
 │   ├── manager.ts
 │   └── _config-driven.ts     # IDE-specific installer
 │
-├── platforms/                # Provider adapters
-│   ├── adapter.ts           # Interface
-│   ├── claude-code.ts
-│   ├── opencode.ts
-│   ├── codex.ts
-│   └── windsurf.ts
-│
-├── schemas/                   # JSON Schemas
-│   ├── platforms.schema.json
-│   ├── skill-manifest.schema.json
-│   └── module.schema.json
-│
 ├── core/
 │   ├── installer.ts          # Main installer
 │   ├── manifest.ts
 │   └── config.ts
 │
-├── commands/
-│   ├── install.ts
-│   ├── uninstall.ts
-│   └── status.ts
-│
-└── validate-schemas.ts       # Schema validation CLI
-```
-
----
-
-## Tests
-
-```
-test/
-├── schemas/                   # JSON Schema validation
-│   ├── platforms.test.ts
-│   ├── skill-manifest.test.ts
-│   └── module.test.ts
-│
-├── install/                  # Integration tests
-│   ├── create-artifacts.test.ts   # Create real structure
-│   ├── validate-structure.test.ts  # Validate structure
-│   └── cleanup.test.ts           # Cleanup
-│
-└── platform-filter/          # Platform filtering tests
-    ├── platforms-yaml.test.ts
-    └── adapter-transform.test.ts
+└── commands/
+    ├── install.ts
+    ├── uninstall.ts
+    └── status.ts
 ```
 
 ---
@@ -207,10 +132,11 @@ test/
 
 ## Naming Convention
 
-- Skill folders: kebab-case (`quick-dev`, `agent-builder`)
-- Agent names: kebab-case (`qd-tea`, `qd-quick-dev`)
-- Manifest file: `qd-skill-manifest.yaml`
-- CLI config folder: `_qd/`
+- Agents: flat `.md` files in `agents/` directory
+- Skills: folder with `SKILL.md` inside
+- Commands: flat `.md` files in `commands/` directory
+- Workflows: folder structure in `workflows/` directory
+- Module config: `module.yaml` at artifacts root
 
 ---
 

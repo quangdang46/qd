@@ -5,20 +5,17 @@ const fs = require('./fs-native');
 
 /**
  * Find the QD project root directory by looking for package.json
- * or specific QD markers
  */
 function findProjectRoot(startPath = path.join(__dirname, '..')) {
   let currentPath = path.resolve(startPath);
 
-  // Keep going up until we find package.json with QD package markers
   while (currentPath !== path.dirname(currentPath)) {
     const packagePath = path.join(currentPath, 'package.json');
 
     if (fs.existsSync(packagePath)) {
       try {
         const pkg = fs.readJsonSync(packagePath);
-        // Check if this is the QD project
-        if ((pkg.name === 'qd' || pkg.name === 'qd-method') || fs.existsSync(path.join(currentPath, 'src', 'core-skills'))) {
+        if (pkg.name === 'qd' || pkg.name === 'qd-method') {
           return currentPath;
         }
       } catch {
@@ -26,15 +23,9 @@ function findProjectRoot(startPath = path.join(__dirname, '..')) {
       }
     }
 
-    // Also check for src/core-skills as a marker
-    if (fs.existsSync(path.join(currentPath, 'src', 'core-skills', 'agents'))) {
-      return currentPath;
-    }
-
     currentPath = path.dirname(currentPath);
   }
 
-  // If we can't find it, use process.cwd() as fallback
   return process.cwd();
 }
 
@@ -49,34 +40,14 @@ function getProjectRoot() {
 }
 
 /**
- * Get path to source directory
+ * Get path to artifacts directory (single source of truth)
  */
-function getSourcePath(...segments) {
-  return path.join(getProjectRoot(), 'src', ...segments);
-}
-
-/**
- * Get path to a module's directory under src/
- * Built-in modules: qd -> bmm-skills (unified QD module).
- * Legacy aliases kept for backward compatibility: core -> core-skills, bmm -> bmm-skills.
- * Any other name resolves under src/modules/{name} (legacy layout).
- */
-function getModulePath(moduleName, ...segments) {
-  if (moduleName === 'qd') {
-    return getSourcePath('bmm-skills', ...segments);
-  }
-  if (moduleName === 'core') {
-    return getSourcePath('core-skills', ...segments);
-  }
-  if (moduleName === 'bmm') {
-    return getSourcePath('bmm-skills', ...segments);
-  }
-  return getSourcePath('modules', moduleName, ...segments);
+function getArtifactsPath(...segments) {
+  return path.join(getProjectRoot(), 'artifacts', ...segments);
 }
 
 module.exports = {
   getProjectRoot,
-  getSourcePath,
-  getModulePath,
+  getArtifactsPath,
   findProjectRoot,
 };

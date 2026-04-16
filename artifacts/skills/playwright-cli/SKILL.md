@@ -1,5 +1,5 @@
 ---
-name: playwright
+name: playwright-cli
 description: "(builtin) Browser automation via playwright-cli - verification, browsing, scraping, testing"
 ---
 

@@ -4,50 +4,33 @@ const path = require('node:path');
 const fs = require('../fs-native');
 const yaml = require('yaml');
 const prompts = require('../prompts');
-const { getProjectRoot, getSourcePath, getModulePath } = require('../project-root');
+const { getProjectRoot, getArtifactsPath } = require('../project-root');
 const { CLIUtils } = require('../cli-utils');
 
 class OfficialModules {
   constructor(options = {}) {
-    // Config collection state (merged from ConfigCollector)
     this.collectedConfig = {};
     this._existingConfig = null;
-    // Tracked during interactive config collection so {directory_name}
-    // placeholder defaults can be resolved in buildQuestion().
     this.currentProjectDir = null;
   }
 
-  /**
-   * Module configurations collected during install.
-   */
   get moduleConfigs() {
     return this.collectedConfig;
   }
 
-  /**
-   * Existing module configurations read from a previous installation.
-   */
   get existingConfig() {
     return this._existingConfig;
   }
 
-  /**
-   * Build a configured OfficialModules instance from install config.
-   * @param {Object} config - Clean install config (from Config.build)
-   * @param {Object} paths - InstallPaths instance
-   * @returns {OfficialModules}
-   */
   static async build(config, paths) {
     const instance = new OfficialModules();
 
-    // Pre-collected by UI or quickUpdate - store and load existing for path-change detection
     if (config.moduleConfigs) {
       instance.collectedConfig = config.moduleConfigs;
       await instance.loadExistingConfig(paths.projectRoot);
       return instance;
     }
 
-    // Headless collection (--yes flag from CLI without UI, tests)
     if (config.hasQdConfig()) {
       instance.collectedConfig.qd = config.qdConfig;
       instance.allAnswers = {};
@@ -65,22 +48,10 @@ class OfficialModules {
     return instance;
   }
 
-  /**
-   * Copy a file to the target location
-   * @param {string} sourcePath - Source file path
-   * @param {string} targetPath - Target file path
-   * @param {boolean} overwrite - Whether to overwrite existing files (default: true)
-   */
   async copyFile(sourcePath, targetPath, overwrite = true) {
     await fs.copy(sourcePath, targetPath, { overwrite });
   }
 
-  /**
-   * Copy a directory recursively
-   * @param {string} sourceDir - Source directory path
-   * @param {string} targetDir - Target directory path
-   * @param {boolean} overwrite - Whether to overwrite existing files (default: true)
-   */
   async copyDirectory(sourceDir, targetDir, overwrite = true) {
     await fs.ensureDir(targetDir);
     const entries = await fs.readdir(sourceDir, { withFileTypes: true });
@@ -97,32 +68,35 @@ class OfficialModules {
     }
   }
 
-  /**
-   * List all available built-in modules (single unified qd module).
-   * @returns {Object} Object with modules array
-   */
   async listAvailable() {
     const modules = [];
+    const artifactsPath = getArtifactsPath();
 
-    // Unified QD module source lives under src/bmm-skills.
-    const bmmPath = getSourcePath('bmm-skills');
-    if (await fs.pathExists(bmmPath)) {
-      const qdInfo = await this.getModuleInfo(bmmPath, 'qd', 'src/bmm-skills');
-      if (qdInfo) {
-        modules.push(qdInfo);
+    if (await fs.pathExists(artifactsPath)) {
+      const moduleConfigPath = path.join(artifactsPath, 'module.yaml');
+      if (await fs.pathExists(moduleConfigPath)) {
+        try {
+          const configContent = await fs.readFile(moduleConfigPath, 'utf8');
+          const config = yaml.parse(configContent);
+
+          modules.push({
+            id: config.code || 'qd',
+            path: artifactsPath,
+            name: config.name || 'QD Framework',
+            description: config.description || 'QD Module',
+            version: config.version || '1.0.0',
+            source: 'artifacts',
+            defaultSelected: config.default_selected !== undefined ? config.default_selected : true,
+          });
+        } catch (error) {
+          await prompts.log.warn(`Failed to read module.yaml: ${error.message}`);
+        }
       }
     }
 
     return { modules };
   }
 
-  /**
-   * Get module information from a module path
-   * @param {string} modulePath - Path to the module directory
-   * @param {string} defaultName - Default name for the module
-   * @param {string} sourceDescription - Description of where the module was found
-   * @returns {Object|null} Module info or null if not a valid module
-   */
   async getModuleInfo(modulePath, defaultName, sourceDescription) {
     const moduleConfigPath = path.join(modulePath, 'module.yaml');
 
@@ -133,25 +107,17 @@ class OfficialModules {
     const moduleInfo = {
       id: defaultName,
       path: modulePath,
-      name: defaultName
-        .split('-')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' '),
+      name: defaultName.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
       description: 'QD Module',
-      version: '5.0.0',
+      version: '1.0.0',
       source: sourceDescription,
     };
 
-    // Read module config for metadata
     try {
       const configContent = await fs.readFile(moduleConfigPath, 'utf8');
       const config = yaml.parse(configContent);
 
-      // Use the code property as the id if available
-      if (config.code) {
-        moduleInfo.id = config.code;
-      }
-
+      if (config.code) moduleInfo.id = config.code;
       moduleInfo.name = config.name || moduleInfo.name;
       moduleInfo.description = config.description || moduleInfo.description;
       moduleInfo.version = config.version || moduleInfo.version;
@@ -164,37 +130,18 @@ class OfficialModules {
     return moduleInfo;
   }
 
-  /**
-   * Find the source path for a module by searching all possible locations
-   * @param {string} moduleCode - Code of the module to find (from module.yaml)
-   * @returns {string|null} Path to the module source or null if not found
-   */
-  async findModuleSource(moduleCode, options = {}) {
-    const projectRoot = getProjectRoot();
-
-    // Unified QD module source (single built-in module).
+  async findModuleSource(moduleCode) {
     if (moduleCode === 'qd') {
-      const bmmPath = getSourcePath('bmm-skills');
-      if (await fs.pathExists(bmmPath)) {
-        return bmmPath;
+      const artifactsPath = getArtifactsPath();
+      if (await fs.pathExists(artifactsPath)) {
+        return artifactsPath;
       }
     }
-
     return null;
   }
 
-  /**
-   * Install a module
-   * @param {string} moduleName - Code of the module to install (from module.yaml)
-   * @param {string} qdDir - Target qd directory
-   * @param {Function} fileTrackingCallback - Optional callback to track installed files
-   * @param {Object} options - Additional installation options
-   * @param {Array<string>} options.installedIDEs - Array of IDE codes that were installed
-   * @param {Object} options.moduleConfig - Module configuration from config collector
-   * @param {Object} options.logger - Logger instance for output
-   */
   async install(moduleName, qdDir, fileTrackingCallback = null, options = {}) {
-    const sourcePath = await this.findModuleSource(moduleName, { silent: options.silent });
+    const sourcePath = await this.findModuleSource(moduleName);
     const targetPath = path.join(qdDir, moduleName);
 
     if (!sourcePath) {
@@ -225,11 +172,6 @@ class OfficialModules {
     return { success: true, module: moduleName, path: targetPath, versionInfo };
   }
 
-  /**
-   * Update an existing module
-   * @param {string} moduleName - Name of the module to update
-   * @param {string} qdDir - Target qd directory
-   */
   async update(moduleName, qdDir) {
     const sourcePath = await this.findModuleSource(moduleName);
     const targetPath = path.join(qdDir, moduleName);
@@ -244,18 +186,9 @@ class OfficialModules {
 
     await this.syncModule(sourcePath, targetPath);
 
-    return {
-      success: true,
-      module: moduleName,
-      path: targetPath,
-    };
+    return { success: true, module: moduleName, path: targetPath };
   }
 
-  /**
-   * Remove a module
-   * @param {string} moduleName - Name of the module to remove
-   * @param {string} qdDir - Target qd directory
-   */
   async remove(moduleName, qdDir) {
     const targetPath = path.join(qdDir, moduleName);
 
@@ -265,29 +198,14 @@ class OfficialModules {
 
     await fs.remove(targetPath);
 
-    return {
-      success: true,
-      module: moduleName,
-    };
+    return { success: true, module: moduleName };
   }
 
-  /**
-   * Check if a module is installed
-   * @param {string} moduleName - Name of the module
-   * @param {string} qdDir - Target qd directory
-   * @returns {boolean} True if module is installed
-   */
   async isInstalled(moduleName, qdDir) {
     const targetPath = path.join(qdDir, moduleName);
     return await fs.pathExists(targetPath);
   }
 
-  /**
-   * Get installed module info
-   * @param {string} moduleName - Name of the module
-   * @param {string} qdDir - Target qd directory
-   * @returns {Object|null} Module info or null if not installed
-   */
   async getInstalledInfo(moduleName, qdDir) {
     const targetPath = path.join(qdDir, moduleName);
 
@@ -296,11 +214,7 @@ class OfficialModules {
     }
 
     const configPath = path.join(targetPath, 'config.yaml');
-    const moduleInfo = {
-      id: moduleName,
-      path: targetPath,
-      installed: true,
-    };
+    const moduleInfo = { id: moduleName, path: targetPath, installed: true };
 
     if (await fs.pathExists(configPath)) {
       try {
@@ -315,105 +229,49 @@ class OfficialModules {
     return moduleInfo;
   }
 
-  /**
-   * Copy module with filtering for localskip agents and conditional content
-   * @param {string} sourcePath - Source module path
-   * @param {string} targetPath - Target module path
-   * @param {Function} fileTrackingCallback - Optional callback to track installed files
-   * @param {Object} moduleConfig - Module configuration with conditional flags
-   */
   async copyModuleWithFiltering(sourcePath, targetPath, fileTrackingCallback = null, moduleConfig = {}) {
-    // Get all files in source
     const sourceFiles = await this.getFileList(sourcePath);
 
     for (const file of sourceFiles) {
-      // Skip sub-modules directory - these are IDE-specific and handled separately
-      if (file.startsWith('sub-modules/')) {
-        continue;
-      }
+      if (file.startsWith('sub-modules/')) continue;
 
-      // Skip sidecar directories - these contain agent-specific assets not needed at install time
-      const isInSidecarDirectory = path
-        .dirname(file)
-        .split('/')
-        .some((dir) => dir.toLowerCase().endsWith('-sidecar'));
+      const isInSidecarDirectory = path.dirname(file).split('/').some((dir) => dir.toLowerCase().endsWith('-sidecar'));
+      if (isInSidecarDirectory) continue;
 
-      if (isInSidecarDirectory) {
-        continue;
-      }
-
-      // Skip module.yaml at root - it's only needed at install time
-      if (file === 'module.yaml') {
-        continue;
-      }
-
-      // Skip module root config.yaml only - generated by config collector with actual values
-      // Workflow-level config.yaml (e.g. workflows/orchestrate-story/config.yaml) must be copied
-      // for custom modules that use workflow-specific configuration
-      if (file === 'config.yaml') {
-        continue;
-      }
+      if (file === 'module.yaml') continue;
+      if (file === 'config.yaml') continue;
 
       const sourceFile = path.join(sourcePath, file);
       const targetFile = path.join(targetPath, file);
 
-      // Check if this is an agent file
       if (file.startsWith('agents/') && file.endsWith('.md')) {
-        // Read the file to check for localskip
         const content = await fs.readFile(sourceFile, 'utf8');
-
-        // Check for localskip="true" in the agent tag
         const agentMatch = content.match(/<agent[^>]*\slocalskip="true"[^>]*>/);
         if (agentMatch) {
           await prompts.log.message(`  Skipping web-only agent: ${path.basename(file)}`);
-          continue; // Skip this agent
+          continue;
         }
       }
 
-      // Copy the file with placeholder replacement
       await this.copyFile(sourceFile, targetFile);
 
-      // Track the file if callback provided
       if (fileTrackingCallback) {
         fileTrackingCallback(targetFile);
       }
     }
   }
 
-  /**
-   * Create directories declared in module.yaml's `directories` key
-   * This replaces the security-risky module installer pattern with declarative config
-   * During updates, if a directory path changed, moves the old directory to the new path
-   * @param {string} moduleName - Name of the module
-   * @param {string} qdDir - Target qd directory
-   * @param {Object} options - Installation options
-   * @param {Object} options.moduleConfig - Module configuration from config collector
-   * @param {Object} options.existingModuleConfig - Previous module config (for detecting path changes during updates)
-   * @param {Object} options.coreConfig - Core configuration
-   * @returns {Promise<{createdDirs: string[], movedDirs: string[], createdWdsFolders: string[]}>} Created directories info
-   */
   async createModuleDirectories(moduleName, qdDir, options = {}) {
     const moduleConfig = options.moduleConfig || {};
     const existingModuleConfig = options.existingModuleConfig || {};
     const projectRoot = path.dirname(qdDir);
     const emptyResult = { createdDirs: [], movedDirs: [], createdWdsFolders: [] };
 
-    // Special handling for core module - it's in src/core-skills not src/modules
-    let sourcePath;
-    if (moduleName === 'core') {
-      sourcePath = getSourcePath('core-skills');
-    } else {
-      sourcePath = await this.findModuleSource(moduleName, { silent: true });
-      if (!sourcePath) {
-        return emptyResult; // No source found, skip
-      }
-    }
+    const sourcePath = await this.findModuleSource(moduleName);
+    if (!sourcePath) return emptyResult;
 
-    // Read module.yaml to find the `directories` key
     const moduleYamlPath = path.join(sourcePath, 'module.yaml');
-    if (!(await fs.pathExists(moduleYamlPath))) {
-      return emptyResult; // No module.yaml, skip
-    }
+    if (!(await fs.pathExists(moduleYamlPath))) return emptyResult;
 
     let moduleYaml;
     try {
@@ -424,9 +282,7 @@ class OfficialModules {
       return emptyResult;
     }
 
-    if (!moduleYaml || !moduleYaml.directories) {
-      return emptyResult; // No directories declared, skip
-    }
+    if (!moduleYaml || !moduleYaml.directories) return emptyResult;
 
     const directories = moduleYaml.directories;
     const wdsFolders = moduleYaml.wds_folders || [];
@@ -435,29 +291,17 @@ class OfficialModules {
     const createdWdsFolders = [];
 
     for (const dirRef of directories) {
-      // Parse variable reference like "{design_artifacts}"
       const varMatch = dirRef.match(/^\{([^}]+)\}$/);
-      if (!varMatch) {
-        // Not a variable reference, skip
-        continue;
-      }
+      if (!varMatch) continue;
 
       const configKey = varMatch[1];
       const dirValue = moduleConfig[configKey];
-      if (!dirValue || typeof dirValue !== 'string') {
-        continue; // No value or not a string, skip
-      }
+      if (!dirValue || typeof dirValue !== 'string') continue;
 
-      // Strip {project-root}/ prefix if present
       let dirPath = dirValue.replace(/^\{project-root\}\/?/, '');
-
-      // Handle remaining {project-root} anywhere in the path
       dirPath = dirPath.replaceAll('{project-root}', '');
-
-      // Resolve to absolute path
       const fullPath = path.join(projectRoot, dirPath);
 
-      // Validate path is within project root (prevent directory traversal)
       const normalizedPath = path.normalize(fullPath);
       const normalizedRoot = path.normalize(projectRoot);
       if (!normalizedPath.startsWith(normalizedRoot + path.sep) && normalizedPath !== normalizedRoot) {
@@ -466,13 +310,10 @@ class OfficialModules {
         continue;
       }
 
-      // Check if directory path changed from previous config (update/modify scenario)
       const oldDirValue = existingModuleConfig[configKey];
       let oldFullPath = null;
       let oldDirPath = null;
       if (oldDirValue && typeof oldDirValue === 'string') {
-        // F3: Normalize both values before comparing to avoid false negatives
-        // from trailing slashes, separator differences, or prefix format variations
         let normalizedOld = oldDirValue.replace(/^\{project-root\}\/?/, '');
         normalizedOld = path.normalize(normalizedOld.replaceAll('{project-root}', ''));
         const normalizedNew = path.normalize(dirPath);
@@ -482,21 +323,15 @@ class OfficialModules {
           oldFullPath = path.join(projectRoot, oldDirPath);
           const normalizedOldAbsolute = path.normalize(oldFullPath);
           if (!normalizedOldAbsolute.startsWith(normalizedRoot + path.sep) && normalizedOldAbsolute !== normalizedRoot) {
-            oldFullPath = null; // Old path escapes project root, ignore it
+            oldFullPath = null;
           }
 
-          // F13: Prevent parent/child move (e.g. docs/planning -> docs/planning/v2)
           if (oldFullPath) {
             const normalizedNewAbsolute = path.normalize(fullPath);
-            if (
-              normalizedOldAbsolute.startsWith(normalizedNewAbsolute + path.sep) ||
-              normalizedNewAbsolute.startsWith(normalizedOldAbsolute + path.sep)
-            ) {
+            if (normalizedOldAbsolute.startsWith(normalizedNewAbsolute + path.sep) || normalizedNewAbsolute.startsWith(normalizedOldAbsolute + path.sep)) {
               const color = await prompts.getColor();
               await prompts.log.warn(
-                color.yellow(
-                  `${configKey}: cannot move between parent/child paths (${oldDirPath} / ${dirPath}), creating new directory instead`,
-                ),
+                color.yellow(`${configKey}: cannot move between parent/child paths (${oldDirPath} / ${dirPath}), creating new directory instead`),
               );
               oldFullPath = null;
             }
@@ -507,9 +342,6 @@ class OfficialModules {
       const dirName = configKey.replaceAll('_', ' ');
 
       if (oldFullPath && (await fs.pathExists(oldFullPath)) && !(await fs.pathExists(fullPath))) {
-        // Path changed and old dir exists -> move old to new location
-        // F1: Use fs.move() instead of fs.rename() for cross-device/volume support
-        // F2: Wrap in try/catch - fallback to creating new dir on failure
         try {
           await fs.ensureDir(path.dirname(fullPath));
           await fs.move(oldFullPath, fullPath);
@@ -517,28 +349,21 @@ class OfficialModules {
         } catch (moveError) {
           const color = await prompts.getColor();
           await prompts.log.warn(
-            color.yellow(
-              `Failed to move ${oldDirPath} -> ${dirPath}: ${moveError.message}\n  Creating new directory instead. Please move contents from the old directory manually.`,
-            ),
+            color.yellow(`Failed to move ${oldDirPath} -> ${dirPath}: ${moveError.message}\n  Creating new directory instead.`),
           );
           await fs.ensureDir(fullPath);
           createdDirs.push(`${dirName}: ${dirPath}`);
         }
       } else if (oldFullPath && (await fs.pathExists(oldFullPath)) && (await fs.pathExists(fullPath))) {
-        // F5: Both old and new directories exist - warn user about potential orphaned documents
         const color = await prompts.getColor();
         await prompts.log.warn(
-          color.yellow(
-            `${dirName}: path changed but both directories exist:\n  Old: ${oldDirPath}\n  New: ${dirPath}\n  Old directory may contain orphaned documents - please review and merge manually.`,
-          ),
+          color.yellow(`${dirName}: path changed but both directories exist:\n  Old: ${oldDirPath}\n  New: ${dirPath}\n  Please review manually.`),
         );
       } else if (!(await fs.pathExists(fullPath))) {
-        // New directory doesn't exist yet -> create it
         createdDirs.push(`${dirName}: ${dirPath}`);
         await fs.ensureDir(fullPath);
       }
 
-      // Create WDS subfolders if this is the design_artifacts directory
       if (configKey === 'design_artifacts' && wdsFolders.length > 0) {
         for (const subfolder of wdsFolders) {
           const subPath = path.join(fullPath, subfolder);
@@ -553,48 +378,29 @@ class OfficialModules {
     return { createdDirs, movedDirs, createdWdsFolders };
   }
 
-  /**
-   * Private: Sync module files (preserving user modifications)
-   * @param {string} sourcePath - Source module path
-   * @param {string} targetPath - Target module path
-   */
   async syncModule(sourcePath, targetPath) {
-    // Get list of all source files
     const sourceFiles = await this.getFileList(sourcePath);
 
     for (const file of sourceFiles) {
       const sourceFile = path.join(sourcePath, file);
       const targetFile = path.join(targetPath, file);
 
-      // Check if target file exists and has been modified
       if (await fs.pathExists(targetFile)) {
         const sourceStats = await fs.stat(sourceFile);
         const targetStats = await fs.stat(targetFile);
-
-        // Skip if target is newer (user modified)
-        if (targetStats.mtime > sourceStats.mtime) {
-          continue;
-        }
+        if (targetStats.mtime > sourceStats.mtime) continue;
       }
 
-      // Copy file with placeholder replacement
       await this.copyFile(sourceFile, targetFile);
     }
   }
 
-  /**
-   * Private: Get list of all files in a directory
-   * @param {string} dir - Directory path
-   * @param {string} baseDir - Base directory for relative paths
-   * @returns {Array} List of relative file paths
-   */
   async getFileList(dir, baseDir = dir) {
     const files = [];
     const entries = await fs.readdir(dir, { withFileTypes: true });
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
-
       if (entry.isDirectory()) {
         const subFiles = await this.getFileList(fullPath, baseDir);
         files.push(...subFiles);
@@ -606,107 +412,62 @@ class OfficialModules {
     return files;
   }
 
-  // --- Config collection methods (merged from ConfigCollector) ---
+  // Config collection methods (simplified for single module)
 
-  /**
-   * Find the qd installation directory in a project
-   * V6+ installations can use ANY folder name but ALWAYS have _config/manifest.yaml
-   * @param {string} projectDir - Project directory
-   * @returns {Promise<string>} Path to qd directory
-   */
   async findQdDir(projectDir) {
-    // Check if project directory exists
     if (!(await fs.pathExists(projectDir))) {
-      // Project doesn't exist yet, return default
       return path.join(projectDir, 'qd');
     }
 
-    // V6+ strategy: Look for ANY directory with _config/manifest.yaml
-    // This is the definitive marker of a V6+ installation
     try {
       const entries = await fs.readdir(projectDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const manifestPath = path.join(projectDir, entry.name, '_config', 'manifest.yaml');
           if (await fs.pathExists(manifestPath)) {
-            // Found a V6+ installation
             return path.join(projectDir, entry.name);
           }
         }
       }
-    } catch {
-      // Ignore errors, fall through to default
-    }
+    } catch {}
 
-    // No V6+ installation found, return default
-    // This will be used for new installations
     return path.join(projectDir, 'qd');
   }
 
-  /**
-   * Detect the existing QD folder name in a project
-   * @param {string} projectDir - Project directory
-   * @returns {Promise<string|null>} Folder name (just the name, not full path) or null if not found
-   */
   async detectExistingQdFolder(projectDir) {
-    // Check if project directory exists
-    if (!(await fs.pathExists(projectDir))) {
-      return null;
-    }
+    if (!(await fs.pathExists(projectDir))) return null;
 
-    // Look for ANY directory with _config/manifest.yaml
     try {
       const entries = await fs.readdir(projectDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const manifestPath = path.join(projectDir, entry.name, '_config', 'manifest.yaml');
           if (await fs.pathExists(manifestPath)) {
-            // Found a V6+ installation, return just the folder name
             return entry.name;
           }
         }
       }
-    } catch {
-      // Ignore errors
-    }
+    } catch {}
 
     return null;
   }
 
-  /**
-   * Load existing config if it exists from module config files
-   * @param {string} projectDir - Target project directory
-   */
   async loadExistingConfig(projectDir) {
     this._existingConfig = {};
 
-    // Check if project directory exists first
-    if (!(await fs.pathExists(projectDir))) {
-      return false;
-    }
+    if (!(await fs.pathExists(projectDir))) return false;
 
-    // Find the actual qd directory (handles custom folder names)
     const qdDir = await this.findQdDir(projectDir);
+    if (!(await fs.pathExists(qdDir))) return false;
 
-    // Check if qd directory exists
-    if (!(await fs.pathExists(qdDir))) {
-      return false;
-    }
-
-    // Dynamically discover all installed modules by scanning qd directory
-    // A directory is a module ONLY if it contains a config.yaml file
     let foundAny = false;
     const entries = await fs.readdir(qdDir, { withFileTypes: true });
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        // Skip the _config directory - it's for system use
-        if (entry.name === '_config' || entry.name === '_memory') {
-          continue;
-        }
+        if (entry.name === '_config' || entry.name === '_memory') continue;
 
         const moduleConfigPath = path.join(qdDir, entry.name, 'config.yaml');
-
         if (await fs.pathExists(moduleConfigPath)) {
           try {
             const content = await fs.readFile(moduleConfigPath, 'utf8');
@@ -715,9 +476,7 @@ class OfficialModules {
               this._existingConfig[entry.name] = moduleConfig;
               foundAny = true;
             }
-          } catch {
-            // Ignore parse errors for individual modules
-          }
+          } catch {}
         }
       }
     }
@@ -725,32 +484,15 @@ class OfficialModules {
     return foundAny;
   }
 
-  /**
-   * Pre-scan module schemas to gather metadata for the configuration gateway prompt.
-   * Returns info about which modules have configurable options.
-   * @param {Array} modules - List of non-core module names
-   * @returns {Promise<Array>} Array of {moduleName, displayName, questionCount, hasFieldsWithoutDefaults}
-   */
   async scanModuleSchemas(modules) {
     const metadataFields = new Set(['code', 'name', 'header', 'subheader', 'default_selected']);
     const results = [];
 
     for (const moduleName of modules) {
-      // Resolve module.yaml path - standard location first, then built-in source search
-      let moduleConfigPath = null;
-      const standardPath = path.join(getModulePath(moduleName), 'module.yaml');
-      if (await fs.pathExists(standardPath)) {
-        moduleConfigPath = standardPath;
-      } else {
-        const moduleSourcePath = await this.findModuleSource(moduleName, { silent: true });
-        if (moduleSourcePath) {
-          moduleConfigPath = path.join(moduleSourcePath, 'module.yaml');
-        }
-      }
+      const artifactsPath = getArtifactsPath();
+      const moduleConfigPath = path.join(artifactsPath, 'module.yaml');
 
-      if (!moduleConfigPath || !(await fs.pathExists(moduleConfigPath))) {
-        continue;
-      }
+      if (!moduleConfigPath || !(await fs.pathExists(moduleConfigPath))) continue;
 
       try {
         const content = await fs.readFile(moduleConfigPath, 'utf8');
@@ -784,29 +526,16 @@ class OfficialModules {
     return results;
   }
 
-  /**
-   * Collect configuration for all modules.
-   * @param {Array} modules - List of modules to configure
-   * @param {string} projectDir - Target project directory
-   * @param {Object} options - Additional options
-   * @param {boolean} options.skipPrompts - Skip prompts and use defaults (for --yes flag)
-   */
   async collectAllConfigurations(modules, projectDir, options = {}) {
     this.skipPrompts = options.skipPrompts || false;
     this.modulesToCustomize = undefined;
     await this.loadExistingConfig(projectDir);
 
-    // If qd was already collected (seeded from CLI flags), avoid collecting it twice.
     const qdAlreadyCollected = this.collectedConfig.qd && Object.keys(this.collectedConfig.qd).length > 0;
     const allModules = qdAlreadyCollected ? modules.filter((m) => m !== 'qd') : [...modules];
 
-    // Store all answers across modules for cross-referencing
-    if (!this.allAnswers) {
-      this.allAnswers = {};
-    }
+    if (!this.allAnswers) this.allAnswers = {};
 
-    // Show batch configuration gateway for all selected modules
-    // Scan module schemas for display names and config metadata
     let scannedModules = [];
     if (!this.skipPrompts && allModules.length > 0) {
       scannedModules = await this.scanModuleSchemas(allModules);
@@ -836,29 +565,22 @@ class OfficialModules {
           });
           this.modulesToCustomize = new Set(selected);
         } else {
-          // Express mode: no modules to customize
           this.modulesToCustomize = new Set();
         }
       } else {
-        // All modules have zero config - no gateway needed
         this.modulesToCustomize = new Set();
       }
     }
 
-    // Collect modules
     if (this.modulesToCustomize === undefined) {
-      // No gateway was shown (skipPrompts, no modules, or direct call) - process all normally
       for (const moduleName of allModules) {
         await this.collectModuleConfig(moduleName, projectDir);
       }
     } else {
-      // Split into default modules (tasks progress) and customized modules (interactive)
       const defaultModules = allModules.filter((m) => !this.modulesToCustomize.has(m));
       const customizeModules = allModules.filter((m) => this.modulesToCustomize.has(m));
 
-      // Run default modules with a single spinner
       if (defaultModules.length > 0) {
-        // Build display name map from all scanned modules for pre-call spinner messages
         const displayNameMap = new Map();
         for (const m of scannedModules) {
           displayNameMap.set(m.moduleName, m.displayName);
@@ -882,7 +604,6 @@ class OfficialModules {
         }
       }
 
-      // Run customized modules individually (may show interactive prompts)
       for (const moduleName of customizeModules) {
         await this.collectModuleConfig(moduleName, projectDir);
       }
@@ -892,7 +613,6 @@ class OfficialModules {
       }
     }
 
-    // Add metadata
     this.collectedConfig._meta = {
       version: require(path.join(getProjectRoot(), 'package.json')).version,
       installDate: new Date().toISOString(),
@@ -902,44 +622,17 @@ class OfficialModules {
     return this.collectedConfig;
   }
 
-  /**
-   * Collect configuration for a single module (Quick Update mode - only new fields)
-   * @param {string} moduleName - Module name
-   * @param {string} projectDir - Target project directory
-   * @param {boolean} silentMode - If true, only prompt for new/missing fields
-   * @returns {boolean} True if new fields were prompted, false if all fields existed
-   */
   async collectModuleConfigQuick(moduleName, projectDir, silentMode = true) {
     this.currentProjectDir = projectDir;
-    // Load existing config if not already loaded
-    if (!this._existingConfig) {
-      await this.loadExistingConfig(projectDir);
-    }
+    if (!this._existingConfig) await this.loadExistingConfig(projectDir);
+    if (!this.allAnswers) this.allAnswers = {};
 
-    // Initialize allAnswers if not already initialized
-    if (!this.allAnswers) {
-      this.allAnswers = {};
-    }
-
-    // Load module's config schema from module.yaml
-    // First, try the standard src/modules location
-    let moduleConfigPath = path.join(getModulePath(moduleName), 'module.yaml');
-
-    // If not found in src/modules, we need to find it by searching the project
-    if (!(await fs.pathExists(moduleConfigPath))) {
-      const moduleSourcePath = await this.findModuleSource(moduleName, { silent: true });
-
-      if (moduleSourcePath) {
-        moduleConfigPath = path.join(moduleSourcePath, 'module.yaml');
-      }
-    }
+    const artifactsPath = getArtifactsPath();
+    const moduleConfigPath = path.join(artifactsPath, 'module.yaml');
 
     if (!(await fs.pathExists(moduleConfigPath))) {
-      // No config schema for this module - use existing values
       if (this._existingConfig && this._existingConfig[moduleName]) {
-        if (!this.collectedConfig[moduleName]) {
-          this.collectedConfig[moduleName] = {};
-        }
+        if (!this.collectedConfig[moduleName]) this.collectedConfig[moduleName] = {};
         this.collectedConfig[moduleName] = { ...this._existingConfig[moduleName] };
       }
       return false;
@@ -947,129 +640,89 @@ class OfficialModules {
 
     const configContent = await fs.readFile(moduleConfigPath, 'utf8');
     const moduleConfig = yaml.parse(configContent);
+    if (!moduleConfig) return false;
 
-    if (!moduleConfig) {
-      return false;
-    }
-
-    // Compare schema with existing config to find new/missing fields
     const configKeys = Object.keys(moduleConfig).filter((key) => key !== 'prompt');
     const existingKeys = this._existingConfig && this._existingConfig[moduleName] ? Object.keys(this._existingConfig[moduleName]) : [];
 
-    // Check if this module has no configuration keys at all (like CIS)
-    // Filter out metadata fields and only count actual config objects
     const metadataFields = new Set(['code', 'name', 'header', 'subheader', 'default_selected']);
     const actualConfigKeys = configKeys.filter((key) => !metadataFields.has(key));
     const hasNoConfig = actualConfigKeys.length === 0;
 
-    // If module has no config keys at all, handle it specially
     if (hasNoConfig && moduleConfig.subheader) {
       const moduleDisplayName = moduleConfig.header || `${moduleName.toUpperCase()} Module`;
       await prompts.log.step(moduleDisplayName);
       await prompts.log.message(`  \u2713 ${moduleConfig.subheader}`);
-      return false; // No new fields
+      return false;
     }
 
-    // Find new interactive fields (with prompt)
     const newKeys = configKeys.filter((key) => {
       const item = moduleConfig[key];
-      // Check if it's a config item and doesn't exist in existing config
       return item && typeof item === 'object' && item.prompt && !existingKeys.includes(key);
     });
 
-    // Find new static fields (without prompt, just result)
     const newStaticKeys = configKeys.filter((key) => {
       const item = moduleConfig[key];
       return item && typeof item === 'object' && !item.prompt && item.result && !existingKeys.includes(key);
     });
 
-    // If in silent mode and no new keys (neither interactive nor static), use existing config and skip prompts
     if (silentMode && newKeys.length === 0 && newStaticKeys.length === 0) {
       if (this._existingConfig && this._existingConfig[moduleName]) {
-        if (!this.collectedConfig[moduleName]) {
-          this.collectedConfig[moduleName] = {};
-        }
+        if (!this.collectedConfig[moduleName]) this.collectedConfig[moduleName] = {};
         this.collectedConfig[moduleName] = { ...this._existingConfig[moduleName] };
-
-        // Special handling for user_name: ensure it has a value
-        if (
-          moduleName === 'core' &&
-          (!this.collectedConfig[moduleName].user_name || this.collectedConfig[moduleName].user_name === '[USER_NAME]')
-        ) {
+        if (moduleName === 'qd' && (!this.collectedConfig[moduleName].user_name || this.collectedConfig[moduleName].user_name === '[USER_NAME]')) {
           this.collectedConfig[moduleName].user_name = this.getDefaultUsername();
         }
-
-        // Also populate allAnswers for cross-referencing
         for (const [key, value] of Object.entries(this._existingConfig[moduleName])) {
-          // Ensure user_name is properly set in allAnswers too
           let finalValue = value;
-          if (moduleName === 'core' && key === 'user_name' && (!value || value === '[USER_NAME]')) {
+          if (moduleName === 'qd' && key === 'user_name' && (!value || value === '[USER_NAME]')) {
             finalValue = this.getDefaultUsername();
           }
           this.allAnswers[`${moduleName}_${key}`] = finalValue;
         }
-      } else if (moduleName === 'core') {
-        // No existing core config - ensure we at least have user_name
-        if (!this.collectedConfig[moduleName]) {
-          this.collectedConfig[moduleName] = {};
-        }
+      } else if (moduleName === 'qd') {
+        if (!this.collectedConfig[moduleName]) this.collectedConfig[moduleName] = {};
         if (!this.collectedConfig[moduleName].user_name) {
           this.collectedConfig[moduleName].user_name = this.getDefaultUsername();
           this.allAnswers[`${moduleName}_user_name`] = this.getDefaultUsername();
         }
       }
-
-      // Show "no config" message for modules with no new questions (that have config keys)
       await prompts.log.message(`  \u2713 ${moduleName.toUpperCase()} module already up to date`);
-      return false; // No new fields
+      return false;
     }
 
-    // If we have new fields (interactive or static), process them
     if (newKeys.length > 0 || newStaticKeys.length > 0) {
       const questions = [];
       const staticAnswers = {};
 
-      // Build questions for interactive fields
       for (const key of newKeys) {
         const item = moduleConfig[key];
         const question = await this.buildQuestion(moduleName, key, item, moduleConfig);
-        if (question) {
-          questions.push(question);
-        }
+        if (question) questions.push(question);
       }
 
-      // Prepare static answers (no prompt, just result)
       for (const key of newStaticKeys) {
         staticAnswers[`${moduleName}_${key}`] = undefined;
       }
 
-      // Collect all answers (static + prompted)
       let allAnswers = { ...staticAnswers };
 
       if (questions.length > 0 && silentMode) {
-        // In silent mode (quick update), use defaults for new fields instead of prompting
         for (const q of questions) {
           allAnswers[q.name] = typeof q.default === 'function' ? q.default({}) : q.default;
         }
         await prompts.log.message(`  \u2713 ${moduleName.toUpperCase()} module configured with defaults`);
       } else if (questions.length > 0) {
-        // Only show header if we actually have questions
         await CLIUtils.displayModuleConfigHeader(moduleName, moduleConfig.header, moduleConfig.subheader);
         await prompts.log.message('');
         const promptedAnswers = await prompts.prompt(questions);
-
-        // Merge prompted answers with static answers
         Object.assign(allAnswers, promptedAnswers);
       } else if (newStaticKeys.length > 0) {
-        // Only static fields, no questions - show no config message
         await prompts.log.message(`  \u2713 ${moduleName.toUpperCase()} module configuration updated`);
       }
 
-      // Store all answers for cross-referencing
       Object.assign(this.allAnswers, allAnswers);
 
-      // Process all answers (both static and prompted)
-      // First, copy existing config to preserve values that aren't being updated
       if (this._existingConfig && this._existingConfig[moduleName]) {
         this.collectedConfig[moduleName] = { ...this._existingConfig[moduleName] };
       } else {
@@ -1090,16 +743,12 @@ class OfficialModules {
           result = value;
         }
 
-        // Update the collected config with new/updated values
         this.collectedConfig[moduleName][originalKey] = result;
       }
     }
 
-    // Copy over existing values for fields that weren't prompted
     if (this._existingConfig && this._existingConfig[moduleName]) {
-      if (!this.collectedConfig[moduleName]) {
-        this.collectedConfig[moduleName] = {};
-      }
+      if (!this.collectedConfig[moduleName]) this.collectedConfig[moduleName] = {};
       for (const [key, value] of Object.entries(this._existingConfig[moduleName])) {
         if (!this.collectedConfig[moduleName][key]) {
           this.collectedConfig[moduleName][key] = value;
@@ -1109,16 +758,9 @@ class OfficialModules {
     }
 
     await this.displayModulePostConfigNotes(moduleName, moduleConfig);
-
-    return newKeys.length > 0 || newStaticKeys.length > 0; // Return true if we had any new fields (interactive or static)
+    return newKeys.length > 0 || newStaticKeys.length > 0;
   }
 
-  /**
-   * Process a result template with value substitution
-   * @param {*} resultTemplate - The result template
-   * @param {*} value - The value to substitute
-   * @returns {*} Processed result
-   */
   processResultTemplate(resultTemplate, value) {
     let result = resultTemplate;
 
@@ -1137,12 +779,8 @@ class OfficialModules {
 
       if (typeof result === 'string') {
         result = result.replaceAll(/{([^}]+)}/g, (match, configKey) => {
-          if (configKey === 'project-root') {
-            return '{project-root}';
-          }
-          if (configKey === 'value') {
-            return match;
-          }
+          if (configKey === 'project-root') return '{project-root}';
+          if (configKey === 'value') return match;
 
           let configValue = this.allAnswers[configKey] || this.allAnswers[`${configKey}`];
           if (!configValue) {
@@ -1174,71 +812,32 @@ class OfficialModules {
     return result;
   }
 
-  /**
-   * Get the default username from the system
-   * @returns {string} Capitalized username\
-   */
   getDefaultUsername() {
     let result = 'QD';
     try {
       const os = require('node:os');
       const userInfo = os.userInfo();
       if (userInfo && userInfo.username) {
-        const username = userInfo.username;
-        result = username.charAt(0).toUpperCase() + username.slice(1);
+        result = userInfo.username.charAt(0).toUpperCase() + userInfo.username.slice(1);
       }
-    } catch {
-      // Do nothing, just return 'QD'
-    }
+    } catch {}
     return result;
   }
 
-  /**
-   * Collect configuration for a single module
-   * @param {string} moduleName - Module name
-   * @param {string} projectDir - Target project directory
-   * @param {boolean} skipLoadExisting - Skip loading existing config (for early core collection)
-   * @param {boolean} skipCompletion - Skip showing completion message (for early core collection)
-   */
   async collectModuleConfig(moduleName, projectDir, skipLoadExisting = false, skipCompletion = false) {
     this.currentProjectDir = projectDir;
-    // Load existing config if needed and not already loaded
-    if (!skipLoadExisting && !this._existingConfig) {
-      await this.loadExistingConfig(projectDir);
-    }
+    if (!skipLoadExisting && !this._existingConfig) await this.loadExistingConfig(projectDir);
+    if (!this.allAnswers) this.allAnswers = {};
 
-    // Initialize allAnswers if not already initialized
-    if (!this.allAnswers) {
-      this.allAnswers = {};
-    }
-    // Load module's config
-    let moduleConfigPath = path.join(getModulePath(moduleName), 'module.yaml');
+    const artifactsPath = getArtifactsPath();
+    const moduleConfigPath = path.join(artifactsPath, 'module.yaml');
 
-    // If not found in src/modules or custom paths, search the project
-    if (!(await fs.pathExists(moduleConfigPath))) {
-      const moduleSourcePath = await this.findModuleSource(moduleName, { silent: true });
+    if (!(await fs.pathExists(moduleConfigPath))) return;
 
-      if (moduleSourcePath) {
-        moduleConfigPath = path.join(moduleSourcePath, 'module.yaml');
-      }
-    }
-
-    let configPath = null;
-    if (await fs.pathExists(moduleConfigPath)) {
-      configPath = moduleConfigPath;
-    } else {
-      // No config for this module
-      return;
-    }
-
-    const configContent = await fs.readFile(configPath, 'utf8');
+    const configContent = await fs.readFile(moduleConfigPath, 'utf8');
     const moduleConfig = yaml.parse(configContent);
+    if (!moduleConfig) return;
 
-    if (!moduleConfig) {
-      return;
-    }
-
-    // Process each config item
     const questions = [];
     const staticAnswers = {};
     const configKeys = Object.keys(moduleConfig).filter((key) => key !== 'prompt');
@@ -1246,38 +845,26 @@ class OfficialModules {
     for (const key of configKeys) {
       const item = moduleConfig[key];
 
-      // Skip if not a config object
-      if (!item || typeof item !== 'object') {
-        continue;
-      }
+      if (!item || typeof item !== 'object') continue;
 
-      // Handle static values (no prompt, just result)
       if (!item.prompt && item.result) {
-        // Add to static answers with a marker value
         staticAnswers[`${moduleName}_${key}`] = undefined;
         continue;
       }
 
-      // Handle interactive values (with prompt)
       if (item.prompt) {
         const question = await this.buildQuestion(moduleName, key, item, moduleConfig);
-        if (question) {
-          questions.push(question);
-        }
+        if (question) questions.push(question);
       }
     }
 
-    // Collect all answers (static + prompted)
     let allAnswers = { ...staticAnswers };
 
-    // If there are questions to ask, prompt for accepting defaults vs customizing
     if (questions.length > 0) {
       const moduleDisplayName = moduleConfig.header || `${moduleName.toUpperCase()} Module`;
 
-      // Skip prompts mode: use all defaults without asking
       if (this.skipPrompts) {
         await prompts.log.info(`Using default configuration for ${moduleDisplayName}`);
-        // Use defaults for all questions
         for (const question of questions) {
           const hasDefault = question.default !== undefined && question.default !== null && question.default !== '';
           if (hasDefault && typeof question.default !== 'function') {
@@ -1287,41 +874,25 @@ class OfficialModules {
       } else {
         if (!this._silentConfig) await prompts.log.step(`Configuring ${moduleDisplayName}`);
         let useDefaults = true;
-        if (moduleName === 'core') {
-          useDefaults = false; // Core: always show all questions
+        if (moduleName === 'qd') {
+          useDefaults = false;
         } else if (this.modulesToCustomize === undefined) {
-          // Fallback: original per-module confirm (backward compat for direct calls)
-          const customizeAnswer = await prompts.prompt([
-            {
-              type: 'confirm',
-              name: 'customize',
-              message: 'Accept Defaults (no to customize)?',
-              default: true,
-            },
-          ]);
+          const customizeAnswer = await prompts.prompt([{ type: 'confirm', name: 'customize', message: 'Accept Defaults (no to customize)?', default: true }]);
           useDefaults = customizeAnswer.customize;
         } else {
-          // Batch mode: use defaults unless module was selected for customization
           useDefaults = !this.modulesToCustomize.has(moduleName);
         }
 
-        if (useDefaults && moduleName !== 'core') {
-          // Accept defaults - only ask questions that have NO default value
+        if (useDefaults && moduleName !== 'qd') {
           const questionsWithoutDefaults = questions.filter((q) => q.default === undefined || q.default === null || q.default === '');
-
           if (questionsWithoutDefaults.length > 0) {
             await prompts.log.message(`  Asking required questions for ${moduleName.toUpperCase()}...`);
             const promptedAnswers = await prompts.prompt(questionsWithoutDefaults);
             Object.assign(allAnswers, promptedAnswers);
           }
-
-          // For questions with defaults that weren't asked, we need to process them with their default values
           const questionsWithDefaults = questions.filter((q) => q.default !== undefined && q.default !== null && q.default !== '');
           for (const question of questionsWithDefaults) {
-            // Skip function defaults - these are dynamic and will be evaluated later
-            if (typeof question.default === 'function') {
-              continue;
-            }
+            if (typeof question.default === 'function') continue;
             allAnswers[question.name] = question.default;
           }
         } else {
@@ -1331,36 +902,26 @@ class OfficialModules {
       }
     }
 
-    // Store all answers for cross-referencing
     Object.assign(this.allAnswers, allAnswers);
 
-    // Process all answers (both static and prompted)
-    // Always process if we have any answers or static answers
     if (Object.keys(allAnswers).length > 0 || Object.keys(staticAnswers).length > 0) {
       const answers = allAnswers;
 
-      // Process answers and build result values
       for (const key of Object.keys(answers)) {
         const originalKey = key.replace(`${moduleName}_`, '');
         const item = moduleConfig[originalKey];
         const value = answers[key];
 
-        // Build the result using the template
         let result;
-
-        // For arrays (multi-select), handle differently
         if (Array.isArray(value)) {
           result = value;
         } else if (item.result) {
           result = item.result;
 
-          // Replace placeholders only for strings
           if (typeof result === 'string' && value !== undefined) {
-            // Replace {value} with the actual value
             if (typeof value === 'string') {
               result = result.replace('{value}', value);
             } else if (typeof value === 'boolean' || typeof value === 'number') {
-              // For boolean and number values, if result is just "{value}", use the raw value
               if (result === '{value}') {
                 result = value;
               } else {
@@ -1370,27 +931,13 @@ class OfficialModules {
               result = value;
             }
 
-            // Only do further replacements if result is still a string
             if (typeof result === 'string') {
-              // Replace references to other config values
               result = result.replaceAll(/{([^}]+)}/g, (match, configKey) => {
-                // Check if it's a special placeholder
-                if (configKey === 'project-root') {
-                  return '{project-root}';
-                }
+                if (configKey === 'project-root') return '{project-root}';
+                if (configKey === 'value') return match;
 
-                // Skip if it's the 'value' placeholder we already handled
-                if (configKey === 'value') {
-                  return match;
-                }
-
-                // Look for the config value across all modules
-                // First check if it's in the current module's answers
                 let configValue = answers[`${moduleName}_${configKey}`];
-
-                // Then check all answers (for cross-module references like outputFolder)
                 if (!configValue) {
-                  // Try with various module prefixes
                   for (const [answerKey, answerValue] of Object.entries(this.allAnswers)) {
                     if (answerKey.endsWith(`_${configKey}`)) {
                       configValue = answerValue;
@@ -1399,7 +946,6 @@ class OfficialModules {
                   }
                 }
 
-                // Check in already collected config
                 if (!configValue) {
                   for (const mod of Object.keys(this.collectedConfig)) {
                     if (mod !== '_meta' && this.collectedConfig[mod] && this.collectedConfig[mod][configKey]) {
@@ -1417,20 +963,11 @@ class OfficialModules {
           result = value;
         }
 
-        // Store only the result value (no prompts, defaults, examples, etc.)
-        if (!this.collectedConfig[moduleName]) {
-          this.collectedConfig[moduleName] = {};
-        }
+        if (!this.collectedConfig[moduleName]) this.collectedConfig[moduleName] = {};
         this.collectedConfig[moduleName][originalKey] = result;
       }
-
-      // No longer display completion boxes - keep output clean
     } else {
-      // No questions for this module - show completion message with header if available
       const moduleDisplayName = moduleConfig.header || `${moduleName.toUpperCase()} Module`;
-
-      // Check if this module has NO configuration keys at all (like CIS)
-      // Filter out metadata fields and only count actual config objects
       const metadataFields = new Set(['code', 'name', 'header', 'subheader', 'default_selected']);
       const actualConfigKeys = configKeys.filter((key) => !metadataFields.has(key));
       const hasNoConfig = actualConfigKeys.length === 0;
@@ -1438,93 +975,38 @@ class OfficialModules {
       if (!this._silentConfig) {
         if (hasNoConfig && (moduleConfig.subheader || moduleConfig.header)) {
           await prompts.log.step(moduleDisplayName);
-          if (moduleConfig.subheader) {
-            await prompts.log.message(`  \u2713 ${moduleConfig.subheader}`);
-          } else {
-            await prompts.log.message(`  \u2713 No custom configuration required`);
-          }
+          if (moduleConfig.subheader) await prompts.log.message(`  \u2713 ${moduleConfig.subheader}`);
+          else await prompts.log.message(`  \u2713 No custom configuration required`);
         } else {
-          // Module has config but just no questions to ask
           await prompts.log.message(`  \u2713 ${moduleName.toUpperCase()} module configured`);
         }
       }
     }
 
-    // If we have no collected config for this module, but we have a module schema,
-    // ensure we have at least an empty object
-    if (!this.collectedConfig[moduleName]) {
-      this.collectedConfig[moduleName] = {};
-
-      // If we accepted defaults and have no answers, we still need to check
-      // if there are any static values in the schema that should be applied
-      if (moduleConfig) {
-        for (const key of Object.keys(moduleConfig)) {
-          if (key !== 'prompt' && moduleConfig[key] && typeof moduleConfig[key] === 'object') {
-            const item = moduleConfig[key];
-            // For static items (no prompt, just result), apply the result
-            if (!item.prompt && item.result) {
-              // Apply any placeholder replacements to the result
-              let result = item.result;
-              if (typeof result === 'string') {
-                result = this.replacePlaceholders(result, moduleName, moduleConfig);
-              }
-              this.collectedConfig[moduleName][key] = result;
-            }
-          }
-        }
-      }
-    }
+    if (!this.collectedConfig[moduleName]) this.collectedConfig[moduleName] = {};
 
     await this.displayModulePostConfigNotes(moduleName, moduleConfig);
   }
 
-  /**
-   * Replace placeholders in a string with collected config values
-   * @param {string} str - String with placeholders
-   * @param {string} currentModule - Current module name (to look up defaults in same module)
-   * @param {Object} moduleConfig - Current module's config schema (to look up defaults)
-   * @returns {string} String with placeholders replaced
-   */
   replacePlaceholders(str, currentModule = null, moduleConfig = null) {
-    if (typeof str !== 'string') {
-      return str;
-    }
+    if (typeof str !== 'string') return str;
 
     return str.replaceAll(/{([^}]+)}/g, (match, configKey) => {
-      // Preserve special placeholders
-      if (configKey === 'project-root' || configKey === 'value' || configKey === 'directory_name') {
-        return match;
-      }
-
+      if (configKey === 'project-root' || configKey === 'value' || configKey === 'directory_name') return match;
       const configValue = this.resolveConfigValue(configKey, currentModule, moduleConfig);
-
       return configValue || match;
     });
   }
 
-  /**
-   * Clean a stored path-like value for prompt display/input reuse.
-   * @param {*} value - Stored value
-   * @returns {*} Cleaned value
-   */
   cleanPromptValue(value) {
     if (typeof value === 'string' && value.startsWith('{project-root}/')) {
       return value.replace('{project-root}/', '');
     }
-
     return value;
   }
 
-  /**
-   * Resolve a config key from answers, collected config, existing config, or schema defaults.
-   * @param {string} configKey - Config key to resolve
-   * @param {string} currentModule - Current module name
-   * @param {Object} moduleConfig - Current module config schema
-   * @returns {*} Resolved value
-   */
   resolveConfigValue(configKey, currentModule = null, moduleConfig = null) {
-    // Look for the config value in allAnswers (already answered questions)
-    let configValue = this.allAnswers?.[configKey] || this.allAnswers?.[`core_${configKey}`];
+    let configValue = this.allAnswers?.[configKey] || this.allAnswers?.[`qd_${configKey}`];
 
     if (!configValue && this.allAnswers) {
       for (const [answerKey, answerValue] of Object.entries(this.allAnswers)) {
@@ -1535,12 +1017,10 @@ class OfficialModules {
       }
     }
 
-    // Prefer the current module's persisted value when re-prompting an existing install
     if (!configValue && currentModule && this._existingConfig?.[currentModule]?.[configKey] !== undefined) {
       configValue = this._existingConfig[currentModule][configKey];
     }
 
-    // Check in already collected config
     if (!configValue) {
       for (const mod of Object.keys(this.collectedConfig)) {
         if (mod !== '_meta' && this.collectedConfig[mod] && this.collectedConfig[mod][configKey]) {
@@ -1550,7 +1030,6 @@ class OfficialModules {
       }
     }
 
-    // Fall back to other existing module config values
     if (!configValue && this._existingConfig) {
       for (const mod of Object.keys(this._existingConfig)) {
         if (mod !== '_meta' && this._existingConfig[mod] && this._existingConfig[mod][configKey]) {
@@ -1560,7 +1039,6 @@ class OfficialModules {
       }
     }
 
-    // If still not found and we're in the same module, use the default from the config schema
     if (!configValue && currentModule && moduleConfig && moduleConfig[configKey]) {
       const referencedItem = moduleConfig[configKey];
       if (referencedItem && referencedItem.default !== undefined) {
@@ -1571,16 +1049,6 @@ class OfficialModules {
     return this.cleanPromptValue(configValue);
   }
 
-  /**
-   * Convert an existing stored value back into the prompt-facing value for templated fields.
-   * For example, "{test_artifacts}/{value}" + "_qd-output/test-artifacts/test-design"
-   * becomes "test-design" so the template is not applied twice on modify.
-   * @param {*} existingValue - Stored config value
-   * @param {string} moduleName - Module name
-   * @param {Object} item - Config item definition
-   * @param {Object} moduleConfig - Current module config schema
-   * @returns {*} Prompt-facing default value
-   */
   normalizeExistingValueForPrompt(existingValue, moduleName, item, moduleConfig = null) {
     const cleanedValue = this.cleanPromptValue(existingValue);
 
@@ -1598,66 +1066,46 @@ class OfficialModules {
 
     const startIndex = prefix.length;
     const endIndex = suffix ? cleanedValue.length - suffix.length : cleanedValue.length;
-    if (endIndex < startIndex) {
-      return cleanedValue;
-    }
+    if (endIndex < startIndex) return cleanedValue;
 
     let promptValue = cleanedValue.slice(startIndex, endIndex);
-    if (promptValue.startsWith('/')) {
-      promptValue = promptValue.slice(1);
-    }
-    if (promptValue.endsWith('/')) {
-      promptValue = promptValue.slice(0, -1);
-    }
+    if (promptValue.startsWith('/')) promptValue = promptValue.slice(1);
+    if (promptValue.endsWith('/')) promptValue = promptValue.slice(0, -1);
 
     return promptValue || cleanedValue;
   }
 
-  /**
-   * Build a prompt question from a config item
-   * @param {string} moduleName - Module name
-   * @param {string} key - Config key
-   * @param {Object} item - Config item definition
-   * @param {Object} moduleConfig - Full module config schema (for resolving defaults)
-   */
   async buildQuestion(moduleName, key, item, moduleConfig = null) {
     const questionName = `${moduleName}_${key}`;
 
-    // Check for existing value
     let existingValue = null;
     if (this._existingConfig && this._existingConfig[moduleName]) {
       existingValue = this._existingConfig[moduleName][key];
       existingValue = this.normalizeExistingValueForPrompt(existingValue, moduleName, item, moduleConfig);
     }
 
-    // Special handling for user_name: default to system user
-    if (moduleName === 'core' && key === 'user_name' && !existingValue) {
+    if (moduleName === 'qd' && key === 'user_name' && !existingValue) {
       item.default = this.getDefaultUsername();
     }
 
-    // Determine question type and default value
     let questionType = 'input';
     let defaultValue = item.default;
     let choices = null;
 
-    // Check if default contains references to other fields in the same module
     const hasSameModuleReference = typeof defaultValue === 'string' && defaultValue.match(/{([^}]+)}/);
     let dynamicDefault = false;
 
-    // Replace placeholders in default value with collected config values
     if (typeof defaultValue === 'string') {
       if (defaultValue.includes('{directory_name}') && this.currentProjectDir) {
         const dirName = path.basename(this.currentProjectDir);
         defaultValue = defaultValue.replaceAll('{directory_name}', dirName);
       }
 
-      // Check if this references another field in the same module (for dynamic defaults)
       if (hasSameModuleReference && moduleConfig) {
         const matches = defaultValue.match(/{([^}]+)}/g);
         if (matches) {
           for (const match of matches) {
-            const fieldName = match.slice(1, -1); // Remove { }
-            // Check if this field exists in the same module config
+            const fieldName = match.slice(1, -1);
             if (moduleConfig[fieldName]) {
               dynamicDefault = true;
               break;
@@ -1666,84 +1114,55 @@ class OfficialModules {
         }
       }
 
-      // If not dynamic, replace placeholders now
       if (!dynamicDefault) {
         defaultValue = this.replacePlaceholders(defaultValue, moduleName, moduleConfig);
       }
 
-      // Strip {project-root}/ from defaults since it will be added back by result template
-      // This makes the display cleaner and user input simpler
       if (defaultValue.includes('{project-root}/')) {
         defaultValue = defaultValue.replace('{project-root}/', '');
       }
     }
 
-    // Handle different question types
     if (item['single-select']) {
       questionType = 'list';
       choices = item['single-select'].map((choice) => {
-        // If choice is an object with label and value
         if (typeof choice === 'object' && choice.label && choice.value !== undefined) {
-          return {
-            name: choice.label,
-            value: choice.value,
-          };
+          return { name: choice.label, value: choice.value };
         }
-        // Otherwise it's a simple string choice
-        return {
-          name: choice,
-          value: choice,
-        };
+        return { name: choice, value: choice };
       });
-      if (existingValue) {
-        defaultValue = existingValue;
-      }
+      if (existingValue) defaultValue = existingValue;
     } else if (item['multi-select']) {
       questionType = 'checkbox';
       choices = item['multi-select'].map((choice) => {
-        // If choice is an object with label and value
         if (typeof choice === 'object' && choice.label && choice.value !== undefined) {
           return {
             name: choice.label,
             value: choice.value,
-            checked: existingValue
-              ? existingValue.includes(choice.value)
-              : item.default && Array.isArray(item.default)
-                ? item.default.includes(choice.value)
-                : false,
+            checked: existingValue ? existingValue.includes(choice.value) : item.default && Array.isArray(item.default) ? item.default.includes(choice.value) : false,
           };
         }
-        // Otherwise it's a simple string choice
         return {
           name: choice,
           value: choice,
-          checked: existingValue
-            ? existingValue.includes(choice)
-            : item.default && Array.isArray(item.default)
-              ? item.default.includes(choice)
-              : false,
+          checked: existingValue ? existingValue.includes(choice) : item.default && Array.isArray(item.default) ? item.default.includes(choice) : false,
         };
       });
     } else if (typeof defaultValue === 'boolean') {
       questionType = 'confirm';
     }
 
-    // Build the prompt message
     let message = '';
-
-    // Handle array prompts for multi-line messages
     if (Array.isArray(item.prompt)) {
       message = item.prompt.join('\n');
     } else {
       message = item.prompt;
     }
 
-    // Replace placeholders in prompt message with collected config values
     if (typeof message === 'string') {
       message = this.replacePlaceholders(message, moduleName, moduleConfig);
     }
 
-    // Add current value indicator for existing configs
     const color = await prompts.getColor();
     if (existingValue !== null && existingValue !== undefined) {
       if (typeof existingValue === 'boolean') {
@@ -1751,13 +1170,10 @@ class OfficialModules {
       } else if (Array.isArray(existingValue)) {
         message += color.dim(` (current: ${existingValue.join(', ')})`);
       } else if (questionType !== 'list') {
-        // Show the cleaned value (without {project-root}/) for display
         message += color.dim(` (current: ${existingValue})`);
       }
     } else if (item.example && questionType === 'input') {
-      // Show example for input fields
       let exampleText = typeof item.example === 'string' ? item.example : JSON.stringify(item.example);
-      // Replace placeholders in example
       if (typeof exampleText === 'string') {
         exampleText = this.replacePlaceholders(exampleText, moduleName, moduleConfig);
         exampleText = exampleText.replace('{project-root}/', '');
@@ -1765,69 +1181,42 @@ class OfficialModules {
       message += color.dim(` (e.g., ${exampleText})`);
     }
 
-    // Build the question object
-    const question = {
-      type: questionType,
-      name: questionName,
-      message: message,
-    };
+    const question = { type: questionType, name: questionName, message };
 
-    // Set default - if it's dynamic, use a function that the prompt will evaluate with current answers
-    // But if we have an existing value, always use that instead
     if (existingValue !== null && existingValue !== undefined && questionType !== 'list') {
       question.default = existingValue;
     } else if (dynamicDefault && typeof item.default === 'string') {
       const originalDefault = item.default;
       question.default = (answers) => {
-        // Replace placeholders using answers from previous questions in the same batch
         let resolved = originalDefault;
         resolved = resolved.replaceAll(/{([^}]+)}/g, (match, fieldName) => {
-          // Look for the answer in the current batch (prefixed with module name)
           const answerKey = `${moduleName}_${fieldName}`;
-          if (answers[answerKey] !== undefined) {
-            return answers[answerKey];
-          }
-          // Fall back to collected config
+          if (answers[answerKey] !== undefined) return answers[answerKey];
           return this.collectedConfig[moduleName]?.[fieldName] || match;
         });
-        // Strip {project-root}/ for cleaner display
-        if (resolved.includes('{project-root}/')) {
-          resolved = resolved.replace('{project-root}/', '');
-        }
+        if (resolved.includes('{project-root}/')) resolved = resolved.replace('{project-root}/', '');
         return resolved;
       };
     } else {
       question.default = defaultValue;
     }
 
-    // Add choices for select types
-    if (choices) {
-      question.choices = choices;
-    }
+    if (choices) question.choices = choices;
 
-    // Add validation for input fields
     if (questionType === 'input') {
       question.validate = (input) => {
-        if (!input && item.required) {
-          return 'This field is required';
-        }
-        // Validate against regex pattern if provided
+        if (!input && item.required) return 'This field is required';
         if (input && item.regex) {
           const regex = new RegExp(item.regex);
-          if (!regex.test(input)) {
-            return `Invalid format. Must match pattern: ${item.regex}`;
-          }
+          if (!regex.test(input)) return `Invalid format. Must match pattern: ${item.regex}`;
         }
         return true;
       };
     }
 
-    // Add validation for checkbox (multi-select) fields
     if (questionType === 'checkbox' && item.required) {
       question.validate = (answers) => {
-        if (!answers || answers.length === 0) {
-          return 'At least one option must be selected';
-        }
+        if (!answers || answers.length === 0) return 'At least one option must be selected';
         return true;
       };
     }
@@ -1835,16 +1224,6 @@ class OfficialModules {
     return question;
   }
 
-  /**
-   * Display post-configuration notes for a module
-   * Shows prerequisite guidance based on collected config values
-   * Reads notes from the module's `post-install-notes` section in module.yaml
-   * Supports two formats:
-   *   - Simple string: always displayed
-   *   - Object keyed by config field name, with value-specific messages
-   * @param {string} moduleName - Module name
-   * @param {Object} moduleConfig - Parsed module.yaml content
-   */
   async displayModulePostConfigNotes(moduleName, moduleConfig) {
     if (this._silentConfig) return;
     if (!moduleConfig || !moduleConfig['post-install-notes']) return;
@@ -1852,7 +1231,6 @@ class OfficialModules {
     const notes = moduleConfig['post-install-notes'];
     const color = await prompts.getColor();
 
-    // Format 1: Simple string - always display
     if (typeof notes === 'string') {
       await prompts.log.message('');
       for (const line of notes.trim().split('\n')) {
@@ -1861,7 +1239,6 @@ class OfficialModules {
       return;
     }
 
-    // Format 2: Conditional on config values
     if (typeof notes === 'object') {
       const config = this.collectedConfig[moduleName];
       if (!config) return;
@@ -1887,11 +1264,6 @@ class OfficialModules {
     }
   }
 
-  /**
-   * Deep merge two objects
-   * @param {Object} target - Target object
-   * @param {Object} source - Source object
-   */
   deepMerge(target, source) {
     const result = { ...target };
 
