@@ -6,6 +6,7 @@
  */
 
 const { Installer } = require('../domains/installation/installer');
+const { loadPlatformCodes } = require('../domains/ide/platform-codes');
 
 function registerInit(program) {
   program
@@ -18,11 +19,49 @@ function registerInit(program) {
       const prompts = require('../shared/prompts');
 
       try {
-        const idesArg = options.ides || options.tools || '';
-        const ides = idesArg
-          .split(',')
-          .map(s => s.trim().toLowerCase())
-          .filter(s => s.length > 0);
+        const projectDir = options.directory || process.cwd();
+        let ides = [];
+
+        // If --ides provided, use it directly
+        if (options.ides) {
+          ides = options.ides
+            .split(',')
+            .map(s => s.trim().toLowerCase())
+            .filter(s => s.length > 0);
+        } else {
+          // Interactive mode - show IDE selection
+          await prompts.intro('QD Init');
+
+          const platformConfig = await loadPlatformCodes();
+          const availableIdes = Object.entries(platformConfig.platforms)
+            .filter(([, config]) => config.installer && !config.suspended)
+            .map(([value, config]) => ({
+              value,
+              label: config.name + (config.preferred ? ' ★' : ''),
+              hint: config.preferred ? 'recommended' : undefined,
+            }))
+            .sort((a, b) => {
+              // Preferred first
+              if (a.hint && !b.hint) return -1;
+              if (!a.hint && b.hint) return 1;
+              return a.label.localeCompare(b.label);
+            });
+
+          await prompts.note(
+            '★ = recommended · Use ↑/↓ to navigate, SPACE to select, ENTER to confirm',
+            'Navigation'
+          );
+
+          // Multi-select IDEs with scrolling
+          const selected = await prompts.multiselect({
+            message: 'Select IDEs to install:',
+            options: availableIdes,
+            required: true,
+            maxItems: 8,
+          });
+
+          ides = selected;
+        }
 
         if (ides.length === 0) {
           await prompts.log.error('No IDEs specified. Use --ides to specify IDEs (e.g., --ides claude-code,cursor)');
@@ -34,10 +73,11 @@ function registerInit(program) {
 
         const result = await installer.install({
           ides,
-          directory: options.directory || process.cwd(),
+          directory: projectDir,
         });
 
         if (result && result.success) {
+          await prompts.outro('QD is ready to use!');
           process.exit(0);
         }
       } catch (error) {

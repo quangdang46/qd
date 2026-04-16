@@ -1,137 +1,157 @@
 // @ts-nocheck
 
 /**
- * Prompts - UI utilities using @clack/prompts
- * Extracted from cli/prompts.ts
+ * Prompts - UI utilities using @clack/prompts + @clack/core
+ * Inspired by Claudekit CLI safe-prompts
  */
 
-const prompts = require('@clack/prompts');
-const chalk = require('chalk');
+const {
+  isCancel,
+  select,
+  confirm,
+  text,
+  spinner,
+} = require('@clack/prompts');
 
-const color = {
-  cyan: (s) => chalk.cyan(s),
-  green: (s) => chalk.green(s),
-  yellow: (s) => chalk.yellow(s),
-  red: (s) => chalk.red(s),
-  gray: (s) => chalk.gray(s),
+const { AutocompletePrompt } = require('@clack/core');
+const pc = require('picocolors');
+
+function supportsUnicode() {
+  return process.stdout.isTTY && !process.env.CI;
+}
+
+const S = supportsUnicode() ? {
+  pointer: '›',
+  success: '✓',
+  error: '✗',
+  warning: '⚠',
+  info: 'ℹ',
+  line: '│',
+} : {
+  pointer: '>',
+  success: '+',
+  error: 'x',
+  warning: '!',
+  info: 'i',
+  line: '|',
 };
 
-async function getColor() {
-  return color;
+function intro(title) {
+  console.log(pc.cyan(`\n${S.pointer} ${title}\n`));
 }
 
-async function intro(title) {
-  console.log(color.cyan(`\n◆ ${title}\n`));
+function outro(text) {
+  console.log(pc.green(`\n${S.success} ${text}\n`));
 }
 
-async function outro(text) {
-  console.log(color.gray(`\n✔ ${text}\n`));
-}
-
-async function box(text, title, options = {}) {
-  const borderStyle = options.formatBorder || color.cyan;
-  const border = options.rounded ? '─' : '─';
+function box(text, title, options = {}) {
+  const border = '─';
   const lines = text.split('\n');
-  const width = Math.max(...lines.map((l) => l.length));
+  const width = Math.max(...lines.map((l) => l.length), title.length);
 
-  console.log(borderStyle(`┌─ ${title} ${border.repeat(Math.max(0, width - title.length - 1))}─┐`));
+  console.log(pc.cyan(`┌─ ${title} ${border.repeat(Math.max(0, width - title.length - 1))}─┐`));
   for (const line of lines) {
-    const padded = line.padEnd(width);
-    console.log(borderStyle('│') + ' ' + line + ' '.repeat(Math.max(0, width - line.length)) + ' ' + borderStyle('│'));
+    console.log(pc.cyan('│') + ' ' + line.padEnd(width) + ' ' + pc.cyan('│'));
   }
-  console.log(borderStyle(`└${border.repeat(width + 2)}─┘`));
+  console.log(pc.cyan(`└${border.repeat(width + 2)}─┘`));
 }
 
-async function note(text, title) {
-  const lines = text.split('\n');
-  console.log(color.cyan(`\n● ${title}`));
-  for (const line of lines) {
-    console.log(color.gray(`  ${line}`));
+function note(text, title) {
+  console.log(pc.cyan(`\n${S.pointer} ${title}`));
+  for (const line of text.split('\n')) {
+    console.log(pc.gray(`  ${line}`));
   }
-  console.log('');
-}
-
-async function spin(message) {
-  const s = prompts.spinner();
-  s.start(message);
-  return s;
+  console.log();
 }
 
 const log = {
-  info: async (msg) => {
-    console.log(color.cyan('ℹ'), msg);
-  },
-  warn: async (msg) => {
-    console.log(color.yellow('⚠'), msg);
-  },
-  error: async (msg) => {
-    console.log(color.red('✖'), msg);
-  },
-  success: async (msg) => {
-    console.log(color.green('✔'), msg);
-  },
-  message: async (msg) => {
-    console.log(color.gray(msg));
-  },
+  info: (msg) => console.log(pc.blue(`${S.info} ${msg}`)),
+  success: (msg) => console.log(pc.green(`${S.success} ${msg}`)),
+  warn: (msg) => console.log(pc.yellow(`${S.warning} ${msg}`)),
+  error: (msg) => console.error(pc.red(`${S.error} ${msg}`)),
+  step: (msg) => console.log(pc.cyan(`${S.pointer} ${msg}`)),
 };
 
-const select = async (options) => {
-  const result = await prompts.select({
-    message: options.message,
-    options: options.choices.map((c) => ({
-      label: c.name || c.value,
-      value: c.value,
-    })),
-    initialValue: options.initialValue,
-  });
-  if (prompts.isCancel(result)) process.exit(0);
-  return result;
-};
+function getColor() {
+  return pc;
+}
 
-const text = async (options) => {
-  const result = await prompts.text({
-    message: options.message,
-    placeholder: options.placeholder,
-    validate: options.validate,
-  });
-  if (prompts.isCancel(result)) process.exit(0);
-  return result;
-};
+/**
+ * Multiselect with scrolling support using AutocompletePrompt
+ */
+async function multiselect(options) {
+  const prompt = new AutocompletePrompt({
+    options: options.options,
+    multiple: true,
+    initialValue: options.initialValues || [],
+    validate: () => {
+      if (options.required && prompt.selectedValues.length === 0) {
+        return 'Please select at least one item';
+      }
+    },
+    render() {
+      const title = `${pc.gray('│')}\n${options.message}`;
 
-const confirm = async (options) => {
-  const result = await prompts.confirm({
-    message: options.message,
-    initialValue: options.default,
-  });
-  if (prompts.isCancel(result)) process.exit(0);
-  return result;
-};
+      const renderOption = (opt, isHighlighted) => {
+        const isSelected = this.selectedValues.includes(opt.value);
+        const label = opt.label ?? String(opt.value ?? '');
+        const checkbox = isSelected ? pc.green('◼') : pc.gray('◻');
+        return isHighlighted ? `${checkbox} ${label}` : `${pc.gray(checkbox)} ${pc.gray(label)}`;
+      };
 
-const multiselect = async (options) => {
-  const result = await prompts.multiselect({
-    message: options.message,
-    options: options.options.map((o) => ({
-      label: o.label,
-      value: o.value,
-      hint: o.hint,
-    })),
-    initialValues: options.initialValues,
-    required: options.required,
+      switch (this.state) {
+        case 'submit':
+          return `${pc.gray('│')}\n${this.selectedValues.length} items selected`;
+        case 'cancel':
+          return `${pc.gray('│')}\n${pc.strikethrough(pc.gray('cancelled'))}`;
+        default: {
+          const header = [...`${title}${pc.gray('│')}`.split('\n')];
+          const footer = [
+            `${pc.gray('│')} ${pc.dim('↑/↓ navigate · SPACE select · ENTER confirm')}`,
+          ];
+          const optionLines = [];
+          const maxItems = options.maxItems || 10;
+          let cursor = this.cursor;
+          if (cursor >= this.filteredOptions.length) cursor = this.filteredOptions.length - 1;
+          if (cursor < 0) cursor = 0;
+          
+          const start = Math.max(0, cursor - Math.floor(maxItems / 2));
+          const end = Math.min(start + maxItems, this.filteredOptions.length);
+          
+          for (let i = start; i < end; i++) {
+            const opt = this.filteredOptions[i];
+            const isHighlighted = i === cursor;
+            optionLines.push(`${pc.gray('│')} ${renderOption(opt, isHighlighted)}`);
+          }
+          
+          if (this.filteredOptions.length > maxItems) {
+            optionLines.push(`${pc.gray('│')} ${pc.dim('...')}`);
+          }
+
+          return [...header, ...optionLines, ...footer].join('\n');
+        }
+      }
+    },
   });
-  if (prompts.isCancel(result)) process.exit(0);
+
+  const result = await prompt.prompt();
+  if (isCancel(result)) {
+    process.exit(0);
+  }
   return result;
-};
+}
 
 module.exports = {
-  getColor,
+  isCancel,
+  select,
+  confirm,
+  text,
+  multiselect,
+  spinner,
   intro,
   outro,
   box,
   note,
-  spin,
   log,
-  select,
-  text,
-  confirm,
-  multiselect,
+  getColor,
 };
