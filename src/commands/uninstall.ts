@@ -28,9 +28,9 @@ function registerUninstall(program) {
           const prompts = require('../shared/prompts');
           const dirChoice = await prompts.select({
             message: 'Where do you want to uninstall QD from?',
-            choices: [
-              { value: 'cwd', name: `Current directory (${process.cwd()})` },
-              { value: 'other', name: 'Another directory...' },
+            options: [
+              { value: 'cwd', label: `Current directory (${process.cwd()})` },
+              { value: 'other', label: 'Another directory...' },
             ],
           });
 
