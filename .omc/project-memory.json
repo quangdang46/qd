@@ -142,6 +142,12 @@
       "type": "file"
     },
     {
+      "path": "test/test-installation-components.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776318491864,
+      "type": "file"
+    },
+    {
       "path": "cli/README.md",
       "accessCount": 3,
       "lastAccessed": 1776272352072,
@@ -172,12 +178,6 @@
       "type": "file"
     },
     {
-      "path": "test/test-installation-components.ts",
-      "accessCount": 3,
-      "lastAccessed": 1776273339906,
-      "type": "file"
-    },
-    {
       "path": "cli/ide/platform-codes.yaml",
       "accessCount": 3,
       "lastAccessed": 1776273662545,
@@ -187,6 +187,12 @@
       "path": "artifacts/module.yaml",
       "accessCount": 3,
       "lastAccessed": 1776317802538,
+      "type": "file"
+    },
+    {
+      "path": "test/test-schema-validation.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776318501358,
       "type": "file"
     },
     {
@@ -211,12 +217,6 @@
       "path": "cli/core/installer.ts",
       "accessCount": 2,
       "lastAccessed": 1776272455875,
-      "type": "file"
-    },
-    {
-      "path": "test/test-schema-validation.ts",
-      "accessCount": 2,
-      "lastAccessed": 1776272569438,
       "type": "file"
     },
     {
