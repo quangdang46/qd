@@ -142,11 +142,12 @@ class OfficialModules {
 
   async install(moduleName, qdDir, fileTrackingCallback = null, options = {}) {
     const sourcePath = await this.findModuleSource(moduleName);
-    const targetPath = path.join(qdDir, moduleName);
+    // Direct copy to qdDir - no subdirectory nesting
+    const targetPath = qdDir;
 
     if (!sourcePath) {
       throw new Error(
-        `Source for module '${moduleName}' is not available. It will be retained but cannot be updated without its source files.`,
+        `Source for artifacts is not available.`,
       );
     }
 
@@ -174,7 +175,8 @@ class OfficialModules {
 
   async update(moduleName, qdDir) {
     const sourcePath = await this.findModuleSource(moduleName);
-    const targetPath = path.join(qdDir, moduleName);
+    // Direct copy - no subdirectory nesting
+    const targetPath = qdDir;
 
     if (!sourcePath) {
       throw new Error(`Module '${moduleName}' not found in any source location`);
@@ -190,7 +192,8 @@ class OfficialModules {
   }
 
   async remove(moduleName, qdDir) {
-    const targetPath = path.join(qdDir, moduleName);
+    // Direct remove - no subdirectory
+    const targetPath = qdDir;
 
     if (!(await fs.pathExists(targetPath))) {
       throw new Error(`Module '${moduleName}' is not installed`);
@@ -202,12 +205,13 @@ class OfficialModules {
   }
 
   async isInstalled(moduleName, qdDir) {
-    const targetPath = path.join(qdDir, moduleName);
-    return await fs.pathExists(targetPath);
+    // Direct check - no subdirectory nesting
+    return await fs.pathExists(qdDir);
   }
 
   async getInstalledInfo(moduleName, qdDir) {
-    const targetPath = path.join(qdDir, moduleName);
+    // Direct access - no subdirectory nesting
+    const targetPath = qdDir;
 
     if (!(await fs.pathExists(targetPath))) {
       return null;
@@ -239,6 +243,7 @@ class OfficialModules {
       if (isInSidecarDirectory) continue;
 
       if (file === 'module.yaml') continue;
+      if (file === 'module-help.csv') continue;
       if (file === 'config.yaml') continue;
 
       const sourceFile = path.join(sourcePath, file);

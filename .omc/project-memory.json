@@ -113,27 +113,27 @@
   "hotPaths": [
     {
       "path": "cli/modules/builtin-modules.ts",
-      "accessCount": 21,
-      "lastAccessed": 1776317112551,
+      "accessCount": 42,
+      "lastAccessed": 1776318227322,
       "type": "file"
     },
     {
       "path": "ARCHITECTURE.md",
-      "accessCount": 12,
-      "lastAccessed": 1776302861127,
+      "accessCount": 13,
+      "lastAccessed": 1776317783297,
       "type": "file"
+    },
+    {
+      "path": "cli",
+      "accessCount": 8,
+      "lastAccessed": 1776318035264,
+      "type": "directory"
     },
     {
       "path": "package.json",
       "accessCount": 6,
       "lastAccessed": 1776272787843,
       "type": "file"
-    },
-    {
-      "path": "cli",
-      "accessCount": 5,
-      "lastAccessed": 1776316910742,
-      "type": "directory"
     },
     {
       "path": "cli/schemas/skill-manifest.schema.json",
@@ -181,6 +181,12 @@
       "path": "cli/ide/platform-codes.yaml",
       "accessCount": 3,
       "lastAccessed": 1776273662545,
+      "type": "file"
+    },
+    {
+      "path": "artifacts/module.yaml",
+      "accessCount": 3,
+      "lastAccessed": 1776317802538,
       "type": "file"
     },
     {
@@ -247,12 +253,6 @@
       "path": "cli/smoke-init.js",
       "accessCount": 2,
       "lastAccessed": 1776273760261,
-      "type": "file"
-    },
-    {
-      "path": "artifacts/module.yaml",
-      "accessCount": 2,
-      "lastAccessed": 1776274403408,
       "type": "file"
     },
     {
