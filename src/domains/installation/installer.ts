@@ -509,26 +509,21 @@ class Installer {
     }
 
     // Clean up empty artifact type directories after removing files
-    const platformConfig = await loadPlatformCodes();
-    const cleanedDirs = new Set();
-
+    // Derive artifact types from the installed files themselves, not hardcoded
+    const dirsToCheck = new Set();
     for (const entry of installedFiles) {
       const dir = path.dirname(path.join(projectDir, entry.installed));
-      if (!cleanedDirs.has(dir)) {
-        cleanedDirs.add(dir);
-        // Only remove if it's an artifact type directory and empty
-        const artifactTypes = ['skills', 'commands', 'agents', 'subagents'];
-        const dirName = path.basename(dir);
-        if (artifactTypes.includes(dirName)) {
-          try {
-            const entries = await fs.readdir(dir);
-            if (entries.length === 0) {
-              await fs.remove(dir);
-            }
-          } catch {
-            // Ignore errors - directory might not exist or not be empty
-          }
+      dirsToCheck.add(dir);
+    }
+
+    for (const dir of dirsToCheck) {
+      try {
+        const entries = await fs.readdir(dir);
+        if (entries.length === 0) {
+          await fs.remove(dir);
         }
+      } catch {
+        // Ignore errors - directory might not exist or not be empty
       }
     }
   }
