@@ -373,7 +373,8 @@ class Installer {
   }
 
   async phase5CreateOutputDir(projectDir) {
-    const outputPath = path.join(projectDir, OUTPUT_FOLDER);
+    const { qdDir } = await this.findQdDir(projectDir);
+    const outputPath = path.join(qdDir, OUTPUT_FOLDER);
     await fs.ensureDir(outputPath);
     await fs.ensureDir(path.join(outputPath, 'learnings'));
   }
@@ -555,7 +556,9 @@ class Installer {
   }
 
   async uninstallOutputFolder(projectDir, outputFolder) {
-    const outputPath = path.join(projectDir, outputFolder);
+    // _qd-output is now inside _qd/ folder
+    const { qdDir } = await this.findQdDir(projectDir);
+    const outputPath = path.join(qdDir, outputFolder);
     if (await fs.pathExists(outputPath)) {
       await fs.remove(outputPath);
     }
