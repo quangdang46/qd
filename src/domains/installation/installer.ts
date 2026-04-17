@@ -473,7 +473,7 @@ class Installer {
     });
   }
 
-  // Methods needed by status/uninstall commands
+  // Methods needed by status/remove commands
   qdFolderName = '_qd';
 
   async findQdDir(projectDir) {

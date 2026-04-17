@@ -9,7 +9,7 @@ const path = require('path');
 const tests = [
   { name: 'Schema Validation', file: 'test-schema-validation.ts' },
   { name: 'Platform Filter', file: 'test-platform-filter.ts' },
-  { name: 'Uninstall', file: 'test-uninstall.ts' }
+  { name: 'Remove', file: 'test-uninstall.ts' }
 ];
 
 let allPassed = true;

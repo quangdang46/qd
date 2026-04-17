@@ -10,8 +10,8 @@ const { Installer } = require('../domains/installation/installer');
 
 function registerUninstall(program) {
   program
-    .command('uninstall')
-    .description('Remove QD installation from the current project')
+    .command('remove')
+    .description('Remove QD from the current project')
     .option('-y, --yes', 'Remove all QD components without prompting')
     .option('--directory <path>', 'Project directory (default: current directory)')
     .action(async (options) => {

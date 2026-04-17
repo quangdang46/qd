@@ -19,7 +19,7 @@
   "scripts": {
     "build:installer": "tsc -p tsconfig.json",
     "qd:install": "node dist/index.js install",
-    "qd:uninstall": "node dist/index.js uninstall",
+    "qd:remove": "node dist/index.js remove",
     "install:qd": "node dist/index.js install",
     "smoke:init": "node test/smoke-init.js",
     "test": "jest --config jest.config.ts",
