@@ -19,7 +19,7 @@ const { getProjectRoot } = require('./project-root');
 const { Manifest } = require('./manifest');
 const prompts = require('../../shared/prompts');
 
-const OUTPUT_FOLDER = '_qd-output';
+const OUTPUT_FOLDER = 'learnings';
 
 class Installer {
   constructor() {
@@ -374,9 +374,7 @@ class Installer {
 
   async phase5CreateOutputDir(projectDir) {
     const { qdDir } = await this.findQdDir(projectDir);
-    const outputPath = path.join(qdDir, OUTPUT_FOLDER);
-    await fs.ensureDir(outputPath);
-    await fs.ensureDir(path.join(outputPath, 'learnings'));
+    await fs.ensureDir(path.join(qdDir, OUTPUT_FOLDER));
   }
 
   async phase6WriteManifest(projectDir, artifacts) {
