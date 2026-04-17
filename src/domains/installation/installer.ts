@@ -323,40 +323,50 @@ class Installer {
 
     const tomlLines = [];
 
-    // Add frontmatter fields (required for Codex subagents)
+    // Required fields for Codex subagents
     if (frontmatter.name) {
       tomlLines.push(`name = "${frontmatter.name}"`);
     }
     if (frontmatter.description) {
       tomlLines.push(`description = "${frontmatter.description}"`);
     }
-    if (frontmatter.name || frontmatter.description) {
-      tomlLines.push('');
+
+    // developer_instructions is REQUIRED - collect all markdown content
+    const sections = [];
+    let currentSection = null;
+    let sectionContent = [];
+
+    const lines = content.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        // Save previous section
+        if (currentSection) {
+          sections.push({ name: currentSection, content: sectionContent.join('\n').trim() });
+        }
+        currentSection = line.slice(3).trim();
+        sectionContent = [];
+      } else if (currentSection) {
+        sectionContent.push(line);
+      }
+    }
+    // Save last section
+    if (currentSection) {
+      sections.push({ name: currentSection, content: sectionContent.join('\n').trim() });
     }
 
-    // Process markdown content
-    const lines = content.split('\n');
-    let inSection = null;
+    // Build developer_instructions block
+    if (sections.length > 0) {
+      const devInstructions = sections.map(s => {
+        const lines2 = s.content.split('\n');
+        const indented = lines2.map(l => `  ${l}`).join('\n');
+        return `[${s.name}]\n${indented}`;
+      }).join('\n\n');
 
-    for (const line of lines) {
-      if (line.startsWith('# ')) {
-        // Main title - use as developer_instructions header
-        if (tomlLines.length > 0 && tomlLines[tomlLines.length - 1] !== '') {
-          tomlLines.push('');
-        }
-        tomlLines.push('# ' + line.slice(2).trim());
-      } else if (line.startsWith('## ')) {
-        const sectionName = line.slice(3).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        if (sectionName) {
-          tomlLines.push(`[${sectionName}]`);
-          inSection = sectionName;
-        }
-      } else if (line.trim() && inSection) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('```') && !trimmed.startsWith('|')) {
-          tomlLines.push(`${inSection}.${trimmed}`);
-        }
-      }
+      tomlLines.push('');
+      tomlLines.push('[developer_instructions]');
+      tomlLines.push('developer_instructions = """');
+      tomlLines.push(devInstructions);
+      tomlLines.push('"""');
     }
 
     return tomlLines.join('\n');
