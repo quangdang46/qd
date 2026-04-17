@@ -6,7 +6,7 @@
 
 - Một artifacts source → nhiều IDE targets (`.claude`, `.cursor`, `.windsurf`, etc.)
 - Không cần config.json cho username, language
-- `_qd-output/` cho Khuym workflow outputs (exploring → planning → validating → swarming → executing → reviewing → compounding)
+- `_qd/` internal folder chứa `_qd/learnings/` và `_qd/_config/`
 - Học hỏi Claudekit CLI về phase-based architecture
 - Học hỏi BMAD method về config-driven IDE setup
 
