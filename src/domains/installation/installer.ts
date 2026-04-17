@@ -545,7 +545,10 @@ class Installer {
   }
 
   async uninstallOutputFolder(projectDir, outputFolder) {
-    // TODO: implement
+    const outputPath = path.join(projectDir, outputFolder);
+    if (await fs.pathExists(outputPath)) {
+      await fs.remove(outputPath);
+    }
   }
 
   async uninstallModules(projectDir) {
