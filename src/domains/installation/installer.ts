@@ -401,9 +401,18 @@ class Installer {
         // Store relative path from projectDir for portability
         const relativeInstalledPath = path.relative(projectDir, installedFile);
 
+        // For nested skill directories (BMAD pattern), also track the parent dir
+        const sourceDir = path.dirname(artifact.sourcePath);
+        const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+        const isNestedDir = sourceDir !== typeRootDir && sourceDir.startsWith(typeRootDir + path.sep);
+        const installedDir = isNestedDir
+          ? path.relative(projectDir, path.join(targetPath, path.basename(sourceDir)))
+          : null;
+
         artifactEntries.push({
           source: artifact.relativePath,
           installed: relativeInstalledPath,
+          installedDir,
           ide,
           artifactType,
         });
@@ -499,23 +508,30 @@ class Installer {
     const ides = manifestData?.ides || existingInstall?.ides || [];
     const installedFiles = manifestData?.artifacts || [];
 
-    // Only delete files that QD actually installed (from manifest)
+    // Only delete files and directories that QD actually installed (from manifest)
     // This preserves user's custom files in the same directories
+    const dirsToCheck = new Set();
+
     for (const entry of installedFiles) {
+      // Remove installed file
       const targetPath = path.join(projectDir, entry.installed);
       if (await fs.pathExists(targetPath)) {
         await fs.remove(targetPath);
       }
+
+      // Remove installed directory (for nested skill dirs like agent-browser/)
+      if (entry.installedDir) {
+        const targetDir = path.join(projectDir, entry.installedDir);
+        if (await fs.pathExists(targetDir)) {
+          await fs.remove(targetDir);
+        }
+        dirsToCheck.add(path.dirname(targetDir));
+      } else {
+        dirsToCheck.add(path.dirname(targetPath));
+      }
     }
 
     // Clean up empty artifact type directories after removing files
-    // Derive artifact types from the installed files themselves, not hardcoded
-    const dirsToCheck = new Set();
-    for (const entry of installedFiles) {
-      const dir = path.dirname(path.join(projectDir, entry.installed));
-      dirsToCheck.add(dir);
-    }
-
     for (const dir of dirsToCheck) {
       try {
         const entries = await fs.readdir(dir);
