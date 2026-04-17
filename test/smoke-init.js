@@ -71,15 +71,15 @@ function main() {
     assertExists(claudeDir);
     assertExists(skillsDir);
 
-    // Verify output folder
-    const outputDir = path.join(tempProject, '_qd-output');
-    const learningsDir = path.join(outputDir, 'learnings');
-    assertExists(outputDir);
+    // Verify output folder (_qd/learnings)
+    const qdDir = path.join(tempProject, '_qd');
+    const learningsDir = path.join(qdDir, 'learnings');
+    assertExists(qdDir);
     assertExists(learningsDir);
 
     console.log('\nSmoke init PASS');
     console.log('  .claude/skills created');
-    console.log('  _qd-output/learnings created');
+    console.log('  _qd/learnings created');
   } catch (error) {
     console.error(`Smoke init FAIL: ${error.message}`);
     process.exit(1);
