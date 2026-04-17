@@ -1,0 +1,415 @@
+---
+name: executing
+description: >-
+  Per-agent worker loop for the khuym ecosystem. Load when you are a worker subagent
+  spawned by the khuym:swarming skill. Implements the Flywheel single-agent loop (register,
+  get bead, reserve files, implement, verify, close, report, loop). Handles context
+  monitoring, atomic git commits, post-compaction recovery, and graceful handoff.
+metadata:
+  ecosystem: khuym
+  dependencies:
+    - id: beads-cli
+      kind: command
+      command: br
+      missing_effect: unavailable
+      reason: Workers read, update, and close beads through br.
+    - id: beads-viewer
+      kind: command
+      command: bv
+      missing_effect: unavailable
+      reason: Worker self-routing relies on bv robot priority output.
+    - id: agent-mail
+      kind: mcp_server
+      server_names: [mcp_agent_mail]
+      config_sources: [repo_codex_config, global_codex_config]
+      missing_effect: unavailable
+      reason: Reservations, coordination, and reporting are executed via Agent Mail.
+---
+
+# Executing — Worker Loop
+
+If `.khuym/onboarding.json` is missing or stale for the current repo, stop and invoke `khuym:using-khuym` before continuing.
+
+You are a **worker subagent** spawned by swarming. Your job is one thing: implement beads.
+Self-route from the live bead graph, close work cleanly, report back. Nothing else.
+
+## Loop Overview
+
+```
+Initialize → Get Bead → Reserve Files → Implement → Verify → Close & Report
+     ↑                                                               |
+     └─────────────── Context OK? Loop ─────────────────────────────┘
+                       Context >65%? → HANDOFF.json → Stop
+```
+
+---
+
+## Step 1: Initialize
+
+Run once at session start.
+
+### 1a. Register with Agent Mail
+
+Swarming gives you a Codex nickname first. Use that nickname as the attempted Agent Mail name, then keep the returned Agent Mail name for all later mail operations.
+
+```
+startup = macro_start_session(
+  human_key: "<project-root-path>",
+  model: "gpt-5",
+  program: "codex-cli",
+  task_description: "khuym worker execution",
+  agent_name: "<codex-subagent-name>"
+)
+
+resolved_agent_mail_name = startup.agent.name
+```
+
+Record both identities in your startup acknowledgment:
+- `Codex nickname: <codex-subagent-name>`
+- `Agent Mail name: <resolved-agent-mail-name>`
+
+From this point on, use `resolved_agent_mail_name` for every Agent Mail call.
+
+### 1b. Read Project Context (in this order)
+
+1. **AGENTS.md** — project operating manual (mandatory; skip nothing)
+2. If present, run **`node .codex/khuym_status.mjs --json`** — quick onboarding/state/handoff scout
+3. **.khuym/state.json** — machine-readable routing snapshot
+4. **.khuym/STATE.md** — current project focus, decisions, active blockers
+5. **history/\<feature\>/CONTEXT.md** — locked decisions that MUST be honored
+
+If any of these files does not exist, note the absence and proceed — do not fabricate content.
+
+### 1c. Report Online Before Claiming Work
+
+Before you select a bead, you must report in on the epic thread. Startup is not complete until you read `AGENTS.md`, post a startup acknowledgment with both identities, say `AGENTS.md` was read and `khuym:executing` is loading, and run `fetch_inbox(...)` on the epic topic.
+
+Do not call `bv --robot-priority` before this sequence is complete.
+
+### 1d. Check for Handoff
+
+If `.khuym/HANDOFF.json` exists and was written by a prior instance of you (same agent identity):
+
+1. Read it — restore active bead, progress markers, open questions
+2. Resume from where it stopped; skip re-reading already-read files
+3. Delete or archive HANDOFF.json after confirming context is restored
+
+---
+
+## Step 2: Get Next Bead
+
+Every loop starts with coordination, not bead selection.
+
+Start with `fetch_inbox(project_key="<project-root-path>", agent_name="<resolved-agent-mail-name>", topic="<EPIC_TOPIC>")`.
+If the thread looks stale, also run `fetch_topic(project_key="<project-root-path>", topic_name="<EPIC_TOPIC>")`.
+
+### Normal path: self-route from the live graph
+
+```bash
+bv --robot-priority
+```
+
+Select the top-ranked open bead that:
+- Has no unresolved dependencies (all dependencies closed)
+- Is not reserved by another agent (Agent Mail will tell you on reservation attempt)
+
+### Exceptional path: direct orchestrator hint
+
+If swarming suggests a bead in Agent Mail, treat it as a startup hint or rescue instruction, not as a permanent assignment. Re-check the live graph before claiming the work.
+
+### Read the bead fully:
+
+```bash
+br show <bead-id>
+```
+
+Before implementing, confirm you understand:
+- **Description**: what must be built
+- **Dependencies**: which beads must be closed first
+- **Verification criteria**: exactly what tests/checks define "done"
+- **File scope**: which files this bead should touch
+- **Decision IDs**: any locked decisions from CONTEXT.md this bead references (e.g., D1, D3)
+
+**Do not start implementing until you understand all four.**
+
+---
+
+## Step 3: Reserve Files
+
+Reserve every file this bead will modify before touching a single line of code.
+
+```
+file_reservation_paths(
+  project_key: "<project-root-path>",
+  agent_name: "<resolved-agent-mail-name>",
+  paths: ["src/foo.ts", "src/bar.ts"],
+  reason: "Working bead <bead-id>"
+)
+```
+
+### If reservation returns a conflict:
+
+```
+send_message(
+  project_key: "<project-root-path>",
+  sender_name: "<resolved-agent-mail-name>",
+  to: ["<COORDINATOR_AGENT_NAME>"],
+  thread_id: "<EPIC_ID>",
+  topic: "<EPIC_TOPIC>",
+  subject: "File conflict on <bead-id>",
+  body_md: "Need files: [list]. Currently held by: [holder]. Requesting resolution."
+)
+```
+
+Wait for resolution. Do not proceed without your reservations.
+While waiting, keep polling `fetch_inbox(...)` on the epic topic.
+
+### If reservation succeeds:
+
+Proceed to implementation immediately.
+
+---
+
+## Step 4: Implement
+
+### Read before writing
+
+Read every source file you will modify. Do not write from memory or assumptions about file contents.
+
+### Honor CONTEXT.md locked decisions
+
+Before writing any code, scan your bead's description for decision IDs (D1, D2, …). For each referenced ID:
+1. Read the corresponding entry in `history/<feature>/CONTEXT.md`
+2. Implement exactly as locked — do not reinterpret, do not "improve" a locked decision
+
+Violating a locked decision is the #1 cause of rework. Teams report that >40% of implementation bugs trace back to agents ignoring CONTEXT.md.
+
+### Follow existing patterns
+
+Match naming conventions, error handling patterns, import styles, and test structures found in the codebase. Grep for similar implementations if unsure:
+
+```bash
+grep -r "similar_function_name" src/ --include="*.ts" -l
+```
+
+### No pseudo-implementations
+
+Every artifact you create must be:
+- **Substantive**: real logic, not stubs or TODOs
+- **Wired**: imported, exported, and integrated — not floating code
+
+A file that exists but is never imported has not been implemented. A function that exists but returns `null` has not been implemented.
+
+---
+
+## Step 5: Verify
+
+Run the bead's verification criteria exactly as written. Do not substitute easier checks.
+
+```bash
+# Example — run whatever the bead specifies:
+npm test -- --testPathPattern="<affected-module>"
+npm run build
+npm run lint
+```
+
+### If verification fails:
+
+1. Read the failure output carefully
+2. Fix the root cause
+3. Re-run verification
+
+**Maximum 2 fix attempts.** If verification still fails after 2 attempts:
+
+```
+send_message(
+  project_key: "<project-root-path>",
+  sender_name: "<resolved-agent-mail-name>",
+  to: ["<COORDINATOR_AGENT_NAME>"],
+  thread_id: "<EPIC_ID>",
+  topic: "<EPIC_TOPIC>",
+  subject: "Blocker on <bead-id>: verification failing",
+  body_md: "Failure: [paste exact error]. Attempted fixes: [what you tried]. Need: [specific help or decision]."
+)
+```
+
+Do not close the bead. Mark it blocked and wait.
+While blocked, keep polling `fetch_inbox(...)` for the coordinator reply.
+
+---
+
+## Step 6: Close & Report
+
+All actions must complete. Do not skip any, and do not start another bead until the completion report is sent.
+
+### 6a. Close the bead
+
+```bash
+br close <bead-id> --reason "Completed: <one-line summary of what was implemented>"
+```
+
+### 6b. Atomic git commit
+
+One commit per bead. Exactly this format:
+
+```bash
+git add <files-you-modified>
+git commit -m "feat(<bead-id>): <summary matching br close reason>"
+```
+
+Do not batch multiple beads into one commit. Do not commit unrelated changes.
+
+### 6c. Release file reservations
+
+```
+release_file_reservations(
+  agent_name: "<resolved-agent-mail-name>",
+  paths: ["src/foo.ts", "src/bar.ts"]
+)
+```
+
+Release **before** sending the completion report so other agents can acquire these files immediately.
+
+### 6d. Send completion report
+
+```
+send_message(
+  project_key: "<project-root-path>",
+  sender_name: "<resolved-agent-mail-name>",
+  to: ["<COORDINATOR_AGENT_NAME>"],
+  thread_id: "<EPIC_ID>",
+  topic: "<EPIC_TOPIC>",
+  subject: "Completed <bead-id>",
+  body_md: "Codex nickname: <codex-subagent-name>. Agent Mail name: <resolved-agent-mail-name>. Implemented: [summary]. Files: [list]. Verification: [tests passed / build clean]. Commit: [hash]."
+)
+```
+
+### 6e. Check inbox once after reporting
+
+Before you claim the next bead, run `fetch_inbox(project_key="<project-root-path>", agent_name="<resolved-agent-mail-name>", topic="<EPIC_TOPIC>")`.
+
+---
+
+## Step 7: Context Check
+
+After every bead close, before getting the next bead:
+
+**Estimate your current context usage.**
+
+| Usage | Action |
+|-------|--------|
+| < 65% | Loop back to Step 2 — get next bead |
+| ≥ 65% | Write HANDOFF.json, send handoff mail, stop gracefully |
+
+### Writing HANDOFF.json
+
+Save to `.khuym/HANDOFF.json`:
+
+```json
+{
+  "schema_version": "1.0",
+  "session": {
+    "codex_nickname": "<codex-subagent-name>",
+    "agent_mail_name": "<resolved-agent-mail-name>",
+    "paused_at": "<ISO timestamp>",
+    "reason_for_pause": "context_critical"
+  },
+  "context_snapshot": {
+    "tokens_used_pct": 0.67,
+    "last_bead_closed": "<bead-id>"
+  },
+  "active_work": {
+    "skill": "executing",
+    "current_bead": "<bead-id or null>",
+    "next_action": "Run bv --robot-priority and continue from the live graph"
+  },
+  "resume_instructions": {
+    "read_first": ["AGENTS.md", ".khuym/STATE.md", "history/<feature>/CONTEXT.md"],
+    "check_mail": true,
+    "priority_next": "Check epic thread, then run bv --robot-priority"
+  }
+}
+```
+
+Then notify the orchestrator:
+
+```
+send_message(
+  project_key: "<project-root-path>",
+  sender_name: "<resolved-agent-mail-name>",
+  to: ["<COORDINATOR_AGENT_NAME>"],
+  thread_id: "<EPIC_ID>",
+  topic: "<EPIC_TOPIC>",
+  subject: "Context handoff from <codex-subagent-name> / <resolved-agent-mail-name>",
+  body_md: "Codex nickname: <codex-subagent-name>. Agent Mail name: <resolved-agent-mail-name>. Context at ~67%. Completed N beads. HANDOFF.json written. Safe to resume by checking mail and running bv --robot-priority."
+)
+```
+
+---
+
+## Step 8: Post-Compact Recovery
+
+**If you detect context compaction** (your conversation was summarized, or you notice gaps in your context):
+
+**STOP immediately. Do not continue implementing.**
+
+Re-read in this exact order before any further action:
+
+1. `AGENTS.md`
+2. `history/<feature>/CONTEXT.md`
+3. The current bead you were working on: `br show <bead-id>`
+4. Your active file reservations (query Agent Mail)
+
+Only after re-reading all four may you continue.
+
+**Why this is non-negotiable:** Compaction erases knowledge of AGENTS.md, active reservations, and locked decisions. Agents that skip this step produce implementations that conflict with other workers and violate CONTEXT.md decisions. This is the single most common cause of swarm failures.
+
+---
+
+## Red Flags
+
+Stop and reassess if you notice any of these:
+
+- **Writing files outside your reserved scope** — you are creating conflicts for other workers
+- **Skipping verification** — "it looks right" is not verification; run the actual criteria
+- **Continuing after compaction without re-reading** — you have amnesia; fix it before proceeding
+- **Implementing stubs, TODOs, or empty handlers** — these are not implementations; they are deferred failures
+- **Ignoring a locked decision from CONTEXT.md** — swarming and planning effort was spent locking that decision for a reason
+- **Batching multiple bead commits** — atomic commits per bead are the audit trail; don't corrupt it
+- **Claiming a bead without checking reservations** — self-routing still depends on file coordination
+- **Closing or blocking a bead without reporting via Agent Mail** — off-thread progress is invisible progress; it breaks the swarm
+- **Waiting silently for the coordinator** — if you are blocked, conflicted, handing off, or done, post and keep polling
+
+---
+
+## Quick Reference: Tool Calls
+
+| Action | Call |
+|--------|------|
+| Register | `macro_start_session(...)` |
+| Get priority bead | `bv --robot-priority` |
+| Read bead | `br show <id>` |
+| Reserve files | `file_reservation_paths(...)` |
+| Release files | `release_file_reservations(...)` |
+| Close bead | `br close <id> --reason "..."` |
+| Send mail | `send_message(project_key=..., sender_name=..., to=[...], thread_id=..., topic=..., subject=..., body_md=...)` |
+| Reply in thread | `reply_message(project_key=..., message_id=..., sender_name=..., body_md=...)` |
+| Check inbox | `fetch_inbox(project_key=..., agent_name=..., topic=...)` |
+| Check epic timeline | `fetch_topic(project_key=..., topic_name=...)` |
+
+---
+
+## Inputs You Receive from Swarming
+
+When spawned, swarming provides (via Agent Mail message or task prompt):
+
+- `codex_subagent_name` — your runtime nickname from the parent spawn result (e.g., `Peirce`)
+- `coordinator_agent_name` — swarm coordinator identity (e.g., `GreenCastle`)
+- `epic_thread_id` — the Agent Mail thread for this feature (normally the epic bead ID)
+- `epic_topic` — shared swarm topic tag (recommended: `epic-<EPIC_ID>`)
+- `startup_hint` — optional: a bead or area the orchestrator wants checked first
+- `feature_name` — used to locate `history/<feature>/CONTEXT.md`
+
+You resolve `resolved_agent_mail_name` yourself during `macro_start_session(...)`.
+
+If any of the startup inputs are missing, query Agent Mail for the swarm coordination message before proceeding.
