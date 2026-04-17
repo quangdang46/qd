@@ -1,0 +1,71 @@
+# module.example.yaml - Module Configuration + Format Conversion
+#
+# This file configures the QD module and format conversion rules.
+
+# =============================================================================
+# MODULE INFO (Optional)
+# =============================================================================
+
+code: qd                           # Module identifier
+name: "QD Framework"               # Display name
+description: "Quick Development Framework - AI-driven development methodology"
+
+# =============================================================================
+# FORMAT CONVERSION RULES
+# =============================================================================
+#
+# Convert artifact files from MD to other formats for specific IDEs.
+# By default, files are copied as-is (no conversion needed).
+#
+# Key: IDE platform code (e.g., codex, claude-code)
+# Value: Object with glob pattern → target format mappings
+#
+# Glob patterns are relative to artifacts/ root
+
+convert:
+  # Codex requires TOML format for agents
+  codex:
+    # Pattern syntax: "path/**/*.md" or "path/**"
+    "agents/**": toml         # Convert agents/*.md → agents/*.toml
+    "subagents/**": toml      # Convert subagents/*.md → subagents/*.toml
+
+  # Claude Code uses native skills format (no conversion needed - just copy)
+  # claude-code:
+  #   "output-styles/**": md   # Example if needed
+
+  # Add more IDE conversions as needed:
+  # other-ide:
+  #   "skills/**": json        # Convert to JSON format
+
+# =============================================================================
+# CONVERSION BEHAVIOR
+# =============================================================================
+#
+# - Files matching convert rules are CONVERTED, not copied
+# - Files not matching any convert rule are COPIED as-is
+# - Conversion is applied AFTER schema filtering (only for allowed IDEs)
+#
+# Current supported formats:
+#   - toml: Markdown → TOML (for Codex subagents)
+#     * Extracts frontmatter (name, description)
+#     * Wraps content in [developer_instructions] section
+
+# =============================================================================
+# EXAMPLE CONFIGURATIONS
+# =============================================================================
+
+# Minimal config (no conversion):
+# code: my-module
+# name: "My Module"
+#
+# convert: {}  # Empty = copy as-is
+
+# Full config with conversions:
+# code: qd
+# name: "QD Framework"
+# description: "..."
+#
+# convert:
+#   codex:
+#     "agents/**": toml
+#     "subagents/**": toml
