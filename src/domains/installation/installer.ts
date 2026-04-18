@@ -486,7 +486,7 @@ class Installer {
             installed = path.join(target_dir, artifactType, sourceBasename, fileName);
           }
         }
-        const installedDir = path.join(projectDir, path.dirname(installed));
+        const installedDir = this.getInstalledDirForManifest(projectDir, ide, artifact, platformConfig, target_dir, artifactType, sourceDir, sourceBasename, typeRootDir);
 
         currentIdeArtifacts.push({
           source: artifact.relativePath,
@@ -508,6 +508,18 @@ class Installer {
       ides: allIdes,
       artifacts: artifactEntries,
     });
+  }
+
+  // Helper to compute installedDir for manifest - matches installArtifact logic
+  getInstalledDirForManifest(projectDir, ide, artifact, platformConfig, target_dir, artifactType, sourceDir, sourceBasename, typeRootDir) {
+    const platform = platformConfig.platforms[ide];
+    // For nested skill directories, installedDir is target_dir/artifactType/sourceBasename
+    // e.g., .claude/hooks/notifications (not .claude/hooks/notifications/lib)
+    if (sourceDir !== typeRootDir) {
+      return path.join(projectDir, target_dir, artifactType, sourceBasename);
+    }
+    // For direct files in type root, installedDir is target_dir/artifactType
+    return path.join(projectDir, target_dir, artifactType);
   }
 
   async phase6DisplaySummary(platformConfig) {
@@ -591,47 +603,55 @@ class Installer {
     const ides = manifestData?.ides || existingInstall?.ides || [];
     const installedFiles = manifestData?.artifacts || [];
 
-    // Only delete files and directories that QD actually installed (from manifest)
-    // This preserves user's custom files in the same directories
-    const dirsToCheck = new Set();
+    // Collect skill-level directories to remove (e.g., .claude/hooks/docs, .claude/skills/agent-browser)
+    // This ensures ALL files in that skill directory are removed, including duplicates not in manifest
+    const skillDirsToRemove = new Set();
     const ideRootsToClean = new Set();
 
     for (const entry of installedFiles) {
+      // Remove the file
       const targetPath = path.join(projectDir, entry.installed);
-
-      // Remove file if exists
       if (await fs.pathExists(targetPath)) {
         await fs.remove(targetPath);
       }
 
-      // Remove nested directory if present
+      // Use installedDir from manifest - it already contains the correct skill-level directory
+      // e.g., for .claude/hooks/notifications/lib/env-loader.cjs, installedDir is .claude/hooks/notifications
+      // Only add if it's a nested directory (depth > 2), not the type root itself
+      // Type root deletion would delete ALL content including user's custom skills
       if (entry.installedDir) {
-        const targetDir = path.join(projectDir, entry.installedDir);
-        if (await fs.pathExists(targetDir)) {
-          await fs.remove(targetDir);
+        const relDir = path.relative(projectDir, entry.installedDir);
+        const depth = relDir.split(path.sep).length;
+        if (depth > 2) {
+          skillDirsToRemove.add(entry.installedDir);
         }
       }
 
-      // Track parent dirs and IDE roots for cleanup
-      dirsToCheck.add(path.dirname(targetPath));
-      ideRootsToClean.add(path.join(projectDir, entry.installed.split(path.sep)[0]));
+      // Track IDE root
+      const parts = entry.installed.split(path.sep);
+      ideRootsToClean.add(path.join(projectDir, parts[0]));
     }
 
-    // Clean up empty directories and IDE roots
-    for (const dir of [...dirsToCheck, ...ideRootsToClean]) {
+    // Remove all skill-level directories (this removes duplicates and all nested content)
+    for (const skillDir of skillDirsToRemove) {
       try {
-        if ((await fs.readdir(dir)).length === 0) {
-          await fs.remove(dir);
+        if (await fs.pathExists(skillDir)) {
+          await fs.remove(skillDir);
         }
       } catch {
         // Ignore errors
       }
     }
 
-    // Force remove IDE root directories since they should be empty of QD content
+    // Clean up empty IDE root directories
     for (const ideRoot of ideRootsToClean) {
       try {
-        await fs.remove(ideRoot);
+        if (await fs.pathExists(ideRoot)) {
+          const items = await fs.readdir(ideRoot);
+          if (items.length === 0) {
+            await fs.remove(ideRoot);
+          }
+        }
       } catch {
         // Ignore errors
       }

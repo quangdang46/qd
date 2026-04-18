@@ -12,7 +12,6 @@
 # Mapping rules:
 # - mappings.<type>: <target> — maps artifacts/<type>/ to <target>/ in IDE dir
 # - Default target = type name if not specified
-# - Cursor merges skills/commands/agents into rules/
 
 platforms:
   claude-code:
@@ -91,9 +90,7 @@ platforms:
     name: "Gemini CLI"
     preferred: false
     installer:
-      legacy_targets:
-        - .gemini/commands
-      target_dir: .gemini/skills
+      target_dir: .gemini
 
   github-copilot:
     name: "GitHub Copilot"
