@@ -295,10 +295,10 @@ class Installer {
       // File in artifacts root (like module.yaml, testfile.md) or in untracked nested dir
       // Check if it's directly in artifacts root (not in any type subdirectory)
       if (sourceDir === artifactsDir) {
-        // File at artifacts root level - copy to type root as-is (e.g., .claude/skills/testfile.md)
+        // File at artifacts root level - copy to IDE root directly (e.g., .claude/testfile.md)
         const sourceFile = artifact.sourcePath;
         const fileName = path.basename(sourceFile);
-        const targetFile = path.join(targetPath, fileName);
+        const targetFile = path.join(projectDir, target_dir, fileName);
         await fs.copy(sourceFile, targetFile, { overwrite: true });
         return;
       }
@@ -491,8 +491,8 @@ class Installer {
             installed = path.join(target_dir, artifactType, fileName);
           }
         } else if (sourceDir === path.join(projectDir, 'artifacts')) {
-          // File directly at artifacts root (e.g., testfile.md) -> goes to target_dir/artifactType/filename
-          installed = path.join(target_dir, artifactType, fileName);
+          // File directly at artifacts root (e.g., testfile.md) -> goes to target_dir/filename
+          installed = path.join(target_dir, fileName);
         } else {
           // Nested skill directory
           if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
@@ -528,10 +528,9 @@ class Installer {
   // Helper to compute installedDir for manifest - matches installArtifact logic
   getInstalledDirForManifest(projectDir, ide, artifact, platformConfig, target_dir, artifactType, sourceDir, sourceBasename, typeRootDir) {
     const artifactsDir = path.join(projectDir, 'artifacts');
-    // For files directly at artifacts root (testfile.md), installedDir is target_dir/artifactType
-    // This is different from nested skill dirs where installedDir includes the skill dirname
+    // For files directly at artifacts root (testfile.md), installedDir is just target_dir (IDE root)
     if (sourceDir === artifactsDir) {
-      return path.join(projectDir, target_dir, artifactType);
+      return path.join(projectDir, target_dir);
     }
     // For nested skill directories, installedDir is target_dir/artifactType/sourceBasename
     // e.g., .claude/hooks/notifications (not .claude/hooks/notifications/lib)
