@@ -1,6 +1,6 @@
-# module.example.yaml - Module Configuration + Format Conversion
+# module.example.yaml - Unified Module Configuration
 #
-# This file configures the QD module and format conversion rules.
+# This file configures the QD module with IDE selection and format conversion.
 
 # =============================================================================
 # MODULE INFO (Optional)
@@ -9,6 +9,57 @@
 code: qd                           # Module identifier
 name: "QD Framework"               # Display name
 description: "Quick Development Framework - AI-driven development methodology"
+
+# =============================================================================
+# IDE SELECTION RULES
+# =============================================================================
+#
+# Control which IDEs receive artifacts. Can be set at root level (applies to all)
+# or per-file using overrides.
+#
+# Option 1: Whitelist - only these IDEs get ALL artifacts
+# supported_ides:
+#   - claude-code    # Claude Code
+#   - cursor         # Cursor
+#   - windsurf       # Windsurf
+#   - codex          # Codex
+#   - antigravity    # Google Antigravity
+#   - auggie         # Auggie
+#   - cline          # Cline
+#   - codebuddy      # CodeBuddy
+#   - crush          # Crush
+#   - gemini         # Gemini CLI
+#   - github-copilot # GitHub Copilot
+#   - iflow          # iFlow
+#   - junie          # Junie
+#   - kilo           # KiloCoder
+#   - kiro           # Kiro
+#   - ona            # Ona
+#   - opencode       # OpenCode
+#   - pi             # Pi
+#   - qoder          # Qoder
+#   - qwen           # QwenCoder
+#   - roo            # Roo Code
+#   - rovo-dev       # Rovo Dev
+#   - trae           # Trae
+
+# Option 2: Blacklist - all IDEs EXCEPT these get ALL artifacts
+# ignored_ides:
+#   - codex
+#   - antigravity
+
+# =============================================================================
+# FILE-LEVEL OVERRIDES
+# =============================================================================
+# Override settings for specific files (overrides root-level rules)
+
+# overrides:
+#   "testfile.md":                  # File to override
+#     supported_ides: [claude-code]  # Only Claude Code gets this file
+#   "internal-note.md":
+#     supported_ides: []          # Skip this file (no IDEs get it)
+#   "special.md":
+#     ignored_ides: [cursor]       # All except Cursor gets this file
 
 # =============================================================================
 # FORMAT CONVERSION RULES
@@ -54,18 +105,23 @@ convert:
 # EXAMPLE CONFIGURATIONS
 # =============================================================================
 
-# Minimal config (no conversion):
+# Minimal config (no IDE selection, no conversion):
 # code: my-module
 # name: "My Module"
 #
 # convert: {}  # Empty = copy as-is
 
-# Full config with conversions:
-# code: qd
-# name: "QD Framework"
-# description: "..."
+# Only Claude Code and Cursor get all artifacts:
+# supported_ides:
+#   - claude-code
+#   - cursor
 #
 # convert:
 #   codex:
 #     "agents/**": toml
-#     "subagents/**": toml
+
+# Everyone except Codex gets all artifacts:
+# ignored_ides:
+#   - codex
+#
+# convert: {}

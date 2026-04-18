@@ -159,7 +159,7 @@ class Installer {
       throw new Error('artifacts/ directory not found');
     }
 
-    await this.walkDir(artifactsDir, artifactsDir, null, entries, config);
+    await this.walkDir(artifactsDir, artifactsDir, config, entries, config);
 
     return entries;
   }
@@ -175,13 +175,13 @@ class Installer {
       if (dirent.name === OUTPUT_FOLDER) continue;
 
       if (dirent.isDirectory()) {
-        let dirSchema = parentSchema; // Start with parent's schema
+        let dirSchema = parentSchema; // Inherit parent's schema (module.yaml config)
+        // Load subdir schema.yaml for nested override only (backward compat)
         const schemaPath = path.join(fullPath, 'schema.yaml');
         if (await fs.pathExists(schemaPath)) {
           dirSchema = await this.readSchema(schemaPath);
         }
         await this.walkDir(fullPath, artifactsRoot, dirSchema, entries, config);
-        // After processing directory, update currentSchema so subsequent files use the correct schema
         currentSchema = dirSchema;
       } else if (dirent.isFile()) {
         if (dirent.name === 'schema.yaml' || dirent.name.endsWith('.example.yaml')) continue;

@@ -2,10 +2,15 @@ code: qd
 name: "QD Framework"
 description: "Quick Development Framework - AI-driven development methodology"
 
+# IDE Selection - only these IDEs receive this module's artifacts
+# Use supported_ides (whitelist) or ignored_ides (blacklist)
+supported_ides:
+  - claude-code
+  - cursor
+  - windsurf
+  - codex
+
 # Format conversion rules
-# Key: IDE platform code (e.g., codex)
-# Value: Object with glob pattern → target format mappings
-# Glob patterns are relative to artifacts/ root
 convert:
   codex:
     "agents/**": toml
