@@ -63,6 +63,7 @@ class Installer {
       await this.phase4CopyToTargets(projectDir, platformConfig, artifacts, config);
       await this.phase5CreateOutputDir(projectDir);
       await this.phase6WriteManifest(projectDir, artifacts, platformConfig);
+      await this.phaseAddToGitignore(projectDir);
       await this.phase6DisplaySummary(platformConfig);
 
       return { success: true, projectDir, ides: this.selectedIdes };
@@ -528,6 +529,42 @@ class Installer {
       rounded: true,
       formatBorder: color.green,
     });
+  }
+
+  async phaseAddToGitignore(projectDir) {
+    const gitignorePath = path.join(projectDir, '.gitignore');
+
+    // Get all known IDE target directories from platform config
+    const allIdeDirs = Object.values(this.platformConfig.platforms)
+      .filter(p => p?.installer?.target_dir)
+      .map(p => p.installer.target_dir + '/');
+
+    try {
+      let content = '';
+      if (await fs.pathExists(gitignorePath)) {
+        content = await fs.readFile(gitignorePath, 'utf8');
+      }
+
+      const existingLines = content.split('\n').map(l => l.trim()).filter(l => !l.startsWith('#'));
+      const toAdd = [];
+
+      // Check each known IDE directory - add if it exists in project AND not in gitignore
+      for (const dir of allIdeDirs) {
+        const fullPath = path.join(projectDir, dir);
+        if (await fs.pathExists(fullPath)) {
+          if (!existingLines.includes(dir)) {
+            toAdd.push(dir);
+          }
+        }
+      }
+
+      if (toAdd.length > 0) {
+        const newLine = content.endsWith('\n') || content === '' ? '' : '\n';
+        await fs.writeFile(gitignorePath, content + newLine + toAdd.join('\n') + '\n', 'utf8');
+      }
+    } catch {
+      // Silently ignore gitignore errors
+    }
   }
 
   // Methods needed by status/remove commands

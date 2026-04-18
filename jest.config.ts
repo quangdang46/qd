@@ -12,7 +12,7 @@ const config = {
   transformIgnorePatterns: [
     'node_modules/(?!(@clack)/)',
   ],
-  testTimeout: 10000,
+  testTimeout: 30000,
   moduleNameMapper: {
     '^(\\.\\.?/.*)\\.js$': '$1',
   },

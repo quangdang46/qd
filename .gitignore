@@ -46,7 +46,6 @@ z*/
 .qwen
 .rovodev
 .kilocodemodes
-.claude
 .codex
 .github/chatmodes
 .github/agents
@@ -62,3 +61,4 @@ dist/
 test-dist/
 references/
 .omc/*
+.claude/

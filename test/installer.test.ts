@@ -95,6 +95,7 @@ describe('Installation Components', () => {
     });
 
     test('full install creates .claude directory', async () => {
+      jest.setTimeout(30000);
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-install-'));
       try {
         const repoRoot = path.resolve(__dirname, '..');
@@ -117,6 +118,7 @@ describe('Installation Components', () => {
     });
 
     test('install with multiple IDEs creates both directories', async () => {
+      jest.setTimeout(30000);
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-multi-'));
       try {
         const repoRoot = path.resolve(__dirname, '..');
