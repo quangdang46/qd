@@ -45,9 +45,9 @@ describe('Schema Validation', () => {
       expect(parsed.code).toBeDefined();
       expect(parsed.name).toBeDefined();
 
-      // supported_ides must be array of valid IDEs
-      expect(Array.isArray(parsed.supported_ides)).toBe(true);
-      if (parsed.supported_ides.length > 0) {
+      // supported_ides is optional (module-level IDE filter, not user selection)
+      if (parsed.supported_ides) {
+        expect(Array.isArray(parsed.supported_ides)).toBe(true);
         const validIdes = ['claude-code', 'cursor', 'windsurf', 'codex', 'gemini', 'github-copilot', 'roo', 'trae'];
         for (const ide of parsed.supported_ides) {
           expect(validIdes).toContain(ide);

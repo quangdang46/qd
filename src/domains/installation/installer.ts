@@ -17,6 +17,7 @@ const yaml = require('yaml');
 const { loadPlatformCodes } = require('../ide/platform-codes');
 const { getProjectRoot } = require('./project-root');
 const { Manifest } = require('./manifest');
+const { ArtifactResolver } = require('./artifact-resolver');
 const prompts = require('../../shared/prompts');
 
 const OUTPUT_FOLDER = 'learnings';
@@ -28,6 +29,7 @@ class Installer {
     this.selectedIdes = [];
     this.artifacts = [];
     this.results = [];
+    this.resolver = new ArtifactResolver();
   }
 
   async install(options = {}) {
@@ -89,26 +91,7 @@ class Installer {
   }
 
   getTargetPath(projectDir, ide, artifact) {
-    const platform = this.platformConfig.platforms[ide];
-    const { target_dir } = platform.installer;
-    const artifactType = this.getArtifactType(artifact.relativePath);
-    const targetBase = path.join(projectDir, target_dir, artifactType);
-
-    const sourceDir = path.dirname(artifact.sourcePath);
-    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
-
-    if (sourceDir === typeRootDir) {
-      const sourceFile = artifact.sourcePath;
-      const fileName = path.basename(sourceFile);
-      const baseName = path.basename(fileName, path.extname(fileName));
-      if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
-        return path.join(targetBase, `${baseName}.toml`);
-      }
-      return path.join(targetBase, fileName);
-    }
-
-    const sourceBasename = path.basename(sourceDir);
-    return path.join(targetBase, sourceBasename);
+    return this.resolver.getTargetPath(projectDir, ide, artifact, this.platformConfig);
   }
 
   async phase1CollectConfig(projectDir) {
@@ -180,6 +163,8 @@ class Installer {
         currentSchema = parentSchema;
       } else if (dirent.isFile()) {
         if (dirent.name.endsWith('.example.yaml')) continue;
+        if (dirent.name === 'module.yaml') continue;
+        if (dirent.name === 'schema.yaml') continue;
 
         const fileSchema = currentSchema || { supported_ides: null, ignored_ides: null, overrides: {} };
         const overrideKey = dirent.name;
@@ -198,24 +183,17 @@ class Installer {
     }
   }
 
-  async readSchema(schemaPath) {
-    try {
-      const content = await fs.readFile(schemaPath, 'utf8');
-      return yaml.parse(content) || {};
-    } catch {
-      return {};
-    }
-  }
-
   resolveTargetIdes(schema, fileOverride) {
     if (fileOverride && 'supported_ides' in fileOverride && fileOverride.supported_ides) {
       if (fileOverride.supported_ides.length === 0) return [];
-      return fileOverride.supported_ides;
+      // Override must intersect with user's selected IDEs
+      return fileOverride.supported_ides.filter(ide => this.selectedIdes.includes(ide));
     }
 
     if (schema && schema.supported_ides !== undefined && schema.supported_ides) {
       if (schema.supported_ides.length === 0) return [];
-      return schema.supported_ides;
+      // Intersect with user's selected IDEs (not override, just filter)
+      return schema.supported_ides.filter(ide => this.selectedIdes.includes(ide));
     }
 
     if (schema && schema.ignored_ides) {
@@ -357,17 +335,12 @@ class Installer {
   }
 
   getArtifactType(relativePath) {
-    const parts = relativePath.split(path.sep);
-    if (parts.length > 1 && ['skills', 'commands', 'agents', 'subagents', 'hooks', 'rules', 'output-styles'].includes(parts[0])) {
-      return parts[0];
-    }
-    return 'skills';
+    return this.resolver.getArtifactType(relativePath);
   }
 
-  changeExtension(filename, newExt) {
-    const lastDot = filename.lastIndexOf('.');
-    if (lastDot === -1) return `${filename}.${newExt}`;
-    return `${filename.slice(0, lastDot)}.${newExt}`;
+  escapeTomlString(str) {
+    if (!str) return '';
+    return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
   }
 
   mdToToml(mdContent) {
@@ -397,10 +370,10 @@ class Installer {
 
     // Required fields for Codex subagents
     if (frontmatter.name) {
-      tomlLines.push(`name = "${frontmatter.name}"`);
+      tomlLines.push(`name = "${this.escapeTomlString(frontmatter.name)}"`);
     }
     if (frontmatter.description) {
-      tomlLines.push(`description = "${frontmatter.description}"`);
+      tomlLines.push(`description = "${this.escapeTomlString(frontmatter.description)}"`);
     }
 
     // developer_instructions is REQUIRED - collect all markdown content
@@ -496,7 +469,7 @@ class Installer {
             installed = path.join(target_dir, artifactType, sourceBasename, fileName);
           }
         }
-        const installedDir = this.getInstalledDirForManifest(projectDir, ide, artifact, platformConfig, target_dir, artifactType, sourceDir, sourceBasename, typeRootDir);
+        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig);
 
         currentIdeArtifacts.push({
           source: artifact.relativePath,
@@ -518,22 +491,6 @@ class Installer {
       ides: allIdes,
       artifacts: artifactEntries,
     });
-  }
-
-  // Helper to compute installedDir for manifest - matches installArtifact logic
-  getInstalledDirForManifest(projectDir, ide, artifact, platformConfig, target_dir, artifactType, sourceDir, sourceBasename, typeRootDir) {
-    const artifactsDir = path.join(projectDir, 'artifacts');
-    // For files directly at artifacts root (testfile.md), installedDir is just target_dir (IDE root)
-    if (sourceDir === artifactsDir) {
-      return path.join(projectDir, target_dir);
-    }
-    // For nested skill directories, installedDir is target_dir/artifactType/sourceBasename
-    // e.g., .claude/hooks/notifications (not .claude/hooks/notifications/lib)
-    if (sourceDir !== typeRootDir) {
-      return path.join(projectDir, target_dir, artifactType, sourceBasename);
-    }
-    // For direct files in type root, installedDir is target_dir/artifactType
-    return path.join(projectDir, target_dir, artifactType);
   }
 
   async phase6DisplaySummary(platformConfig) {
@@ -657,12 +614,29 @@ class Installer {
       }
     }
 
-    // Clean up empty IDE root directories
+    // Clean up intermediate empty directories (e.g., .claude/skills/ after removing nested skills)
     for (const ideRoot of ideRootsToClean) {
       try {
         if (await fs.pathExists(ideRoot)) {
-          const items = await fs.readdir(ideRoot);
-          if (items.length === 0) {
+          const cleanEmptyDirs = async (dir) => {
+            const items = await fs.readdir(dir);
+            for (const item of items) {
+              const fullPath = path.join(dir, item);
+              const stat = await fs.stat(fullPath);
+              if (stat.isDirectory()) {
+                await cleanEmptyDirs(fullPath);
+                // Check if now empty after cleaning children
+                const remaining = await fs.readdir(fullPath);
+                if (remaining.length === 0) {
+                  await fs.remove(fullPath);
+                }
+              }
+            }
+          };
+          await cleanEmptyDirs(ideRoot);
+          // Final check: remove IDE root if empty
+          const rootItems = await fs.readdir(ideRoot);
+          if (rootItems.length === 0) {
             await fs.remove(ideRoot);
           }
         }

@@ -17,7 +17,7 @@
     "qd": "dist/index.js"
   },
   "scripts": {
-    "build:installer": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "qd:install": "node dist/index.js install",
     "qd:remove": "node dist/index.js remove",
     "install:qd": "node dist/index.js install",
