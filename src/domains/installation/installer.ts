@@ -289,8 +289,20 @@ class Installer {
     // vs a nested skill directory (e.g., artifacts/skills/agent-browser)
     const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
 
+    const artifactsDir = path.join(projectDir, 'artifacts');
+
     if (!sourceDir.startsWith(typeRootDir + path.sep) && sourceDir !== typeRootDir) {
-      // File at artifacts root (like module.yaml) - skip, not a content artifact
+      // File in artifacts root (like module.yaml, testfile.md) or in untracked nested dir
+      // Check if it's directly in artifacts root (not in any type subdirectory)
+      if (sourceDir === artifactsDir) {
+        // File at artifacts root level - copy to type root as-is (e.g., .claude/skills/testfile.md)
+        const sourceFile = artifact.sourcePath;
+        const fileName = path.basename(sourceFile);
+        const targetFile = path.join(targetPath, fileName);
+        await fs.copy(sourceFile, targetFile, { overwrite: true });
+        return;
+      }
+      // File in a nested directory that doesn't match any artifact type
       return;
     }
 
@@ -472,12 +484,15 @@ class Installer {
 
         let installed;
         if (sourceDir === typeRootDir) {
-          // Direct file in type root
+          // Direct file in type root (e.g., artifacts/agents/atlas.md)
           if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
             installed = path.join(target_dir, artifactType, `${baseName}.toml`);
           } else {
             installed = path.join(target_dir, artifactType, fileName);
           }
+        } else if (sourceDir === path.join(projectDir, 'artifacts')) {
+          // File directly at artifacts root (e.g., testfile.md) -> goes to target_dir/artifactType/filename
+          installed = path.join(target_dir, artifactType, fileName);
         } else {
           // Nested skill directory
           if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
@@ -512,7 +527,12 @@ class Installer {
 
   // Helper to compute installedDir for manifest - matches installArtifact logic
   getInstalledDirForManifest(projectDir, ide, artifact, platformConfig, target_dir, artifactType, sourceDir, sourceBasename, typeRootDir) {
-    const platform = platformConfig.platforms[ide];
+    const artifactsDir = path.join(projectDir, 'artifacts');
+    // For files directly at artifacts root (testfile.md), installedDir is target_dir/artifactType
+    // This is different from nested skill dirs where installedDir includes the skill dirname
+    if (sourceDir === artifactsDir) {
+      return path.join(projectDir, target_dir, artifactType);
+    }
     // For nested skill directories, installedDir is target_dir/artifactType/sourceBasename
     // e.g., .claude/hooks/notifications (not .claude/hooks/notifications/lib)
     if (sourceDir !== typeRootDir) {
