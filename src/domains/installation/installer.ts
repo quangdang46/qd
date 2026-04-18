@@ -175,16 +175,11 @@ class Installer {
       if (dirent.name === OUTPUT_FOLDER) continue;
 
       if (dirent.isDirectory()) {
-        let dirSchema = parentSchema; // Inherit parent's schema (module.yaml config)
-        // Load subdir schema.yaml for nested override only (backward compat)
-        const schemaPath = path.join(fullPath, 'schema.yaml');
-        if (await fs.pathExists(schemaPath)) {
-          dirSchema = await this.readSchema(schemaPath);
-        }
-        await this.walkDir(fullPath, artifactsRoot, dirSchema, entries, config);
-        currentSchema = dirSchema;
+        // Use module.yaml config for all directories - no subdirectory schema.yaml
+        await this.walkDir(fullPath, artifactsRoot, parentSchema, entries, config);
+        currentSchema = parentSchema;
       } else if (dirent.isFile()) {
-        if (dirent.name === 'schema.yaml' || dirent.name.endsWith('.example.yaml')) continue;
+        if (dirent.name.endsWith('.example.yaml')) continue;
 
         const fileSchema = currentSchema || { supported_ides: null, ignored_ides: null, overrides: {} };
         const overrideKey = dirent.name;
