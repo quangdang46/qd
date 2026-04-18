@@ -47,13 +47,24 @@ function outro(text) {
 function box(text, title, options = {}) {
   const border = '─';
   const lines = text.split('\n');
-  const width = Math.max(...lines.map((l) => l.length), title.length);
+  // Calculate width to fit longest line or title
+  const contentWidth = Math.max(...lines.map((l) => l.length), title.length);
+  const minWidth = 40; // minimum box width
+  const width = Math.max(contentWidth, minWidth);
 
-  console.log(pc.cyan(`┌─ ${title} ${border.repeat(Math.max(0, width - title.length - 1))}─┐`));
+  // Title line: ┌─ Title ────────────────┐
+  const titleLine = `┌─ ${title} `;
+  const remainingWidth = width - title.length;
+  const titleBorder = border.repeat(Math.max(1, remainingWidth));
+  console.log(pc.cyan(`${titleLine}${titleBorder}─┐`));
+
+  // Content lines: │ content here              │
   for (const line of lines) {
     console.log(pc.cyan('│') + ' ' + line.padEnd(width) + ' ' + pc.cyan('│'));
   }
-  console.log(pc.cyan(`└${border.repeat(width + 2)}─┘`));
+
+  // Bottom line: └───────────────────────────┘
+  console.log(pc.cyan('└' + border.repeat(width + 2) + '─┘'));
 }
 
 function note(text, title) {
@@ -90,7 +101,8 @@ async function multiselect(options) {
       }
     },
     render() {
-      const title = `${pc.gray('│')}\n${options.message}`;
+      const title = `${options.message}`;
+      const sep = pc.gray('─'.repeat(40));
 
       const renderOption = (opt, isHighlighted) => {
         const isSelected = this.selectedValues.includes(opt.value);
@@ -101,11 +113,11 @@ async function multiselect(options) {
 
       switch (this.state) {
         case 'submit':
-          return `${pc.gray('│')}\n${this.selectedValues.length} items selected`;
+          return `${pc.gray('│')} ${this.selectedValues.length} items selected`;
         case 'cancel':
-          return `${pc.gray('│')}\n${pc.strikethrough(pc.gray('cancelled'))}`;
+          return `${pc.gray('│')} ${pc.strikethrough(pc.gray('cancelled'))}`;
         default: {
-          const header = [...`${title}${pc.gray('│')}`.split('\n')];
+          const header = [`${pc.gray('│')} ${title}`];
           const footer = [
             `${pc.gray('│')} ${pc.dim('↑/↓ navigate · SPACE select · ENTER confirm')}`,
           ];
@@ -114,10 +126,10 @@ async function multiselect(options) {
           let cursor = this.cursor;
           if (cursor >= this.filteredOptions.length) cursor = this.filteredOptions.length - 1;
           if (cursor < 0) cursor = 0;
-          
+
           const start = Math.max(0, cursor - Math.floor(maxItems / 2));
           const end = Math.min(start + maxItems, this.filteredOptions.length);
-          
+
           for (let i = start; i < end; i++) {
             const opt = this.filteredOptions[i];
             const isHighlighted = i === cursor;
