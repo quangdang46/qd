@@ -6,7 +6,7 @@
 
 - Một artifacts source → nhiều IDE targets (`.claude`, `.cursor`, `.windsurf`, etc.)
 - Không cần config.json cho username, language
-- `_qd/` internal folder chứa `_qd/learnings/` và `_qd/_config/`
+- `_qd/` internal folder contains `_qd/history/` with `<feature>/` and `learnings/` subfolders
 - Học hỏi Claudekit CLI về phase-based architecture
 - Học hỏi BMAD method về config-driven IDE setup
 
@@ -30,8 +30,8 @@ Running `qd init` creates:
 
 ```
 project/
-├── _qd-output/                  # QD outputs (Khuym workflow)
-│   └── learnings/
+├── _qd/                        # QD runtime + history (created at runtime)
+│   └── history/
 ├── .claude/                    # (if Claude Code selected)
 │   ├── skills/
 │   ├── commands/
@@ -53,7 +53,7 @@ project/
 | Decision | Status | Notes |
 |----------|--------|-------|
 | `_qd/` internal only | CHOSED | Not exposed to users |
-| `_qd-output/` for workflow | CHOSED | Khuym pattern - workflow outputs only |
+| `_qd/` for workflow | CHOSED | QD workflow pattern - history + runtime |
 | No config.json | CHOSED | No username, language, project_name prompts |
 | CLI IDE handling logic | KEEP | Current implementation in cli/ide/ is good |
 | schema.yaml per folder + overrides | CHOSED | IDE selection per artifact folder + file-level |
@@ -66,7 +66,7 @@ project/
 
 ## Directory Breakdown
 
-### `_qd-output/` — Khuym Workflow Outputs
+### `_qd/` — QD Runtime + History
 
 | Path | Description |
 |------|-------------|
@@ -76,7 +76,7 @@ project/
 | `phase-plan.md` | Phase breakdown |
 | `learnings/` | Dated learnings (YYYY-MM-DD-*.md) |
 
-**Note:** `_qd-output/` is created at phase 5, excluded from artifacts walk.
+**Note:** `_qd/` created at runtime, not during install. Excluded from artifacts walk.
 
 ---
 
@@ -249,12 +249,12 @@ qd init
   → Phase 3: Walk artifacts tree
        ├── Read schema.yaml at each level (cascade + override)
        ├── Apply overrides for individual files
-       └── Skip _qd-output/ (hardcoded exclude)
+       └── Skip _qd/ (hardcoded exclude)
   → Phase 4: Copy/convert to IDE targets
        ├── Apply mappings from platform-codes.yaml
        ├── Convert format if convert rule exists (MD → TOML)
        └── Skip files with supported_ides: [] or ignored_ides excludes
-  → Phase 5: Create _qd-output/ directory
+  → Phase 5: (no output folder creation — _qd/ created at runtime)
   → Phase 6: Display summary
 ```
 
@@ -264,8 +264,9 @@ qd init
 
 ```
 myproject/
-├── _qd-output/                     # Khuym workflow outputs
-│   └── learnings/
+├── _qd/                     # QD runtime + history (created at runtime, not during install)
+│   └── history/
+│       └── learnings/
 ├── .claude/
 │   ├── skills/                     # artifacts/skills/** → .claude/skills/
 │   ├── commands/                   # artifacts/commands/** → .claude/commands/
@@ -302,7 +303,7 @@ artifacts/
 cli/ide/
 └── platform-codes.yaml     # IDE → target dir + artifact type mappings
 
-_qd-output/                 # (created at phase 5, excluded from walk)
+_qd/                 # (created at runtime, excluded from artifacts walk)
 ```
 
 ---

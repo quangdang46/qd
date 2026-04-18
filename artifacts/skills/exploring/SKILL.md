@@ -5,18 +5,18 @@ description: >-
   decisions from the user through Socratic dialogue BEFORE research or planning begins.
   Implements GSD discuss-phase + Superpowers brainstorming + CE scope-tiering.
   Trigger phrases: build, add, change, implement, design, figure out what we need,
-  brainstorm, exploring. Output is the feature CONTEXT.md file in history/ — the single source
+  brainstorm, exploring. Output is the feature CONTEXT.md file in ._qd/history/ — the single source
   of truth for all downstream agents (planning, validating, swarming).
 metadata:
   version: '1.0'
-  ecosystem: khuym
-  position: '2 of 9 — runs after using-khuym, before planning'
+  ecosystem: qd
+  position: '2 of 9 — runs after using-qd, before planning'
   dependencies: []
 ---
 
 # Exploring Skill
 
-If `.khuym/onboarding.json` is missing or stale for the current repo, stop and invoke `khuym:using-khuym` before continuing.
+If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
 
 Research shows that 5–10 minutes spent extracting decisions before any planning begins
 prevents hours of back-and-forth caused by planner assumptions ([GSD README](https://github.com/gsd-build/get-shit-done)).
@@ -52,8 +52,8 @@ If scope is unclear, ask ONE disambiguation question before continuing.
 
 ```
 Read (if exists):
-- history/learnings/critical-patterns.md   ← promoted critical learnings
-- .khuym/STATE.md                          ← any prior feature context
+- ._qd/history/learnings/critical-patterns.md   ← promoted critical learnings
+- ._qd/STATE.md                          ← any prior feature context
 ```
 
 Build an internal summary of prior decisions. Use it to skip already-answered questions
@@ -147,7 +147,7 @@ by all downstream agents. Do not reuse or renumber IDs once assigned.
 **Step 4.1 — Write CONTEXT.md**
 
 ```
-Path: history/<feature-slug>/CONTEXT.md
+Path: ._qd/history/<feature-slug>/CONTEXT.md
 ```
 
 Load `references/context-template.md` and populate every section. Rules:
@@ -163,7 +163,7 @@ Spawn a fresh subagent with this prompt (never pass session history):
 ```
 You are a context document reviewer. Verify this CONTEXT.md is ready for planning agents.
 
-File to review: history/<feature>/CONTEXT.md
+File to review: ._qd/history/<feature>/CONTEXT.md
 
 Check for:
 - Completeness: any TODOs, placeholders, "Tbr", or unfilled sections?
@@ -190,23 +190,23 @@ Issues (if any): [section] — [issue] — [why it matters for planning]
 
 After CONTEXT.md passes review:
 
-1. Update `.khuym/STATE.md`:
+1. Update `._qd/STATE.md`:
    ```
    Current: exploring complete for <feature>
-   CONTEXT.md: history/<feature>/CONTEXT.md
+   CONTEXT.md: ._qd/history/<feature>/CONTEXT.md
    Locked decisions: D1...D_N
-   Next: invoke khuym:planning skill
+   Next: invoke exploringplanning skill
    ```
 
 2. Present to user:
-   > "Decisions captured. CONTEXT.md written to `history/<feature>/CONTEXT.md`.
+   > "Decisions captured. CONTEXT.md written to `._qd/history/<feature>/CONTEXT.md`.
    > CONTEXT.md is now the single source of truth for all downstream agents.
-   > Invoke the khuym:planning skill to research the codebase, show the proposed phases and stories, and then wait for approval before current-phase preparation."
+   > Invoke the exploringplanning skill to research the codebase, show the proposed phases and stories, and then wait for approval before current-phase preparation."
 
 <HARD-GATE>
 Do NOT invoke planning, write code, create beads, or take any implementation action.
 The terminal state of this skill is writing CONTEXT.md and announcing handoff.
-The ONLY valid next step is the user invoking the khuym:planning skill.
+The ONLY valid next step is the user invoking the exploringplanning skill.
 </HARD-GATE>
 
 ---

@@ -1,9 +1,9 @@
 ---
 name: reviewing
-description: Post-execution quality verification skill for the khuym ecosystem. Invoke after the final phase swarm completes. Runs 5 parallel specialist review agents, 3-level artifact verification, human UAT, and finishing (PR, cleanup, epic close). Review issues become beads instead of per-finding markdown files; P1 still blocks merge while P2/P3 become non-blocking follow-up beads. Absorbs finishing responsibilities and hands off to compounding.
+description: Post-execution quality verification skill for the qd ecosystem. Invoke after the final phase swarm completes. Runs 5 parallel specialist review agents, 3-level artifact verification, human UAT, and finishing (PR, cleanup, epic close). Review issues become beads instead of per-finding markdown files; P1 still blocks merge while P2/P3 become non-blocking follow-up beads. Absorbs finishing responsibilities and hands off to compounding.
 metadata:
   version: '1.0'
-  ecosystem: khuym
+  ecosystem: qd
   position: 7-of-9
   upstream: swarming
   downstream: compounding
@@ -22,7 +22,7 @@ metadata:
 
 # Reviewing
 
-If `.khuym/onboarding.json` is missing or stale for the current repo, stop and invoke `khuym:using-khuym` before continuing.
+If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
 
 Post-execution quality verification. You are the last automated gate before a feature ships. Your job is to catch what escaped execution — not just confirm tasks are closed, but verify that the work is **correct, safe, and complete**.
 
@@ -41,16 +41,16 @@ If a finding makes sense only to someone who already read the diff carefully, it
 
 ## When to Invoke
 
-- After `khuym:swarming` reports the final phase is complete
+- After `exploringswarming` reports the final phase is complete
 - Manually: when spot-checking any branch or set of changes
 - Flags: `--serial` (always serial), `--skip-uat` (auto mode only, skips Phase 3)
 
 ## Prerequisites
 
 Read before starting:
-- `history/<feature>/CONTEXT.md` — locked decisions (D1, D2...) and testable deliverables
-- `history/<feature>/approach.md` — planned approach and risk map from planning
-- `.khuym/STATE.md` — current epic state
+- `._qd/history/<feature>/CONTEXT.md` — locked decisions (D1, D2...) and testable deliverables
+- `._qd/history/<feature>/approach.md` — planned approach and risk map from planning
+- `._qd/STATE.md` — current epic state
 
 ## Phase 1: Automated Review (5 Specialist Agents)
 
@@ -74,14 +74,14 @@ Dispatch agents 1–4 first (parallel or serial per rules above). Agent 5 **alwa
 | 2 `architecture` | Design patterns, coupling, separation of concerns, API design |
 | 3 `security` | OWASP top 10, injection, auth, secrets, data exposure |
 | 4 `test-coverage` | Missing tests, edge cases, integration gaps |
-| 5 `learnings-synthesizer` | **Always last** — cross-reference `history/learnings/`, flag known patterns, suggest compounding entries |
+| 5 `learnings-synthesizer` | **Always last** — cross-reference `._qd/history/learnings/`, flag known patterns, suggest compounding entries |
 
 ### Isolated Context Per Agent — CRITICAL
 
 Each agent receives **only**:
 1. The git diff (or worktree diff): `git diff <base>..<head>`
-2. `history/<feature>/CONTEXT.md`
-3. `history/<feature>/approach.md`
+2. `._qd/history/<feature>/CONTEXT.md`
+3. `._qd/history/<feature>/approach.md`
 
 Do **not** pass session history, implementation notes, or agent communication logs. Reviewer objectivity depends on seeing only the work product, not the implementer's thought process ([Superpowers code-reviewer pattern](https://raw.githubusercontent.com/obra/superpowers/main/skills/requesting-code-review/SKILL.md)).
 
@@ -203,13 +203,13 @@ Can you navigate to /forgot-password, enter an email, and confirm the reset emai
 ```
 
 **On failure:**
-1. Invoke `khuym:debugging` skill → root-cause the failure
+1. Invoke `exploringdebugging` skill → root-cause the failure
 2. Create a fix bead: `br create "Fix: <description>" -t task -p 0 --parent <epic-id>`
-3. Execute the fix bead (invoke `khuym:executing` skill)
+3. Execute the fix bead (invoke `exploringexecuting` skill)
 4. Re-verify the specific UAT item
 5. Do not proceed until the item passes or user explicitly accepts the failure
 
-**On skip:** Record in `.khuym/STATE.md` with reason. Do not count as pass.
+**On skip:** Record in `._qd/STATE.md` with reason. Do not count as pass.
 
 ## Phase 4: Finishing
 
@@ -239,8 +239,8 @@ You are the last step before compounding. Close the loop completely.
     → br close <epic-id> --reason "Feature complete: <summary>"
 
 [ ] Clear working state
-    → Archive STATE.md: cp .khuym/STATE.md history/<feature>/STATE-final.md
-    → Clear: echo "" > .khuym/STATE.md
+    → Archive STATE.md: cp ._qd/STATE.md ._qd/history/<feature>/STATE-final.md
+    → Clear: echo "" > ._qd/STATE.md
 ```
 
 ### Merge Options Detail
@@ -262,14 +262,14 @@ gh pr create \
 After Phase 4 completes:
 
 > "Feature complete. Epic [id] closed. [N] learnings flagged by learnings-synthesizer.
-> Invoke `khuym:compounding` skill to capture patterns, decisions, and failures for future planning cycles."
+> Invoke `exploringcompounding` skill to capture patterns, decisions, and failures for future planning cycles."
 
-Update `.khuym/STATE.md`:
+Update `._qd/STATE.md`:
 ```
 STATUS: reviewing-complete
 EPIC: <id>
 HANDOFF: compounding
-FLAGGED_LEARNINGS: <count> (see .khuym/findings/learnings-candidates.md)
+FLAGGED_LEARNINGS: <count> (see ._qd/findings/learnings-candidates.md)
 ```
 
 ## Red Flags
@@ -288,9 +288,9 @@ Stop and surface to user immediately if you see:
 ## Files Written
 
 ```
-.khuym/findings/
+._qd/findings/
   learnings-candidates.md              ← Session-level compounding suggestions only
-history/<feature>/
+._qd/history/<feature>/
   STATE-final.md                       ← Archived state at close
 ```
 

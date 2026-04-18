@@ -1,12 +1,12 @@
 ---
 name: executing
 description: >-
-  Per-agent worker loop for the khuym ecosystem. Load when you are a worker subagent
-  spawned by the khuym:swarming skill. Implements the Flywheel single-agent loop (register,
+  Per-agent worker loop for the qd ecosystem. Load when you are a worker subagent
+  spawned by the exploringswarming skill. Implements the Flywheel single-agent loop (register,
   get bead, reserve files, implement, verify, close, report, loop). Handles context
   monitoring, atomic git commits, post-compaction recovery, and graceful handoff.
 metadata:
-  ecosystem: khuym
+  ecosystem: qd
   dependencies:
     - id: beads-cli
       kind: command
@@ -28,7 +28,7 @@ metadata:
 
 # Executing — Worker Loop
 
-If `.khuym/onboarding.json` is missing or stale for the current repo, stop and invoke `khuym:using-khuym` before continuing.
+If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
 
 You are a **worker subagent** spawned by swarming. Your job is one thing: implement beads.
 Self-route from the live bead graph, close work cleanly, report back. Nothing else.
@@ -57,7 +57,7 @@ startup = macro_start_session(
   human_key: "<project-root-path>",
   model: "gpt-5",
   program: "codex-cli",
-  task_description: "khuym worker execution",
+  task_description: "qd worker execution",
   agent_name: "<codex-subagent-name>"
 )
 
@@ -73,22 +73,22 @@ From this point on, use `resolved_agent_mail_name` for every Agent Mail call.
 ### 1b. Read Project Context (in this order)
 
 1. **AGENTS.md** — project operating manual (mandatory; skip nothing)
-2. If present, run **`node .codex/khuym_status.mjs --json`** — quick onboarding/state/handoff scout
-3. **.khuym/state.json** — machine-readable routing snapshot
-4. **.khuym/STATE.md** — current project focus, decisions, active blockers
-5. **history/\<feature\>/CONTEXT.md** — locked decisions that MUST be honored
+2. If present, run **`node .codex/_qd_status.mjs --json`** — quick onboarding/state/handoff scout
+3. **._qd/state.json** — machine-readable routing snapshot
+4. **._qd/STATE.md** — current project focus, decisions, active blockers
+5. **._qd/history/\<feature\>/CONTEXT.md** — locked decisions that MUST be honored
 
 If any of these files does not exist, note the absence and proceed — do not fabricate content.
 
 ### 1c. Report Online Before Claiming Work
 
-Before you select a bead, you must report in on the epic thread. Startup is not complete until you read `AGENTS.md`, post a startup acknowledgment with both identities, say `AGENTS.md` was read and `khuym:executing` is loading, and run `fetch_inbox(...)` on the epic topic.
+Before you select a bead, you must report in on the epic thread. Startup is not complete until you read `AGENTS.md`, post a startup acknowledgment with both identities, say `AGENTS.md` was read and `exploringexecuting` is loading, and run `fetch_inbox(...)` on the epic topic.
 
 Do not call `bv --robot-priority` before this sequence is complete.
 
 ### 1d. Check for Handoff
 
-If `.khuym/HANDOFF.json` exists and was written by a prior instance of you (same agent identity):
+If `._qd/HANDOFF.json` exists and was written by a prior instance of you (same agent identity):
 
 1. Read it — restore active bead, progress markers, open questions
 2. Resume from where it stopped; skip re-reading already-read files
@@ -179,7 +179,7 @@ Read every source file you will modify. Do not write from memory or assumptions 
 ### Honor CONTEXT.md locked decisions
 
 Before writing any code, scan your bead's description for decision IDs (D1, D2, …). For each referenced ID:
-1. Read the corresponding entry in `history/<feature>/CONTEXT.md`
+1. Read the corresponding entry in `._qd/history/<feature>/CONTEXT.md`
 2. Implement exactly as locked — do not reinterpret, do not "improve" a locked decision
 
 Violating a locked decision is the #1 cause of rework. Teams report that >40% of implementation bugs trace back to agents ignoring CONTEXT.md.
@@ -303,7 +303,7 @@ After every bead close, before getting the next bead:
 
 ### Writing HANDOFF.json
 
-Save to `.khuym/HANDOFF.json`:
+Save to `._qd/HANDOFF.json`:
 
 ```json
 {
@@ -324,7 +324,7 @@ Save to `.khuym/HANDOFF.json`:
     "next_action": "Run bv --robot-priority and continue from the live graph"
   },
   "resume_instructions": {
-    "read_first": ["AGENTS.md", ".khuym/STATE.md", "history/<feature>/CONTEXT.md"],
+    "read_first": ["AGENTS.md", "._qd/STATE.md", "._qd/history/<feature>/CONTEXT.md"],
     "check_mail": true,
     "priority_next": "Check epic thread, then run bv --robot-priority"
   }
@@ -356,7 +356,7 @@ send_message(
 Re-read in this exact order before any further action:
 
 1. `AGENTS.md`
-2. `history/<feature>/CONTEXT.md`
+2. `._qd/history/<feature>/CONTEXT.md`
 3. The current bead you were working on: `br show <bead-id>`
 4. Your active file reservations (query Agent Mail)
 
@@ -408,7 +408,7 @@ When spawned, swarming provides (via Agent Mail message or task prompt):
 - `epic_thread_id` — the Agent Mail thread for this feature (normally the epic bead ID)
 - `epic_topic` — shared swarm topic tag (recommended: `epic-<EPIC_ID>`)
 - `startup_hint` — optional: a bead or area the orchestrator wants checked first
-- `feature_name` — used to locate `history/<feature>/CONTEXT.md`
+- `feature_name` — used to locate `._qd/history/<feature>/CONTEXT.md`
 
 You resolve `resolved_agent_mail_name` yourself during `macro_start_session(...)`.
 

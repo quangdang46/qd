@@ -1,10 +1,10 @@
 ---
 name: swarming
-description: Orchestrates parallel worker agents for phase execution. Use after the khuym:validating skill approves the current phase for execution. Initializes the overseer/orchestrator context, spawns bounded worker subagents, monitors Agent Mail for completions/blockers/file conflicts, coordinates rescues and course corrections, and hands off either to planning for the next phase or to reviewing after the final phase. The orchestrator TENDS — it never implements beads directly.
+description: Orchestrates parallel worker agents for phase execution. Use after the exploringvalidating skill approves the current phase for execution. Initializes the overseer/orchestrator context, spawns bounded worker subagents, monitors Agent Mail for completions/blockers/file conflicts, coordinates rescues and course corrections, and hands off either to planning for the next phase or to reviewing after the final phase. The orchestrator TENDS — it never implements beads directly.
 metadata:
   version: '1.0'
   role: orchestrator
-  ecosystem: khuym
+  ecosystem: qd
   position: 5-of-9
   upstream: validating
   downstream: reviewing
@@ -29,11 +29,11 @@ metadata:
 
 # Swarming
 
-If `.khuym/onboarding.json` is missing or stale for the current repo, stop and invoke `khuym:using-khuym` before continuing.
+If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
 
 ## Role Boundary — Read First
 
-You are the **ORCHESTRATOR**. You launch workers, monitor coordination, handle escalations, and keep the swarm moving. You do NOT implement beads. If you find yourself editing source files, stop immediately — that is the khuym:executing skill's job.
+You are the **ORCHESTRATOR**. You launch workers, monitor coordination, handle escalations, and keep the swarm moving. You do NOT implement beads. If you find yourself editing source files, stop immediately — that is the exploringexecuting skill's job.
 
 - **swarming** = launches and tends workers (this skill)
 - **executing** = each worker's self-routing implementation loop
@@ -68,19 +68,19 @@ In Flywheel terms, this skill is the Khuym/Codex adaptation of the `ntm spawn` +
 
 ## When to Use This Skill
 
-Invoke after the `khuym:validating` skill issues: _"Validation complete. Current phase passes. Invoke khuym:swarming skill."_
+Invoke after the `exploringvalidating` skill issues: _"Validation complete. Current phase passes. Invoke exploringswarming skill."_
 
 Prerequisites:
 - Current-phase beads are in `open` status and approved for execution
 - EPIC_ID is known (from STATE.md or user input)
 - Agent Mail server is reachable
-- If `.codex/khuym_status.mjs` exists, run `node .codex/khuym_status.mjs --json` first to confirm onboarding, current phase, and any saved handoff before launching the swarm
+- If `.codex/_qd_status.mjs` exists, run `node .codex/_qd_status.mjs --json` first to confirm onboarding, current phase, and any saved handoff before launching the swarm
 
 ---
 
 ## Phase 1: Confirm Swarm Readiness
 
-1. Get `EPIC_ID`: prefer `.khuym/state.json`, then `.khuym/STATE.md`, then ask the user.
+1. Get `EPIC_ID`: prefer `._qd/state.json`, then `._qd/STATE.md`, then ask the user.
 2. Check live bead status:
    ```bash
    bv --robot-triage --graph-root <EPIC_ID>
@@ -89,7 +89,7 @@ Prerequisites:
    - open beads exist
    - dependencies are acyclic
    - no unresolved validation blockers remain
-4. Update `.khuym/state.json` and `.khuym/STATE.md` with current swarm intent and epic ID.
+4. Update `._qd/state.json` and `._qd/STATE.md` with current swarm intent and epic ID.
 
 **Do not** compute runtime tracks, runtime waves, or any separate runtime planning artifact. In the corrected model, the bead graph itself is the execution source of truth.
 
@@ -172,7 +172,7 @@ Do not invent worker names locally. The parent runtime result is the source of t
 Provide each worker:
 - Codex subagent nickname plus the bootstrap context needed to resolve Agent Mail identity
 - Feature name / epic ID
-- Instruction to load the `khuym:executing` skill immediately
+- Instruction to load the `exploringexecuting` skill immediately
 - Optional startup hint if there is an urgent ready bead, clearly labeled as a hint rather than an assignment
 - Scoped task-specific context by default; full parent-context inheritance only when explicitly needed
 
@@ -186,7 +186,7 @@ Do **not** assign workers fixed tracks, fixed waves, or fixed bead lists as the 
 7. implement and report
 8. loop
 
-Mark spawned workers in `.khuym/STATE.md` under `## Active Workers` immediately after each spawn result.
+Mark spawned workers in `._qd/STATE.md` under `## Active Workers` immediately after each spawn result.
 
 Use one line per worker:
 
@@ -221,7 +221,7 @@ fetch_topic(
 
 Then:
 1. Process every new worker message before moving on
-2. Update `.khuym/STATE.md` to reflect the latest worker status
+2. Update `._qd/STATE.md` to reflect the latest worker status
 3. Reply, remind, or coordinate immediately when a worker is blocked or waiting
 4. Re-run the live graph check when a bead closes, a blocker clears, a worker goes silent, or the thread state looks stale
 
@@ -239,16 +239,16 @@ When a worker posts an online message:
 1. Confirm it joined the correct epic thread
 2. Confirm it reports both the Codex nickname and resolved Agent Mail name
 3. Confirm it explicitly says `AGENTS.md` was read
-4. Confirm it is loading `khuym:executing`
+4. Confirm it is loading `exploringexecuting`
 5. Confirm the worker's next step is `fetch_inbox(...)`, then `bv --robot-priority`
-6. Update the matching `.khuym/STATE.md` worker entry from:
+6. Update the matching `._qd/STATE.md` worker entry from:
    `Codex: <nickname> | Agent Mail: pending | Status: spawned | Current bead: -`
    to:
    `Codex: <nickname> | Agent Mail: <resolved-name> | Status: online | Current bead: -`
 
 If a worker does not post a startup acknowledgment:
 1. After 2 poll cycles: send a direct reminder telling the worker to re-read `AGENTS.md`, post `[ONLINE]`, and fetch inbox
-2. After 3 silent poll cycles: mark the worker `stalled-startup` in `.khuym/STATE.md` and send a second reminder
+2. After 3 silent poll cycles: mark the worker `stalled-startup` in `._qd/STATE.md` and send a second reminder
 3. After 5 silent poll cycles with ready work remaining: escalate to the user with the specific worker name, current graph state, and recovery attempts already made
 
 ### Bead Completion Reports
@@ -257,7 +257,7 @@ When a worker posts a completion report:
 1. Verify the bead is actually closed: `br status <bead-id>`
 2. Acknowledge receipt on the thread
 3. Confirm the report includes the bead ID, both worker identities, verification summary, and commit hash
-4. Update `.khuym/STATE.md` using the existing worker entry keyed by Codex nickname
+4. Update `._qd/STATE.md` using the existing worker entry keyed by Codex nickname
 5. Re-check the graph to see what newly unblocked
 
 ### Blocker Alerts
@@ -268,7 +268,7 @@ When a worker posts a blocker alert:
    - **Needs another worker's status or release:** coordinate via thread
    - **Needs human judgment:** escalate to user quickly
 2. Do not let workers spin silently on blockers
-3. Record blocker state in `.khuym/STATE.md` on the same worker entry that tracks both names
+3. Record blocker state in `._qd/STATE.md` on the same worker entry that tracks both names
 
 ### File Conflict Requests
 
@@ -278,7 +278,7 @@ When a worker requests a file another worker holds:
    - holder releases at a safe checkpoint
    - requester waits
    - requester defers and creates a follow-up bead
-3. Log the resolution in `.khuym/STATE.md` using the existing two-name worker entries
+3. Log the resolution in `._qd/STATE.md` using the existing two-name worker entries
 
 ### Silence Ladder
 
@@ -286,7 +286,7 @@ Silence is not neutral. Treat it as a coordination problem to resolve.
 
 - After 2 quiet poll cycles from a worker that should have reported: send a reminder
 - After 3 quiet poll cycles from an active worker: send a direct status check telling the worker to fetch inbox, re-read `AGENTS.md` if needed, and report back on the epic thread
-- After 5 quiet poll cycles while ready work, in-progress work, or unresolved reservations still exist: mark the worker stalled in `.khuym/STATE.md` and escalate to the user with the concrete status, what you already tried, and why the swarm cannot safely continue unattended
+- After 5 quiet poll cycles while ready work, in-progress work, or unresolved reservations still exist: mark the worker stalled in `._qd/STATE.md` and escalate to the user with the concrete status, what you already tried, and why the swarm cannot safely continue unattended
 
 ### Overseer Broadcasts
 
@@ -301,7 +301,7 @@ Use broadcast messages when the swarm needs a shared correction, for example:
 After each significant event, estimate your own context budget.
 
 **If context >65% used:**
-1. Write `.khuym/HANDOFF.json` with complete swarm state (see `references/message-templates.md` → **Handoff JSON template**)
+1. Write `._qd/HANDOFF.json` with complete swarm state (see `references/message-templates.md` → **Handoff JSON template**)
 2. Broadcast a pause notification on the epic thread
 3. Report to user that the orchestrator paused safely and how to resume
 4. Do NOT abandon the swarm without writing `HANDOFF.json`
@@ -321,8 +321,8 @@ When no current-phase beads remain `in_progress` and the graph shows no remainin
    - ask the user whether to defer, create cleanup beads, or continue later
 3. If all current-phase beads are closed:
    - run final build/test commands appropriate to the project
-   - clear `## Active Workers` from `.khuym/STATE.md`
-   - inspect `history/<feature>/phase-plan.md` and `.khuym/STATE.md`
+   - clear `## Active Workers` from `._qd/STATE.md`
+   - inspect `._qd/history/<feature>/phase-plan.md` and `._qd/STATE.md`
    - if more phases remain:
      ```
      Active skill: swarming -> COMPLETE
@@ -338,9 +338,9 @@ When no current-phase beads remain `in_progress` and the graph shows no remainin
 
 4. Handoff message:
    - if more phases remain:
-     > "Swarm execution complete for the current phase. Return to khuym:planning to prepare the next phase."
+     > "Swarm execution complete for the current phase. Return to exploringplanning to prepare the next phase."
    - if this was the final phase:
-     > "Swarm execution complete for the final phase. Invoke khuym:reviewing skill."
+     > "Swarm execution complete for the final phase. Invoke exploringreviewing skill."
 
 ---
 

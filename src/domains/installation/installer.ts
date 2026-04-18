@@ -20,6 +20,7 @@ const { Manifest } = require('./manifest');
 const { ArtifactResolver } = require('./artifact-resolver');
 const { matchGlob } = require('../../helpers/glob');
 const { mdToToml, escapeTomlString } = require('../../helpers/toml');
+const { mergeAgentsTemplate } = require('../../helpers/agents-merge');
 const prompts = require('../../shared/prompts');
 
 const OUTPUT_FOLDER = 'learnings';
@@ -63,7 +64,7 @@ class Installer {
       }
 
       await this.phase4CopyToTargets(projectDir, platformConfig, artifacts, config);
-      await this.phase5CreateOutputDir(projectDir);
+      // Phase 5: no output folder creation needed — history/ created at runtime
       await this.phase6WriteManifest(projectDir, artifacts, platformConfig);
       await this.phaseAddToGitignore(projectDir);
       await this.phase6DisplaySummary(platformConfig);
@@ -259,9 +260,18 @@ class Installer {
       // File in artifacts root (like module.yaml, testfile.md) or in untracked nested dir
       // Check if it's directly in artifacts root (not in any type subdirectory)
       if (sourceDir === artifactsDir) {
-        // File at artifacts root level - copy to IDE root directly (e.g., .claude/testfile.md)
+        // File at artifacts root level
         const sourceFile = artifact.sourcePath;
         const fileName = path.basename(sourceFile);
+
+        // Special case: AGENTS.template.md → AGENTS.md at project root (smart merge)
+        if (fileName === 'AGENTS.template.md') {
+          const targetFile = path.join(projectDir, 'AGENTS.md');
+          await mergeAgentsTemplate(sourceFile, targetFile);
+          return;
+        }
+
+        // Copy to IDE target (e.g., .claude/testfile.md)
         const targetFile = path.join(projectDir, target_dir, fileName);
         await fs.copy(sourceFile, targetFile, { overwrite: true });
         return;
@@ -403,10 +413,7 @@ class Installer {
     return tomlLines.join('\n');
   }
 
-  async phase5CreateOutputDir(projectDir) {
-    const { qdDir } = await this.findQdDir(projectDir);
-    await fs.ensureDir(path.join(qdDir, OUTPUT_FOLDER));
-  }
+// Phase 5 intentionally empty — history/ created at runtime, not during install
 
   async phase6WriteManifest(projectDir, artifacts, platformConfig) {
     const { qdDir } = await this.findQdDir(projectDir);
@@ -504,7 +511,7 @@ class Installer {
     }
 
     lines.push('');
-    lines.push(`  Output folder: ${OUTPUT_FOLDER}/`);
+    lines.push('  History/ learn ings created at runtime, not during install');
     lines.push('');
     lines.push('  Get started:');
     lines.push('    1. Launch your AI agent');

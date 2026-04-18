@@ -1,3 +1,0 @@
-# Ignore scripts directory for all IDEs
-# These are internal tooling scripts, not user-facing artifacts
-supported_ides: []

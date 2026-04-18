@@ -1,12 +1,12 @@
 ---
 name: validating
 description: |
-  The critical gate between planning and execution in the khuym ecosystem. Load this skill after planning has written phase-plan.md, the user has approved the phase plan, and the current phase has been decomposed into stories and beads. Verifies the current phase contract, story map, and bead graph across 8 structural dimensions, executes time-boxed spikes for HIGH-risk items, polishes current-phase beads with bv graph analytics, and requires explicit user approval before any code is written.
+  The critical gate between planning and execution in the qd ecosystem. Load this skill after planning has written phase-plan.md, the user has approved the phase plan, and the current phase has been decomposed into stories and beads. Verifies the current phase contract, story map, and bead graph across 8 structural dimensions, executes time-boxed spikes for HIGH-risk items, polishes current-phase beads with bv graph analytics, and requires explicit user approval before any code is written.
 metadata:
   version: '1.2'
   position: 3
   chain: exploring -> planning -> validating -> swarming
-  ecosystem: khuym
+  ecosystem: qd
   dependencies:
     - id: beads-cli
       kind: command
@@ -22,10 +22,10 @@ metadata:
 
 # Validating
 
-If `.khuym/onboarding.json` is missing or stale for the current repo, stop and invoke `khuym:using-khuym` before continuing.
+If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
 
 > "Don't jump off the wall without checking."
-> — The khuym principle on verification
+> — The qd principle on verification
 
 ## Why This Skill Exists
 
@@ -59,21 +59,21 @@ Do not stop at labels like `dependency issue`, `story order problem`, `context b
 
 You need all of these:
 
-- `history/<feature>/CONTEXT.md`
-- `history/<feature>/discovery.md`
-- `history/<feature>/approach.md`
-- `history/<feature>/phase-plan.md`
-- `history/<feature>/phase-<n>-contract.md`
-- `history/<feature>/phase-<n>-story-map.md`
+- `._qd/history/<feature>/CONTEXT.md`
+- `._qd/history/<feature>/discovery.md`
+- `._qd/history/<feature>/approach.md`
+- `._qd/history/<feature>/phase-plan.md`
+- `._qd/history/<feature>/phase-<n>-contract.md`
+- `._qd/history/<feature>/phase-<n>-story-map.md`
 - `.beads/` for the current phase
 
-If any are missing, stop and return to `khuym:planning`.
+If any are missing, stop and return to `exploringplanning`.
 
 ## Phase 0: Current Phase Orientation
 
 Before structural verification, orient the validator.
 
-Read from `.khuym/STATE.md` and the phase artifacts:
+Read from `._qd/STATE.md` and the phase artifacts:
 
 - current phase number and name
 - whether `phase-plan.md` was approved
@@ -108,12 +108,12 @@ Load `references/plan-checker-prompt.md`. Spawn an isolated subagent with:
 ```text
 Inputs:
 - current phase bead set
-- history/<feature>/CONTEXT.md
-- history/<feature>/discovery.md
-- history/<feature>/approach.md
-- history/<feature>/phase-plan.md
-- history/<feature>/phase-<n>-contract.md
-- history/<feature>/phase-<n>-story-map.md
+- ._qd/history/<feature>/CONTEXT.md
+- ._qd/history/<feature>/discovery.md
+- ._qd/history/<feature>/approach.md
+- ._qd/history/<feature>/phase-plan.md
+- ._qd/history/<feature>/phase-<n>-contract.md
+- ._qd/history/<feature>/phase-<n>-story-map.md
 Role: plan-checker
 ```
 
@@ -194,7 +194,7 @@ br close <id> --reason "NO: <blocker and why it breaks the approach>"
 
 - full stop
 - write blocker summary into `approach.md`
-- return to `khuym:planning`
+- return to `exploringplanning`
 - re-run validating from Phase 0 after replanning
 
 ---
@@ -248,7 +248,7 @@ Fix all CRITICAL flags before moving on. MINOR flags are judgment calls but shou
 
 ### Story-to-bead coherence check
 
-Before leaving Phase 3, inspect `history/<feature>/phase-<n>-story-map.md`:
+Before leaving Phase 3, inspect `._qd/history/<feature>/phase-<n>-story-map.md`:
 
 - every story should map to at least one bead
 - every bead should belong to a story
@@ -320,7 +320,7 @@ Approve execution for Phase <n>? (yes/no)
 
 ### If user approves
 
-Update `.khuym/STATE.md`:
+Update `._qd/STATE.md`:
 
 ```text
 PHASE: validated
@@ -333,7 +333,7 @@ BEADS: <N>
 
 Handoff:
 
-`Validation complete. Current phase passes. Invoke khuym:swarming skill.`
+`Validation complete. Current phase passes. Invoke exploringswarming skill.`
 
 ### If user rejects
 
@@ -368,8 +368,8 @@ Validating approves execution for the **current phase only**.
 
 After swarming finishes:
 
-- if more phases remain in `phase-plan.md`, return to `khuym:planning` to prepare the next phase
-- if this was the final phase, proceed to `khuym:reviewing`
+- if more phases remain in `phase-plan.md`, return to `exploringplanning` to prepare the next phase
+- if this was the final phase, proceed to `exploringreviewing`
 
 Do not assume later phases are ready just because the current phase passed.
 
