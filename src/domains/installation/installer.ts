@@ -18,6 +18,8 @@ const { loadPlatformCodes } = require('../ide/platform-codes');
 const { getProjectRoot } = require('./project-root');
 const { Manifest } = require('./manifest');
 const { ArtifactResolver } = require('./artifact-resolver');
+const { matchGlob } = require('../../helpers/glob');
+const { mdToToml, escapeTomlString } = require('../../helpers/toml');
 const prompts = require('../../shared/prompts');
 
 const OUTPUT_FOLDER = 'learnings';
@@ -211,25 +213,13 @@ class Installer {
       if (!rules || typeof rules !== 'object') continue;
 
       for (const [pattern, format] of Object.entries(rules)) {
-        if (this.matchGlob(pattern, relativePath)) {
+        if (matchGlob(pattern, relativePath)) {
           return { ide, format };
         }
       }
     }
 
     return null;
-  }
-
-  matchGlob(pattern, str) {
-    const regex = pattern
-      .replace(/\./g, '\\.')
-      .replace(/\*\*/g, '{{DOUBLE_STAR}}')
-      .replace(/\*/g, '[^/]*')
-      .replace(/\?/g, '[^/]')
-      .replace(/\/{{DOUBLE_STAR}}\//g, '(.*/)?')
-      .replace(/\/{{DOUBLE_STAR}}/g, '.*');
-
-    return new RegExp(`^${regex}$`).test(str);
   }
 
   async phase4CopyToTargets(projectDir, platformConfig, artifacts, config) {
@@ -289,7 +279,7 @@ class Installer {
       // Check if format conversion is needed (e.g., codex agents -> toml)
       if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
         const content = await fs.readFile(sourceFile, 'utf8');
-        const tomlContent = this.mdToToml(content);
+        const tomlContent = mdToToml(content);
         const targetFile = path.join(targetPath, `${baseName}.toml`);
         await fs.writeFile(targetFile, tomlContent, 'utf8');
       } else {
@@ -314,7 +304,7 @@ class Installer {
       const mdFile = path.join(sourceDir, 'SKILL.md');
       if (await fs.pathExists(mdFile)) {
         const content = await fs.readFile(mdFile, 'utf8');
-        const tomlContent = this.mdToToml(content);
+        const tomlContent = mdToToml(content);
         const baseName = path.basename(mdFile, '.md');
         const targetFile = path.join(destSkillDir, `${baseName}.toml`);
         await fs.writeFile(targetFile, tomlContent, 'utf8');
@@ -337,11 +327,6 @@ class Installer {
 
   getArtifactType(relativePath) {
     return this.resolver.getArtifactType(relativePath);
-  }
-
-  escapeTomlString(str) {
-    if (!str) return '';
-    return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
   }
 
   mdToToml(mdContent) {
@@ -371,10 +356,10 @@ class Installer {
 
     // Required fields for Codex subagents
     if (frontmatter.name) {
-      tomlLines.push(`name = "${this.escapeTomlString(frontmatter.name)}"`);
+      tomlLines.push(`name = "${escapeTomlString(frontmatter.name)}"`);
     }
     if (frontmatter.description) {
-      tomlLines.push(`description = "${this.escapeTomlString(frontmatter.description)}"`);
+      tomlLines.push(`description = "${escapeTomlString(frontmatter.description)}"`);
     }
 
     // developer_instructions is REQUIRED - collect all markdown content
