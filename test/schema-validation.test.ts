@@ -35,6 +35,88 @@ describe('Schema Validation', () => {
     await fs.remove(tempDir);
   });
 
+  describe('artifacts/module.yaml validation', () => {
+    test('real artifacts/module.yaml is valid', async () => {
+      const modulePath = 'artifacts/module.yaml';
+      const content = await fs.readFile(modulePath, 'utf8');
+      const parsed = yaml.parse(content);
+
+      // Must have basic fields
+      expect(parsed.code).toBeDefined();
+      expect(parsed.name).toBeDefined();
+
+      // supported_ides must be array of valid IDEs
+      expect(Array.isArray(parsed.supported_ides)).toBe(true);
+      if (parsed.supported_ides.length > 0) {
+        const validIdes = ['claude-code', 'cursor', 'windsurf', 'codex', 'gemini', 'github-copilot', 'roo', 'trae'];
+        for (const ide of parsed.supported_ides) {
+          expect(validIdes).toContain(ide);
+        }
+      }
+
+      // Cannot have both supported_ides AND ignored_ides
+      if (parsed.supported_ides && parsed.ignored_ides) {
+        throw new Error('Cannot have both supported_ides and ignored_ides');
+      }
+
+      // convert must be object if present
+      if (parsed.convert) {
+        expect(typeof parsed.convert).toBe('object');
+      }
+
+      // overrides must be object if present
+      if (parsed.overrides) {
+        expect(typeof parsed.overrides).toBe('object');
+      }
+    });
+
+    test('real artifacts/module.yaml structure matches expected schema', async () => {
+      const modulePath = 'artifacts/module.yaml';
+      const content = await fs.readFile(modulePath, 'utf8');
+      const parsed = yaml.parse(content);
+
+      // Expected top-level keys
+      const allowedKeys = ['code', 'name', 'description', 'supported_ides', 'ignored_ides', 'overrides', 'convert'];
+      const actualKeys = Object.keys(parsed);
+
+      for (const key of actualKeys) {
+        expect(allowedKeys).toContain(key);
+      }
+
+      // Check supported_ides is array of strings
+      if (parsed.supported_ides) {
+        expect(Array.isArray(parsed.supported_ides)).toBe(true);
+        for (const ide of parsed.supported_ides) {
+          expect(typeof ide).toBe('string');
+        }
+      }
+
+      // Check ignored_ides is array of strings
+      if (parsed.ignored_ides) {
+        expect(Array.isArray(parsed.ignored_ides)).toBe(true);
+        for (const ide of parsed.ignored_ides) {
+          expect(typeof ide).toBe('string');
+        }
+      }
+
+      // Check convert format
+      if (parsed.convert) {
+        for (const [ide, rules] of Object.entries(parsed.convert)) {
+          expect(typeof ide).toBe('string'); // IDE key
+          expect(typeof rules).toBe('object'); // Pattern→format mapping
+        }
+      }
+
+      // Check overrides format
+      if (parsed.overrides) {
+        for (const [filename, override] of Object.entries(parsed.overrides)) {
+          expect(typeof filename).toBe('string'); // File being overridden
+          expect(typeof override).toBe('object'); // Override config
+        }
+      }
+    });
+  });
+
   describe('module.yaml', () => {
     test('valid module.yaml with name and version', async () => {
       const moduleYaml = `
