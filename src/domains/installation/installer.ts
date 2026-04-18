@@ -32,14 +32,35 @@ class Installer {
 
   async install(options = {}) {
     const projectDir = path.resolve(options.directory || process.cwd());
+    const autoConfirm = options.autoConfirm || false;
 
     try {
       const config = await this.phase1CollectConfig(projectDir);
       const platformConfig = await this.phase2DetectIdes(options.ides || []);
       const artifacts = await this.phase3WalkArtifacts(projectDir, config);
+
+      // Check for existing files before copying
+      const conflicts = await this.findConflicts(projectDir, platformConfig, artifacts);
+      if (conflicts.length > 0) {
+        if (!autoConfirm) {
+          await prompts.note(
+            conflicts.slice(0, 10).join('\n') + (conflicts.length > 10 ? `\n... and ${conflicts.length - 10} more` : ''),
+            `Found ${conflicts.length} existing file(s)`
+          );
+          const confirmed = await prompts.confirm({
+            message: 'Overwrite existing files?',
+            initialValue: false,
+          });
+          if (!confirmed) {
+            await prompts.log.info('Installation cancelled');
+            return { success: false, projectDir, ides: this.selectedIdes };
+          }
+        }
+      }
+
       await this.phase4CopyToTargets(projectDir, platformConfig, artifacts, config);
       await this.phase5CreateOutputDir(projectDir);
-      await this.phase6WriteManifest(projectDir, artifacts);
+      await this.phase6WriteManifest(projectDir, artifacts, platformConfig);
       await this.phase6DisplaySummary(platformConfig);
 
       return { success: true, projectDir, ides: this.selectedIdes };
@@ -47,6 +68,47 @@ class Installer {
       await prompts.log.error(`Installation failed: ${error.message}`);
       throw error;
     }
+  }
+
+  async findConflicts(projectDir, platformConfig, artifacts) {
+    const conflicts = [];
+    for (const artifact of artifacts) {
+      if (artifact.targetIdes.length === 0) continue;
+      for (const ide of artifact.targetIdes) {
+        // Only check conflicts for IDEs being installed now
+        if (!this.selectedIdes.includes(ide)) continue;
+        const platform = platformConfig.platforms[ide];
+        if (!platform?.installer) continue;
+        const targetPath = this.getTargetPath(projectDir, ide, artifact);
+        if (await fs.pathExists(targetPath)) {
+          conflicts.push(path.relative(projectDir, targetPath));
+        }
+      }
+    }
+    return conflicts;
+  }
+
+  getTargetPath(projectDir, ide, artifact) {
+    const platform = this.platformConfig.platforms[ide];
+    const { target_dir } = platform.installer;
+    const artifactType = this.getArtifactType(artifact.relativePath);
+    const targetBase = path.join(projectDir, target_dir, artifactType);
+
+    const sourceDir = path.dirname(artifact.sourcePath);
+    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+
+    if (sourceDir === typeRootDir) {
+      const sourceFile = artifact.sourcePath;
+      const fileName = path.basename(sourceFile);
+      const baseName = path.basename(fileName, path.extname(fileName));
+      if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
+        return path.join(targetBase, `${baseName}.toml`);
+      }
+      return path.join(targetBase, fileName);
+    }
+
+    const sourceBasename = path.basename(sourceDir);
+    return path.join(targetBase, sourceBasename);
   }
 
   async phase1CollectConfig(projectDir) {
@@ -98,6 +160,7 @@ class Installer {
     }
 
     await this.walkDir(artifactsDir, artifactsDir, null, entries, config);
+
     return entries;
   }
 
@@ -112,14 +175,16 @@ class Installer {
       if (dirent.name === OUTPUT_FOLDER) continue;
 
       if (dirent.isDirectory()) {
+        let dirSchema = parentSchema; // Start with parent's schema
         const schemaPath = path.join(fullPath, 'schema.yaml');
         if (await fs.pathExists(schemaPath)) {
-          currentSchema = await this.readSchema(schemaPath);
+          dirSchema = await this.readSchema(schemaPath);
         }
-        await this.walkDir(fullPath, artifactsRoot, currentSchema, entries, config);
+        await this.walkDir(fullPath, artifactsRoot, dirSchema, entries, config);
+        // After processing directory, update currentSchema so subsequent files use the correct schema
+        currentSchema = dirSchema;
       } else if (dirent.isFile()) {
-        if (!dirent.name.endsWith('.md') && !dirent.name.endsWith('.yaml')) continue;
-        if (dirent.name === 'schema.yaml') continue;
+        if (dirent.name === 'schema.yaml' || dirent.name.endsWith('.example.yaml')) continue;
 
         const fileSchema = currentSchema || { supported_ides: null, ignored_ides: null, overrides: {} };
         const overrideKey = dirent.name;
@@ -286,7 +351,7 @@ class Installer {
 
   getArtifactType(relativePath) {
     const parts = relativePath.split(path.sep);
-    if (parts.length > 1 && ['skills', 'commands', 'agents', 'subagents'].includes(parts[0])) {
+    if (parts.length > 1 && ['skills', 'commands', 'agents', 'subagents', 'hooks', 'rules', 'output-styles'].includes(parts[0])) {
       return parts[0];
     }
     return 'skills';
@@ -377,50 +442,55 @@ class Installer {
     await fs.ensureDir(path.join(qdDir, OUTPUT_FOLDER));
   }
 
-  async phase6WriteManifest(projectDir, artifacts) {
+  async phase6WriteManifest(projectDir, artifacts, platformConfig) {
     const { qdDir } = await this.findQdDir(projectDir);
     await fs.ensureDir(path.join(qdDir, '_config'));
 
     const manifest = new Manifest();
-    const artifactEntries = [];
+    const existingManifest = await manifest.read(qdDir);
+    const existingIdes = existingManifest?.ides || [];
+    const existingArtifacts = existingManifest?.artifacts || [];
 
+    // Merge IDEs: keep old ones + add new ones
+    const allIdes = [...new Set([...existingIdes, ...this.selectedIdes])];
+
+    // Replace artifacts for current IDEs (remove old, add new)
+    const currentIdeArtifacts = [];
     for (const artifact of artifacts) {
       if (artifact.targetIdes.length === 0) continue;
-
       for (const ide of artifact.targetIdes) {
-        const platform = this.platformConfig?.platforms?.[ide];
+        const platform = platformConfig.platforms[ide];
         if (!platform?.installer) continue;
-
         const { target_dir } = platform.installer;
         const artifactType = this.getArtifactType(artifact.relativePath);
-        const targetPath = path.join(projectDir, target_dir, artifactType);
-
-        // Determine actual installed file path (may have different extension for TOML)
-        const sourceFile = artifact.sourcePath;
-        const fileName = path.basename(sourceFile);
-        const baseName = path.basename(fileName, path.extname(fileName));
-        let installedFile;
-
-        if (artifact.convertFormat && artifact.convertFormat.ide === ide && artifact.convertFormat.format === 'toml') {
-          installedFile = path.join(targetPath, `${baseName}.toml`);
-        } else {
-          installedFile = path.join(targetPath, fileName);
-        }
-
-        // Store relative path from projectDir for portability
-        const relativeInstalledPath = path.relative(projectDir, installedFile);
-
-        // For nested skill directories (BMAD pattern), also track the parent dir
         const sourceDir = path.dirname(artifact.sourcePath);
+        const sourceBasename = path.basename(sourceDir);
         const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
-        const isNestedDir = sourceDir !== typeRootDir && sourceDir.startsWith(typeRootDir + path.sep);
-        const installedDir = isNestedDir
-          ? path.relative(projectDir, path.join(targetPath, path.basename(sourceDir)))
-          : null;
+        const fileName = path.basename(artifact.sourcePath);
+        const baseName = path.basename(fileName, path.extname(fileName));
 
-        artifactEntries.push({
+
+        let installed;
+        if (sourceDir === typeRootDir) {
+          // Direct file in type root
+          if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
+            installed = path.join(target_dir, artifactType, `${baseName}.toml`);
+          } else {
+            installed = path.join(target_dir, artifactType, fileName);
+          }
+        } else {
+          // Nested skill directory
+          if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
+            installed = path.join(target_dir, artifactType, sourceBasename, `${baseName}.toml`);
+          } else {
+            installed = path.join(target_dir, artifactType, sourceBasename, fileName);
+          }
+        }
+        const installedDir = path.join(projectDir, path.dirname(installed));
+
+        currentIdeArtifacts.push({
           source: artifact.relativePath,
-          installed: relativeInstalledPath,
+          installed,
           installedDir,
           ide,
           artifactType,
@@ -428,10 +498,14 @@ class Installer {
       }
     }
 
+    // Remove old artifacts for current IDEs, keep others
+    const artifactEntries = existingArtifacts.filter(a => !this.selectedIdes.includes(a.ide));
+    artifactEntries.push(...currentIdeArtifacts);
+
     await manifest.write(qdDir, {
       version: '1.0.0',
       installDate: new Date().toISOString(),
-      ides: this.selectedIdes,
+      ides: allIdes,
       artifacts: artifactEntries,
     });
   }
@@ -520,35 +594,46 @@ class Installer {
     // Only delete files and directories that QD actually installed (from manifest)
     // This preserves user's custom files in the same directories
     const dirsToCheck = new Set();
+    const ideRootsToClean = new Set();
 
     for (const entry of installedFiles) {
-      // Remove installed file
       const targetPath = path.join(projectDir, entry.installed);
+
+      // Remove file if exists
       if (await fs.pathExists(targetPath)) {
         await fs.remove(targetPath);
       }
 
-      // Remove installed directory (for nested skill dirs like agent-browser/)
+      // Remove nested directory if present
       if (entry.installedDir) {
         const targetDir = path.join(projectDir, entry.installedDir);
         if (await fs.pathExists(targetDir)) {
           await fs.remove(targetDir);
         }
-        dirsToCheck.add(path.dirname(targetDir));
-      } else {
-        dirsToCheck.add(path.dirname(targetPath));
       }
+
+      // Track parent dirs and IDE roots for cleanup
+      dirsToCheck.add(path.dirname(targetPath));
+      ideRootsToClean.add(path.join(projectDir, entry.installed.split(path.sep)[0]));
     }
 
-    // Clean up empty artifact type directories after removing files
-    for (const dir of dirsToCheck) {
+    // Clean up empty directories and IDE roots
+    for (const dir of [...dirsToCheck, ...ideRootsToClean]) {
       try {
-        const entries = await fs.readdir(dir);
-        if (entries.length === 0) {
+        if ((await fs.readdir(dir)).length === 0) {
           await fs.remove(dir);
         }
       } catch {
-        // Ignore errors - directory might not exist or not be empty
+        // Ignore errors
+      }
+    }
+
+    // Force remove IDE root directories since they should be empty of QD content
+    for (const ideRoot of ideRootsToClean) {
+      try {
+        await fs.remove(ideRoot);
+      } catch {
+        // Ignore errors
       }
     }
   }
