@@ -2,3 +2,19 @@
 test/
 coverage/
 test-output/
+
+# Source and build
+src/
+tsconfig.json
+jest.config.ts
+
+# References and docs
+references/
+docs/
+
+# Internal tooling
+.omc/
+.artifacts/
+
+# Include runtime YAML from domains
+!src/domains/**/*.yaml

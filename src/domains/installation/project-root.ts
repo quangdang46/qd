@@ -8,6 +8,18 @@ const path = require('node:path');
 const fs = require('../../shared/fs-native');
 
 function findProjectRoot(startPath = path.join(__dirname, '..')) {
+  // First try using require.resolve to find the qdspec package
+  try {
+    const qdspecPath = require.resolve('qdspec/package.json');
+    const qdspecDir = path.dirname(qdspecPath);
+    if (fs.existsSync(path.join(qdspecDir, 'artifacts'))) {
+      return qdspecDir;
+    }
+  } catch {
+    // Continue with fallback
+  }
+
+  // Fallback: walk up from startPath looking for qdspec package.json
   let currentPath = path.resolve(startPath);
 
   while (currentPath !== path.dirname(currentPath)) {
@@ -16,7 +28,7 @@ function findProjectRoot(startPath = path.join(__dirname, '..')) {
     if (fs.existsSync(packagePath)) {
       try {
         const pkg = fs.readJsonSync(packagePath);
-        if (pkg.name === 'qd' || pkg.name === 'qd-method') {
+        if (pkg.name === 'qdspec') {
           return currentPath;
         }
       } catch {
