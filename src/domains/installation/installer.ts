@@ -303,8 +303,10 @@ class Installer {
       return;
     }
 
-    // Nested skill directory (e.g., artifacts/skills/agent-browser) -> copy entire dir
-    const destSkillDir = path.join(targetPath, sourceBasename);
+    // Nested skill directory (e.g., artifacts/skills/xia/agents) -> copy entire dir preserving structure
+    // Compute the relative path from typeRootDir to preserve nested structure
+    const relativeToTypeRoot = path.relative(typeRootDir, sourceDir);
+    const destSkillDir = path.join(targetPath, relativeToTypeRoot);
 
     // Clean target skill dir before copy to prevent stale files
     if (await fs.pathExists(destSkillDir)) {
