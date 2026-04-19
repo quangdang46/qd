@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
+import { buildQDDependencyReport } from "./qd_dependencies.mjs";
 
 export const STATE_SCHEMA_VERSION = "1.0";
 
@@ -47,7 +47,7 @@ const WALK_SKIP_DIRS = new Set([
   ".git",
   ".hg",
   ".idea",
-  "._qd",
+  ".qd",
   ".next",
   ".pnpm-store",
   ".turbo",
@@ -437,10 +437,10 @@ export function normalizeQDState(state) {
 
 export function getQDStatePaths(repoRoot) {
   return {
-    stateJson: path.join(repoRoot, "._qd", "state.json"),
-    stateMarkdown: path.join(repoRoot, "._qd", "STATE.md"),
-    handoff: path.join(repoRoot, "._qd", "HANDOFF.json"),
-    config: path.join(repoRoot, "._qd", "config.json"),
+    stateJson: path.join(repoRoot, ".qd", "state.json"),
+    stateMarkdown: path.join(repoRoot, ".qd", "STATE.md"),
+    handoff: path.join(repoRoot, ".qd", "HANDOFF.json"),
+    config: path.join(repoRoot, ".qd", "config.json"),
     agents: path.join(repoRoot, "AGENTS.md"),
     criticalPatterns: path.join(repoRoot, "history", "learnings", "critical-patterns.md"),
   };
@@ -486,24 +486,24 @@ function buildNextReads(status) {
   const reads = ["AGENTS.md"];
 
   if (status.handoff.exists) {
-    reads.push("._qd/HANDOFF.json");
+    reads.push(".qd/HANDOFF.json");
   }
 
   if (status.state_json.exists) {
-    reads.push("._qd/state.json");
+    reads.push(".qd/state.json");
   }
 
   if (status.state_markdown.exists) {
-    reads.push("._qd/STATE.md");
+    reads.push(".qd/STATE.md");
   }
 
   const featureSlug = deriveFeatureSlug(status);
   if (featureSlug) {
-    reads.push(`._qd/._qd/history/${featureSlug}/CONTEXT.md`);
+    reads.push(`.qd/.qd/history/${featureSlug}/CONTEXT.md`);
   }
 
   if (status.critical_patterns_exists) {
-    reads.push("._qd/history/learnings/critical-patterns.md");
+    reads.push(".qd/history/learnings/critical-patterns.md");
   }
 
   return reads;

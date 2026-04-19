@@ -3,8 +3,8 @@
 **Date**: <YYYY-MM-DD>
 **Feature**: <feature-slug>
 **Based on**:
-- `._qd/history/<feature>/discovery.md`
-- `._qd/history/<feature>/CONTEXT.md`
+- `.qd/history/<feature>/discovery.md`
+- `.qd/history/<feature>/CONTEXT.md`
 
 ---
 
@@ -152,7 +152,7 @@ Layer 5 (sequential): UI (depends on Layer 4)
 
 | Learning Source | Key Insight | How Applied |
 |-----------------|-------------|-------------|
-| `._qd/history/learnings/<file>` | `<gotcha or pattern>` | `<how this approach or specific bead accounts for it>` |
+| `.qd/history/learnings/<file>` | `<gotcha or pattern>` | `<how this approach or specific bead accounts for it>` |
 
 _If none applied: "No prior institutional learnings relevant to this feature."_
 

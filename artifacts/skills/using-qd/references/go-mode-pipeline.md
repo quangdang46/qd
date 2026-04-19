@@ -18,7 +18,7 @@ User: "/go [feature]"
        │
        ▼
 [STEP 1] exploring
-       │ Output: ._qd/history/<feature>/CONTEXT.md
+       │ Output: .qd/history/<feature>/CONTEXT.md
        │
        ▼
 [GATE 1] ← HARD STOP: "Approve CONTEXT.md?"
@@ -57,7 +57,7 @@ User: "/go [feature]"
        │
        ▼
 [STEP 7] compounding
-       │ Capture learnings -> ._qd/history/learnings/
+       │ Capture learnings -> .qd/history/learnings/
        │
        ▼
 DONE
@@ -69,10 +69,10 @@ DONE
 
 Before invoking `exploringexploring`, always:
 
-1. Run State Bootstrap from SKILL.md (check `._qd/`, read `critical-patterns.md`).
+1. Run State Bootstrap from SKILL.md (check `.qd/`, read `critical-patterns.md`).
 2. Determine feature slug from the user's description (lowercase-hyphenated, e.g. `agent-email-inbox`).
-3. Create `._qd/history/<feature>/` if it does not exist.
-4. Write `._qd/STATE.md`:
+3. Create `.qd/history/<feature>/` if it does not exist.
+4. Write `.qd/STATE.md`:
    ```text
    focus: <feature>
    phase: go-mode/exploring
@@ -93,7 +93,7 @@ Before invoking `exploringexploring`, always:
 - Classify domain (SEE / CALL / RUN / READ / ORGANIZE)
 - Identify gray areas via Socratic Q&A
 - Lock decisions with stable IDs (D1, D2, ...)
-- Write `._qd/history/<feature>/CONTEXT.md`
+- Write `.qd/history/<feature>/CONTEXT.md`
 - Self-review `CONTEXT.md`
 
 **Update STATE.md:** `phase: go-mode/gate-1`
@@ -107,7 +107,7 @@ HARD-GATE: Do not proceed until user explicitly approves.
 
 Present:
   "Exploration complete for [feature].
-   [N] decisions locked in ._qd/history/<feature>/CONTEXT.md.
+   [N] decisions locked in .qd/history/<feature>/CONTEXT.md.
    [M] open questions noted.
 
    Key decisions:
@@ -126,14 +126,14 @@ If user says `revise`, loop back to exploring. If user says `yes`, proceed to St
 
 **Invoke:** Load `exploringplanning` skill.
 
-**Input:** `._qd/history/<feature>/CONTEXT.md`, `._qd/history/learnings/critical-patterns.md`.
+**Input:** `.qd/history/<feature>/CONTEXT.md`, `.qd/history/learnings/critical-patterns.md`.
 
 **The first planning pass will:**
 
 - retrieve learnings
 - run discovery
 - synthesize an approach
-- write `._qd/history/<feature>/phase-plan.md`
+- write `.qd/history/<feature>/phase-plan.md`
 - show the full phase breakdown in plain English
 
 **Important:** this step does **not** create beads yet.
@@ -154,7 +154,7 @@ Present:
    - Phase 2: [name] -> [real-world outcome]
    - Phase 3: [name] -> [real-world outcome]
 
-   Stories inside each phase are documented in ._qd/history/<feature>/phase-plan.md.
+   Stories inside each phase are documented in .qd/history/<feature>/phase-plan.md.
 
    Approve this phase/story breakdown before current-phase preparation? (yes / revise / show full phase-plan.md)"
 ```
@@ -172,8 +172,8 @@ If user says `revise`, return to the planning pass that owns `phase-plan.md`. If
 **The second planning pass will:**
 
 - select the current phase from `phase-plan.md`
-- write `._qd/history/<feature>/phase-<n>-contract.md`
-- write `._qd/history/<feature>/phase-<n>-story-map.md`
+- write `.qd/history/<feature>/phase-<n>-contract.md`
+- write `.qd/history/<feature>/phase-<n>-story-map.md`
 - create beads only for that phase
 
 **Rules:**
@@ -299,8 +299,8 @@ If fix beads are created, execute them and re-run reviewing before presenting GA
 **The exploringcompounding skill will:**
 
 - dispatch 3 analysis subagents: patterns / decisions / failures
-- write `._qd/history/learnings/YYYYMMDD-<feature>.md`
-- promote critical items to `._qd/history/learnings/critical-patterns.md`
+- write `.qd/history/learnings/YYYYMMDD-<feature>.md`
+- promote critical items to `.qd/history/learnings/critical-patterns.md`
 - optionally index via CASS
 
 **Final update STATE.md:**
@@ -312,7 +312,7 @@ last_feature: <feature>
 last_updated: <timestamp>
 ```
 
-Delete `._qd/HANDOFF.json` if it exists.
+Delete `.qd/HANDOFF.json` if it exists.
 
 ---
 
@@ -376,7 +376,7 @@ Delete `._qd/HANDOFF.json` if it exists.
 
 ---
 
-## Config Options (._qd/config.json)
+## Config Options (.qd/config.json)
 
 Absent = enabled. Only set to disable.
 

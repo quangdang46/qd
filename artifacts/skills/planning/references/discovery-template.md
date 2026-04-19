@@ -2,13 +2,13 @@
 
 **Date**: <YYYY-MM-DD>
 **Feature**: <feature-slug>
-**CONTEXT.md reference**: `._qd/history/<feature>/CONTEXT.md`
+**CONTEXT.md reference**: `.qd/history/<feature>/CONTEXT.md`
 
 ---
 
 ## Institutional Learnings
 
-> Read during Phase 0 from `._qd/history/learnings/`
+> Read during Phase 0 from `.qd/history/learnings/`
 
 ### Critical Patterns (Always Applied)
 

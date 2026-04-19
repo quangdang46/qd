@@ -10,7 +10,7 @@ class IdeManager {
   constructor() {
     this.handlers = new Map();
     this._initialized = false;
-    this.qdFolderName = '_qd';
+    this.qdFolderName = '.qd';
   }
 
   setQdFolderName(qdFolderName) {

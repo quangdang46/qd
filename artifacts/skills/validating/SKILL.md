@@ -58,12 +58,12 @@ Do not stop at labels like `dependency issue`, `story order problem`, `context b
 
 You need all of these:
 
-- `._qd/history/<feature>/CONTEXT.md`
-- `._qd/history/<feature>/discovery.md`
-- `._qd/history/<feature>/approach.md`
-- `._qd/history/<feature>/phase-plan.md`
-- `._qd/history/<feature>/phase-<n>-contract.md`
-- `._qd/history/<feature>/phase-<n>-story-map.md`
+- `.qd/history/<feature>/CONTEXT.md`
+- `.qd/history/<feature>/discovery.md`
+- `.qd/history/<feature>/approach.md`
+- `.qd/history/<feature>/phase-plan.md`
+- `.qd/history/<feature>/phase-<n>-contract.md`
+- `.qd/history/<feature>/phase-<n>-story-map.md`
 - `.beads/` for the current phase
 
 If any are missing, stop and return to `exploringplanning`.
@@ -72,7 +72,7 @@ If any are missing, stop and return to `exploringplanning`.
 
 Before structural verification, orient the validator.
 
-Read from `._qd/STATE.md` and the phase artifacts:
+Read from `.qd/STATE.md` and the phase artifacts:
 
 - current phase number and name
 - whether `phase-plan.md` was approved
@@ -107,12 +107,12 @@ Load `references/plan-checker-prompt.md`. Spawn an isolated subagent with:
 ```text
 Inputs:
 - current phase bead set
-- ._qd/history/<feature>/CONTEXT.md
-- ._qd/history/<feature>/discovery.md
-- ._qd/history/<feature>/approach.md
-- ._qd/history/<feature>/phase-plan.md
-- ._qd/history/<feature>/phase-<n>-contract.md
-- ._qd/history/<feature>/phase-<n>-story-map.md
+- .qd/history/<feature>/CONTEXT.md
+- .qd/history/<feature>/discovery.md
+- .qd/history/<feature>/approach.md
+- .qd/history/<feature>/phase-plan.md
+- .qd/history/<feature>/phase-<n>-contract.md
+- .qd/history/<feature>/phase-<n>-story-map.md
 Role: plan-checker
 ```
 
@@ -247,7 +247,7 @@ Fix all CRITICAL flags before moving on. MINOR flags are judgment calls but shou
 
 ### Story-to-bead coherence check
 
-Before leaving Phase 3, inspect `._qd/history/<feature>/phase-<n>-story-map.md`:
+Before leaving Phase 3, inspect `.qd/history/<feature>/phase-<n>-story-map.md`:
 
 - every story should map to at least one bead
 - every bead should belong to a story
@@ -319,7 +319,7 @@ Approve execution for Phase <n>? (yes/no)
 
 ### If user approves
 
-Update `._qd/STATE.md`:
+Update `.qd/STATE.md`:
 
 ```text
 PHASE: validated

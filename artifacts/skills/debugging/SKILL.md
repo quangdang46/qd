@@ -1,6 +1,6 @@
 ---
 name: debugging
-description: Systematic debugging for blocked workers, test failures, build errors, runtime crashes, and integration issues. Invoked standalone ("debug this error") or by other skills (reviewing spawns debugger on UAT failure, executing invokes it on blocker). Reads ._qd/history/learnings/critical-patterns.md to avoid re-solving known issues. Writes debug notes that compounding can later capture.
+description: Systematic debugging for blocked workers, test failures, build errors, runtime crashes, and integration issues. Invoked standalone ("debug this error") or by other skills (reviewing spawns debugger on UAT failure, executing invokes it on blocker). Reads .qd/history/learnings/critical-patterns.md to avoid re-solving known issues. Writes debug notes that compounding can later capture.
 metadata:
   ecosystem: qd
   dependencies:
@@ -61,7 +61,7 @@ Example: `Build failure in packages/sdk: TS2345 type mismatch in auth.ts`
 **Check known patterns first** — before any investigation:
 
 ```bash
-cat ._qd/history/learnings/critical-patterns.md 2>/dev/null | grep -i "<keyword from classification>"
+cat .qd/history/learnings/critical-patterns.md 2>/dev/null | grep -i "<keyword from classification>"
 ```
 
 If a known pattern matches → jump directly to Step 4 (Fix), using the documented resolution.
@@ -123,7 +123,7 @@ Verify: does the failure indicate the bead was implemented against the wrong spe
 ### 3d. Check CONTEXT.md for decision violations
 
 ```bash
-cat ._qd/history/<feature>/CONTEXT.md
+cat .qd/history/<feature>/CONTEXT.md
 ```
 
 Ask: was a locked decision (D1, D2...) violated by the implementation? Decision violations are a frequent root cause — the code does something "reasonable" that was explicitly excluded.
@@ -230,7 +230,7 @@ cat >> /tmp/debug-notes.md << 'EOF'
 EOF
 ```
 
-Tell the user: "New failure pattern found. Run exploringcompounding skill to promote this to ._qd/history/learnings/."
+Tell the user: "New failure pattern found. Run exploringcompounding skill to promote this to .qd/history/learnings/."
 
 ### If this matches a known pattern from critical-patterns.md
 
@@ -241,7 +241,7 @@ Verify the existing advice still works:
 
 ```bash
 echo "⚠ Pattern '<name>' resolution no longer accurate as of <date> — <what changed>" \
-  >> ._qd/history/learnings/critical-patterns.md
+  >> .qd/history/learnings/critical-patterns.md
 ```
 
 ---
@@ -304,4 +304,4 @@ Do not spin. One report, then pause and let the orchestrator escalate.
 | Runtime crash | Read stack trace top-to-bottom, find first line in your code |
 | Integration error | Check env vars, then API response body (not just status code) |
 | Worker stuck | Check bead deps with `bv`, then Agent Mail for conflicts |
-| Recurring issue | Check `._qd/history/learnings/critical-patterns.md` first |
+| Recurring issue | Check `.qd/history/learnings/critical-patterns.md` first |

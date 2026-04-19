@@ -1,9 +1,9 @@
 # Story Map: Phase <N> - <Phase Name>
 
 **Date**: <YYYY-MM-DD>
-**Phase Plan**: `._qd/history/<feature>/phase-plan.md`
-**Phase Contract**: `._qd/history/<feature>/phase-<n>-contract.md`
-**Approach Reference**: `._qd/history/<feature>/approach.md`
+**Phase Plan**: `.qd/history/<feature>/phase-plan.md`
+**Phase Contract**: `.qd/history/<feature>/phase-<n>-contract.md`
+**Approach Reference**: `.qd/history/<feature>/approach.md`
 
 ---
 

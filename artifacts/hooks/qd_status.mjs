@@ -3,7 +3,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readQDStatus, renderQDStatus, resolveRepoRoot } from "../../scripts/_qd_state.mjs";
+import { readQDStatus, renderQDStatus, resolveRepoRoot } from "../../scripts/qd_state.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,7 +31,7 @@ function parseCliArgs(argv) {
     if (arg === "--help" || arg === "-h") {
       process.stdout.write(
         [
-          "Usage: _qd_status.mjs [--repo-root <path>] [--json]",
+          "Usage: qd_status.mjs [--repo-root <path>] [--json]",
           "",
           "Shows a read-only QD status snapshot from state and handoff files.",
         ].join("\n"),

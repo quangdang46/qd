@@ -1,6 +1,6 @@
 # Learnings File Template
 
-Use this template when writing `._qd/history/learnings/YYYYMMDD-<slug>.md`.
+Use this template when writing `.qd/history/learnings/YYYYMMDD-<slug>.md`.
 
 One file per feature. Multiple learnings can appear in a single file — separate them
 with `---` dividers. Start each file with the YAML frontmatter below, then add
@@ -138,7 +138,7 @@ rather than writing parallel logic.
 
 ## critical-patterns.md Entry Format
 
-When promoting a critical learning to `._qd/history/learnings/critical-patterns.md`,
+When promoting a critical learning to `.qd/history/learnings/critical-patterns.md`,
 use this condensed format:
 
 ```markdown
@@ -150,5 +150,5 @@ use this condensed format:
 <2-4 sentence summary. What happened, root cause, and what to do differently.
 Enough context that a reader doesn't need to open the full file to act on it.>
 
-**Full entry:** ._qd/history/learnings/YYYYMMDD-<slug>.md
+**Full entry:** .qd/history/learnings/YYYYMMDD-<slug>.md
 ```

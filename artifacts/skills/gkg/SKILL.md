@@ -4,7 +4,7 @@ description: >-
   Codebase intelligence support skill for QD using the gkg MCP tools. Use when
   planning or discovery needs an architecture snapshot, file/definition discovery,
   existing-pattern evidence, importer lookups, or a quick symbol trace in a
-  supported repo. Primary path: scout readiness with `node {IDE_TARGET_DIR}/_qd_status.mjs --json`,
+  supported repo. Primary path: scout readiness with `node {IDE_TARGET_DIR}/qd_status.mjs --json`,
   then `repo_map` plus `search_codebase_definitions` plus `read_definitions`.
 metadata:
   version: "1.1"
@@ -28,7 +28,7 @@ Do not start with `which gkg` or any imagined `gkg <subcommand>` discovery flow.
 Run:
 
 ```bash
-node {IDE_TARGET_DIR}/_qd_status.mjs --json
+node {IDE_TARGET_DIR}/qd_status.mjs --json
 ```
 
 Use the scout output as the source of truth for this repo:
@@ -77,7 +77,7 @@ Use it to answer:
 - which files expose the main definitions in a target area
 - how the local repo slice is shaped before deeper reads
 
-When discovery is being written down for planning, save the result or summary to `._qd/history/<feature>/discovery.md` under `## Architecture Snapshot`.
+When discovery is being written down for planning, save the result or summary to `.qd/history/<feature>/discovery.md` under `## Architecture Snapshot`.
 
 ### 2. `search_codebase_definitions`
 
@@ -98,7 +98,7 @@ Use immediately after `search_codebase_definitions` to read the strongest matche
 
 This is the main evidence-gathering step. It is usually better than hopping file-to-file manually because it keeps discovery centered on actual definitions instead of filenames alone.
 
-When planning writes formal discovery output, summarize the findings in `._qd/history/<feature>/discovery.md` under `## Existing Patterns`.
+When planning writes formal discovery output, summarize the findings in `.qd/history/<feature>/discovery.md` under `## Existing Patterns`.
 
 ## Tool Guidance
 
@@ -155,7 +155,7 @@ Use this skill mainly during `exploringplanning` discovery work.
 - `import_usage` can help confirm importer spread when that matters to the approach.
 - `get_references` and `get_definition` are optional spot tools, not the backbone of the workflow.
 
-If planning is producing `._qd/history/<feature>/discovery.md`, keep the saved output concise and evidence-based:
+If planning is producing `.qd/history/<feature>/discovery.md`, keep the saved output concise and evidence-based:
 
 - `## Architecture Snapshot`
 - `## Existing Patterns`
@@ -177,7 +177,7 @@ Useful fallbacks:
 
 Then read the relevant files directly.
 
-If planning is writing discovery output, note the fallback plainly in `._qd/history/<feature>/discovery.md`, for example:
+If planning is writing discovery output, note the fallback plainly in `.qd/history/<feature>/discovery.md`, for example:
 
 > gkg was unavailable or not ready for this repo/session, so discovery used `rg` and direct file inspection.
 

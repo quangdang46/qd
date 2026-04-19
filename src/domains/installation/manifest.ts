@@ -2,7 +2,7 @@
 
 /**
  * Manifest - Installation manifest reader/writer for QD
- * Based on BMAD's manifest pattern: _qd/_config/manifest.yaml
+ * Based on BMAD's manifest pattern: .qd/_config/manifest.yaml
  */
 
 const path = require('node:path');
@@ -31,7 +31,7 @@ class Manifest {
   }
 
   /**
-   * Write manifest to _qd/_config/manifest.yaml
+   * Write manifest to .qd/_config/manifest.yaml
    * @param {string} qdDir - Path to _qd directory
    * @param {Object} data - Manifest data
    */

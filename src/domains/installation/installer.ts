@@ -7,7 +7,7 @@
  * Phase 2: Detect selected IDEs + load platform-codes.yaml
  * Phase 3: Walk artifacts tree (cascade schema.yaml + apply overrides)
  * Phase 4: Copy/convert to IDE targets (apply mappings, format conversion)
- * Phase 5: Create _qd-output/ directory
+ * Phase 5: Create .qd-output/ directory
  * Phase 6: Display summary
  */
 
@@ -566,7 +566,7 @@ class Installer {
   }
 
   // Methods needed by status/remove commands
-  qdFolderName = '_qd';
+  qdFolderName = '.qd';
 
   async findQdDir(projectDir) {
     return { qdDir: path.join(projectDir, this.qdFolderName) };
@@ -676,7 +676,7 @@ class Installer {
   }
 
   async uninstallOutputFolder(projectDir, outputFolder) {
-    // _qd-output is now inside _qd/ folder
+    // .qd-output is now inside .qd/ folder
     const { qdDir } = await this.findQdDir(projectDir);
     const outputPath = path.join(qdDir, outputFolder);
     if (await fs.pathExists(outputPath)) {

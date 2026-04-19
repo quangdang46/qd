@@ -5,7 +5,7 @@
 Origin:
 - Dream behavior adaptation from archived reverse-engineering notes captured during the original Dream research pass
 - QD process contracts from `AGENTS.md`
-- Locked decisions from `._qd/history/dream-skill/CONTEXT.md` (D1-D6)
+- Locked decisions from `.qd/history/dream-skill/CONTEXT.md` (D1-D6)
 
 What the source does:
 - Defines a manual, repo-scoped dream consolidation pass over Codex artifacts and learnings files.
@@ -82,7 +82,7 @@ Exact rationalization targets from RED baseline:
 
 4. Scenario: Critical Pattern File Edited Without Approval
 - Result: PASS
-- Why: skill explicitly prohibits auto-edits to `._qd/history/learnings/critical-patterns.md`.
+- Why: skill explicitly prohibits auto-edits to `.qd/history/learnings/critical-patterns.md`.
 
 5. Scenario: No-Match Candidate Forced Into Existing File
 - Result: PASS

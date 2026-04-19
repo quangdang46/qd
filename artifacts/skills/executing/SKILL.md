@@ -72,10 +72,10 @@ From this point on, use `resolved_agent_mail_name` for every Agent Mail call.
 ### 1b. Read Project Context (in this order)
 
 1. **AGENTS.md** — project operating manual (mandatory; skip nothing)
-2. If present, run **`node {IDE_TARGET_DIR}/_qd_status.mjs --json`** — quick state/handoff scout
-3. **._qd/state.json** — machine-readable routing snapshot
-4. **._qd/STATE.md** — current project focus, decisions, active blockers
-5. **._qd/history/\<feature\>/CONTEXT.md** — locked decisions that MUST be honored
+2. If present, run **`node {IDE_TARGET_DIR}/qd_status.mjs --json`** — quick state/handoff scout
+3. **.qd/state.json** — machine-readable routing snapshot
+4. **.qd/STATE.md** — current project focus, decisions, active blockers
+5. **.qd/history/\<feature\>/CONTEXT.md** — locked decisions that MUST be honored
 
 If any of these files does not exist, note the absence and proceed — do not fabricate content.
 
@@ -87,7 +87,7 @@ Do not call `bv --robot-priority` before this sequence is complete.
 
 ### 1d. Check for Handoff
 
-If `._qd/HANDOFF.json` exists and was written by a prior instance of you (same agent identity):
+If `.qd/HANDOFF.json` exists and was written by a prior instance of you (same agent identity):
 
 1. Read it — restore active bead, progress markers, open questions
 2. Resume from where it stopped; skip re-reading already-read files
@@ -178,7 +178,7 @@ Read every source file you will modify. Do not write from memory or assumptions 
 ### Honor CONTEXT.md locked decisions
 
 Before writing any code, scan your bead's description for decision IDs (D1, D2, …). For each referenced ID:
-1. Read the corresponding entry in `._qd/history/<feature>/CONTEXT.md`
+1. Read the corresponding entry in `.qd/history/<feature>/CONTEXT.md`
 2. Implement exactly as locked — do not reinterpret, do not "improve" a locked decision
 
 Violating a locked decision is the #1 cause of rework. Teams report that >40% of implementation bugs trace back to agents ignoring CONTEXT.md.
@@ -302,7 +302,7 @@ After every bead close, before getting the next bead:
 
 ### Writing HANDOFF.json
 
-Save to `._qd/HANDOFF.json`:
+Save to `.qd/HANDOFF.json`:
 
 ```json
 {
@@ -323,7 +323,7 @@ Save to `._qd/HANDOFF.json`:
     "next_action": "Run bv --robot-priority and continue from the live graph"
   },
   "resume_instructions": {
-    "read_first": ["AGENTS.md", "._qd/STATE.md", "._qd/history/<feature>/CONTEXT.md"],
+    "read_first": ["AGENTS.md", ".qd/STATE.md", ".qd/history/<feature>/CONTEXT.md"],
     "check_mail": true,
     "priority_next": "Check epic thread, then run bv --robot-priority"
   }
@@ -355,7 +355,7 @@ send_message(
 Re-read in this exact order before any further action:
 
 1. `AGENTS.md`
-2. `._qd/history/<feature>/CONTEXT.md`
+2. `.qd/history/<feature>/CONTEXT.md`
 3. The current bead you were working on: `br show <bead-id>`
 4. Your active file reservations (query Agent Mail)
 
@@ -407,7 +407,7 @@ When spawned, swarming provides (via Agent Mail message or task prompt):
 - `epic_thread_id` — the Agent Mail thread for this feature (normally the epic bead ID)
 - `epic_topic` — shared swarm topic tag (recommended: `epic-<EPIC_ID>`)
 - `startup_hint` — optional: a bead or area the orchestrator wants checked first
-- `feature_name` — used to locate `._qd/history/<feature>/CONTEXT.md`
+- `feature_name` — used to locate `.qd/history/<feature>/CONTEXT.md`
 
 You resolve `resolved_agent_mail_name` yourself during `macro_start_session(...)`.
 

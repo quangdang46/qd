@@ -308,8 +308,8 @@ Current status:
 Workers: continue current bead safely, then report status to this thread.
 
 Resume artifacts:
-- ._qd/HANDOFF.json
-- ._qd/STATE.md
+- .qd/HANDOFF.json
+- .qd/STATE.md
 - bv --robot-triage --graph-root <EPIC_ID>
 ```
 
@@ -346,7 +346,7 @@ Next step: Invoke the exploringreviewing skill.
 
 ## Handoff JSON Template
 
-Write to `._qd/HANDOFF.json` when the swarm coordinator context exceeds 65%:
+Write to `.qd/HANDOFF.json` when the swarm coordinator context exceeds 65%:
 
 ```json
 {
@@ -389,7 +389,7 @@ Write to `._qd/HANDOFF.json` when the swarm coordinator context exceeds 65%:
   ],
   "resume_instructions": {
     "priority_next": "Poll epic thread, then inspect the live graph",
-    "read_first": ["._qd/STATE.md", "._qd/HANDOFF.json"],
+    "read_first": [".qd/STATE.md", ".qd/HANDOFF.json"],
     "check_mail": true,
     "bead_check": "bv --robot-triage --graph-root <EPIC_ID>",
     "restore_confirmation": "Confirm open/in-progress/blocked counts still match before resuming"

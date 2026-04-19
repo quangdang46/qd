@@ -3,7 +3,7 @@
 This template is written by the exploringexploring skill in Phase 4.
 It is read by the exploringplanning skill, exploringvalidating skill, and all downstream agents.
 
-**Save to:** `._qd/history/<feature-slug>/CONTEXT.md`
+**Save to:** `.qd/history/<feature-slug>/CONTEXT.md`
 
 Rules for filling this in:
 - Be concrete: "Card layout, not timeline" not "modern and clean"

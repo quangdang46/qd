@@ -4,7 +4,7 @@ description: >-
   Capture learnings from completed feature work to make future work easier.
   Invoke after reviewing completes and the feature is merged. Runs three parallel
   analysis subagents (patterns/decisions/failures), synthesizes into
-  ._qd/history/learnings dated markdown entries, promotes critical items to
+  .qd/history/learnings dated markdown entries, promotes critical items to
   critical-patterns.md. Trigger phrases: what did we learn, capture learnings,
   compound, lessons learned, document what we found, exploringcompounding skill.
   Key output: critical-patterns.md is read by every planning and exploring
@@ -48,10 +48,10 @@ Complete these phases in order. The three-agent analysis (Phase 2) runs in paral
 Collect all artifacts from the completed feature. Read:
 
 ```
-._qd/history/<feature>/CONTEXT.md          ← locked decisions (what we committed to)
-._qd/history/<feature>/discovery.md        ← research findings (what we learned before coding)
-._qd/history/<feature>/approach.md         ← synthesis + risk map (how we planned to do it)
-._qd/STATE.md or HANDOFF artifacts  ← runtime coordination state, if retained
+.qd/history/<feature>/CONTEXT.md          ← locked decisions (what we committed to)
+.qd/history/<feature>/discovery.md        ← research findings (what we learned before coding)
+.qd/history/<feature>/approach.md         ← synthesis + risk map (how we planned to do it)
+.qd/STATE.md or HANDOFF artifacts  ← runtime coordination state, if retained
 .beads/ or `br show` output           ← the executable work graph we actually ran
 ```
 
@@ -175,7 +175,7 @@ Create a short, descriptive slug: `<primary-topic>-<secondary-topic>` (e.g., `au
 **Step 3.4 — Write the learnings file:**
 
 ```
-._qd/history/learnings/YYYYMMDD-<slug>.md
+.qd/history/learnings/YYYYMMDD-<slug>.md
 ```
 
 Use the format from `references/learnings-template.md`. Include YAML frontmatter.
@@ -194,7 +194,7 @@ For every finding tagged `severity: critical`:
 - Would cause meaningful wasted effort if future agents didn't know it
 - Is generalizable — not so implementation-specific it's useless elsewhere
 
-**If criteria met, append to `._qd/history/learnings/critical-patterns.md`:**
+**If criteria met, append to `.qd/history/learnings/critical-patterns.md`:**
 
 ```markdown
 ## [YYYYMMDD] <Learning Title>
@@ -204,7 +204,7 @@ For every finding tagged `severity: critical`:
 
 <2-4 sentence summary of the learning and what to do differently>
 
-**Full entry:** ._qd/history/learnings/YYYYMMDD-<slug>.md
+**Full entry:** .qd/history/learnings/YYYYMMDD-<slug>.md
 ```
 
 **If `critical-patterns.md` does not exist yet, create it with this header:**
@@ -223,7 +223,7 @@ most to learn and save the most by knowing.
 
 ### Phase 5: Optional CASS / CM Integration
 
-These steps are optional. Check `._qd/config.json` for `cass_enabled` and `cm_enabled` flags.
+These steps are optional. Check `.qd/config.json` for `cass_enabled` and `cm_enabled` flags.
 If the config file is absent, skip both.
 
 **If CASS is available:**
@@ -244,13 +244,13 @@ The file-based learnings are the primary system. CASS/CM are acceleration layers
 
 ### Phase 6: Update STATE.md
 
-Update `._qd/STATE.md` to record that compounding ran:
+Update `.qd/STATE.md` to record that compounding ran:
 
 ```markdown
 ## Last Compounding Run
 - Feature: <feature-name>
 - Date: YYYY-MM-DD
-- Learnings file: ._qd/history/learnings/YYYYMMDD-<slug>.md
+- Learnings file: .qd/history/learnings/YYYYMMDD-<slug>.md
 - Critical promotions: N (or 0)
 ```
 
@@ -260,7 +260,7 @@ Update `._qd/STATE.md` to record that compounding ran:
 
 ```
 Compounding complete.
-- Learnings: ._qd/history/learnings/YYYYMMDD-<slug>.md
+- Learnings: .qd/history/learnings/YYYYMMDD-<slug>.md
 - Critical promotions: N findings added to critical-patterns.md
 - The ecosystem now has [N total] accumulated learnings.
 

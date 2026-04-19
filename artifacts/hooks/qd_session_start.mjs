@@ -3,8 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildQDDependencyReport } from "../../scripts/_qd_dependencies.mjs";
-import { readGkgReadiness } from "../../scripts/_qd_state.mjs";
+import { buildQDDependencyReport } from "../../scripts/qd_dependencies.mjs";
+import { readGkgReadiness } from "../../scripts/qd_state.mjs";
 
 function findRepoRoot(start) {
   let candidate = path.resolve(start || ".");
@@ -94,7 +94,7 @@ export async function main() {
 
   const notes = [];
   if (fs.existsSync(criticalPatterns)) {
-    notes.push("If you move into planning or execution, read ._qd/history/learnings/critical-patterns.md.");
+    notes.push("If you move into planning or execution, read .qd/history/learnings/critical-patterns.md.");
   }
 
   const gkgReadiness = readGkgReadiness(repoRoot);

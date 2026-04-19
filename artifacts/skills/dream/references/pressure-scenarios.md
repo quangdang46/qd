@@ -5,7 +5,7 @@ Purpose: define RED-phase failing scenarios for `exploringdream` before writing 
 ## Scenario: Bootstrap Timestamp Missing But Run Continues
 
 Setup:
-- Repo has learnings files under `._qd/history/learnings/`.
+- Repo has learnings files under `.qd/history/learnings/`.
 - There is no `last_dream_consolidated_at` marker in repo-local metadata.
 - Operator asks for a normal recurring run (not explicit bootstrap override).
 
@@ -69,7 +69,7 @@ Why this matters:
 ## Scenario: Critical Pattern File Edited Without Approval
 
 Setup:
-- Dream run detects a likely promotion to `._qd/history/learnings/critical-patterns.md`.
+- Dream run detects a likely promotion to `.qd/history/learnings/critical-patterns.md`.
 - User has not explicitly approved promotion edits.
 
 Combined pressures:
@@ -126,7 +126,7 @@ Exact rationalization:
 > "Even if the signal is weak, writing a short note is better than returning nothing."
 
 Why this matters:
-- Violates the `no durable signal` branch and pollutes `._qd/history/learnings/` with transient noise.
+- Violates the `no durable signal` branch and pollutes `.qd/history/learnings/` with transient noise.
 
 ---
 

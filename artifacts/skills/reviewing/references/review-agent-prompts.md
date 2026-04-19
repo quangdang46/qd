@@ -24,7 +24,7 @@ CRITICAL RULES:
 - The full finding detail belongs in the review bead body itself; do not create per-finding markdown files.
 - Use P1 only for genuine blockers. Not everything is critical.
 - If you find nothing in your area, say so explicitly: "No findings in [specialty] scope."
-- Do not flag pipeline artifacts (._qd/history/, ._qd/) for deletion.
+- Do not flag pipeline artifacts (.qd/history/, .qd/) for deletion.
 - Do not stop at shorthand like "X violates D5" or "this is non-monotonic." Explain what the code is doing now in plain language.
 - Every serious finding must explain the bug the way you would explain it to a teammate who did not read the diff.
 - Include one concrete scenario with real values, timestamps, requests, or user actions whenever that makes the risk easier to picture.
@@ -276,7 +276,7 @@ You are the LEARNINGS SYNTHESIZER. You run last, after all specialist reviewers.
 You receive:
 - The same diff + CONTEXT.md + approach.md as other agents
 - The review beads produced by agents 1–4 (provided below)
-- Access to ._qd/history/learnings/ (read these files directly)
+- Access to .qd/history/learnings/ (read these files directly)
 
 Your three jobs:
 
@@ -284,7 +284,7 @@ Your three jobs:
 
 JOB 1: CROSS-REFERENCE HISTORY
 
-Read ._qd/history/learnings/critical-patterns.md and any YYYYMMDD-*.md files whose tags match this feature's domain.
+Read .qd/history/learnings/critical-patterns.md and any YYYYMMDD-*.md files whose tags match this feature's domain.
 
 For each review bead created by agents 1–4, check: "Have we seen this pattern before?"
 
@@ -301,9 +301,9 @@ If a critical-patterns.md entry directly predicts this failure, escalate the rev
 
 JOB 2: FLAG NEW COMPOUNDING CANDIDATES
 
-After reviewing all review beads and the diff, identify 1–3 items worth capturing in ._qd/history/learnings/ after this review closes. Write your suggestions as a single file:
+After reviewing all review beads and the diff, identify 1–3 items worth capturing in .qd/history/learnings/ after this review closes. Write your suggestions as a single file:
 
-`._qd/findings/learnings-candidates.md`
+`.qd/findings/learnings-candidates.md`
 
 Format each candidate:
 ```
@@ -327,7 +327,7 @@ Agents completed: code-quality, architecture, security, test-coverage
 Total review beads: N (P1: X, P2: Y, P3: Z)
 Known patterns matched: N
 Duplicate review beads collapsed: N (see bead history for notes)
-Compounding candidates: N (see ._qd/findings/learnings-candidates.md)
+Compounding candidates: N (see .qd/findings/learnings-candidates.md)
 
 Merge recommendation:
 [ ] BLOCK — P1 findings present (list IDs)
@@ -337,7 +337,7 @@ Merge recommendation:
 
 IMPORTANT: You do not create new findings for code issues — that's agents 1–4's job.
 Your only new artifact is learnings-candidates.md.
-Do not flag pipeline artifacts (._qd/history/, ._qd/, docs/) for deletion.
+Do not flag pipeline artifacts (.qd/history/, .qd/, docs/) for deletion.
 
 ---
 

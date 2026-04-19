@@ -2,11 +2,11 @@
 
 **Date**: <YYYY-MM-DD>
 **Feature**: <feature-slug>
-**Phase Plan Reference**: `._qd/history/<feature>/phase-plan.md`
+**Phase Plan Reference**: `.qd/history/<feature>/phase-plan.md`
 **Based on**:
-- `._qd/history/<feature>/CONTEXT.md`
-- `._qd/history/<feature>/discovery.md`
-- `._qd/history/<feature>/approach.md`
+- `.qd/history/<feature>/CONTEXT.md`
+- `.qd/history/<feature>/discovery.md`
+- `.qd/history/<feature>/approach.md`
 
 ---
 

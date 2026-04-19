@@ -136,12 +136,12 @@ This is the standard to match. A good plan lets someone picture what would actua
 CONTEXT.md (from exploring)
   ↓
 Phase 0: Learnings Retrieval        -> institutional knowledge
-Phase 1: Discovery                  -> ._qd/history/<feature>/discovery.md
-Phase 2: Synthesis                  -> ._qd/history/<feature>/approach.md
-Phase 3: Whole Feature Phase Plan   -> ._qd/history/<feature>/phase-plan.md
+Phase 1: Discovery                  -> .qd/history/<feature>/discovery.md
+Phase 2: Synthesis                  -> .qd/history/<feature>/approach.md
+Phase 3: Whole Feature Phase Plan   -> .qd/history/<feature>/phase-plan.md
 HARD-GATE: user approves phase plan before current-phase prep
-Phase 4: Current Phase Contract     -> ._qd/history/<feature>/phase-<n>-contract.md
-Phase 5: Current Phase Story Map    -> ._qd/history/<feature>/phase-<n>-story-map.md
+Phase 4: Current Phase Contract     -> .qd/history/<feature>/phase-<n>-contract.md
+Phase 5: Current Phase Story Map    -> .qd/history/<feature>/phase-<n>-story-map.md
 Phase 6: Multi-Perspective Check    -> refine current phase artifacts (HIGH-stakes only)
 Phase 7: Current Phase Bead Creation -> .beads/* for this phase only
   ↓
@@ -150,7 +150,7 @@ Handoff: "Invoke exploringvalidating skill for Phase <n>."
 
 ## Before You Start
 
-If `{IDE_TARGET_DIR}/_qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/_qd_status.mjs --json` first so you start from the latest state/handoff snapshot instead of inferring it from memory.
+If `{IDE_TARGET_DIR}/qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/qd_status.mjs --json` first so you start from the latest state/handoff snapshot instead of inferring it from memory.
 
 If the scout reports a supported gkg repo, treat `gkg` as the default discovery path:
 
@@ -160,7 +160,7 @@ If the scout reports a supported gkg repo, treat `gkg` as the default discovery 
 **Read CONTEXT.md first.** It is the single source of truth. Every research decision, every phase, every story, and every bead must honor the locked decisions inside it.
 
 ```bash
-cat ._qd/history/<feature>/CONTEXT.md
+cat .qd/history/<feature>/CONTEXT.md
 ```
 
 If `CONTEXT.md` does not exist, stop. Tell the user: "Run the exploringexploring skill first to lock decisions before planning."
@@ -176,7 +176,7 @@ Institutional knowledge prevents re-solving solved problems. This phase is manda
 ### Step 0.1: Always read critical patterns
 
 ```bash
-cat ._qd/history/learnings/critical-patterns.md
+cat .qd/history/learnings/critical-patterns.md
 ```
 
 ### Step 0.2: Search for domain-relevant learnings
@@ -184,9 +184,9 @@ cat ._qd/history/learnings/critical-patterns.md
 Extract 3-5 keywords from the feature name and `CONTEXT.md`, then run focused searches:
 
 ```bash
-grep -r "tags:.*<keyword1>" ._qd/history/learnings/ -l -i
-grep -r "tags:.*<keyword2>" ._qd/history/learnings/ -l -i
-grep -r "<ComponentName>" ._qd/history/learnings/ -l -i
+grep -r "tags:.*<keyword1>" .qd/history/learnings/ -l -i
+grep -r "tags:.*<keyword2>" .qd/history/learnings/ -l -i
+grep -r "<ComponentName>" .qd/history/learnings/ -l -i
 ```
 
 ### Step 0.3: Score and include
@@ -196,7 +196,7 @@ grep -r "<ComponentName>" ._qd/history/learnings/ -l -i
 
 ### Step 0.4: Document what you found
 
-At the top of `._qd/history/<feature>/discovery.md`, add an `Institutional Learnings` section. If nothing relevant exists, write: `No prior learnings for this domain.`
+At the top of `.qd/history/<feature>/discovery.md`, add an `Institutional Learnings` section. If nothing relevant exists, write: `No prior learnings for this domain.`
 
 ---
 
@@ -229,7 +229,7 @@ Explore if relevant:
 
 All discovery findings go to:
 
-`._qd/history/<feature>/discovery.md`
+`.qd/history/<feature>/discovery.md`
 
 Use `references/discovery-template.md`.
 
@@ -243,12 +243,12 @@ Close the gap between codebase reality and the feature requirements.
 
 Read:
 
-- `._qd/history/<feature>/CONTEXT.md`
-- `._qd/history/<feature>/discovery.md`
+- `.qd/history/<feature>/CONTEXT.md`
+- `.qd/history/<feature>/discovery.md`
 
 Write:
 
-- `._qd/history/<feature>/approach.md`
+- `.qd/history/<feature>/approach.md`
 
 The synthesis result must produce:
 
@@ -277,7 +277,7 @@ Now turn the feature into an understandable sequence of phases before preparing 
 
 Write:
 
-- `._qd/history/<feature>/phase-plan.md`
+- `.qd/history/<feature>/phase-plan.md`
 
 Use `references/phase-plan-template.md`.
 
@@ -311,7 +311,7 @@ After writing `phase-plan.md`, stop and present:
 Use handoff wording like:
 
 > "Planning has broken the feature into phases and stories.
-> Review `._qd/history/<feature>/phase-plan.md`.
+> Review `.qd/history/<feature>/phase-plan.md`.
 > If you approve this shape, planning will prepare Phase <n> for validating.
 > Do not create beads before this approval."
 
@@ -325,13 +325,13 @@ Only after `phase-plan.md` is approved, prepare the current phase.
 
 ### Select the current phase
 
-- Default to the first phase not yet prepared or completed in `._qd/STATE.md`
+- Default to the first phase not yet prepared or completed in `.qd/STATE.md`
 - If no state exists, start with Phase 1
-- If the user explicitly chooses a later phase, honor that and record it in `._qd/STATE.md`
+- If the user explicitly chooses a later phase, honor that and record it in `.qd/STATE.md`
 
 Write:
 
-- `._qd/history/<feature>/phase-<n>-contract.md`
+- `.qd/history/<feature>/phase-<n>-contract.md`
 
 Use `references/phase-contract-template.md`.
 
@@ -362,7 +362,7 @@ Now break the current phase into stories.
 
 Write:
 
-- `._qd/history/<feature>/phase-<n>-story-map.md`
+- `.qd/history/<feature>/phase-<n>-story-map.md`
 
 Use `references/story-map-template.md`.
 
@@ -402,9 +402,9 @@ For standard current phases, skip to Phase 7.
 
 Review these artifacts together:
 
-- `._qd/history/<feature>/phase-plan.md`
-- `._qd/history/<feature>/phase-<n>-contract.md`
-- `._qd/history/<feature>/phase-<n>-story-map.md`
+- `.qd/history/<feature>/phase-plan.md`
+- `.qd/history/<feature>/phase-<n>-contract.md`
+- `.qd/history/<feature>/phase-<n>-story-map.md`
 
 Prompt the reviewer to look for:
 
@@ -488,7 +488,7 @@ From approach.md: <specific decision that applies here>
 
 ## Institutional Learnings
 
-From ._qd/history/learnings/<file>:
+From .qd/history/learnings/<file>:
 - <key gotcha or pattern>
 ```
 
@@ -501,7 +501,7 @@ From ._qd/history/learnings/<file>:
 
 ### Complete the story map
 
-After bead creation, fill the `Story-To-Bead Mapping` section in `._qd/history/<feature>/phase-<n>-story-map.md`.
+After bead creation, fill the `Story-To-Bead Mapping` section in `.qd/history/<feature>/phase-<n>-story-map.md`.
 
 The validator must be able to trace:
 
@@ -511,7 +511,7 @@ The validator must be able to trace:
 
 ## Update STATE.md
 
-After major planning transitions, update `._qd/STATE.md`:
+After major planning transitions, update `.qd/STATE.md`:
 
 ```markdown
 ## Current State
@@ -524,11 +524,11 @@ Current Phase: Phase <n> - <phase name>
 
 ## Artifacts Written
 
-- ._qd/history/<feature>/discovery.md
-- ._qd/history/<feature>/approach.md
-- ._qd/history/<feature>/phase-plan.md
-- ._qd/history/<feature>/phase-<n>-contract.md
-- ._qd/history/<feature>/phase-<n>-story-map.md
+- .qd/history/<feature>/discovery.md
+- .qd/history/<feature>/approach.md
+- .qd/history/<feature>/phase-plan.md
+- .qd/history/<feature>/phase-<n>-contract.md
+- .qd/history/<feature>/phase-<n>-story-map.md
 - .beads/*.md
 
 ## Story Summary
@@ -554,11 +554,11 @@ If context exceeds 65% at any phase transition, write `HANDOFF.json` and pause:
   "completed_through": "Phase <N>",
   "next_phase": "Phase <N+1>",
   "artifacts": [
-    "._qd/history/<feature>/discovery.md",
-    "._qd/history/<feature>/approach.md",
-    "._qd/history/<feature>/phase-plan.md",
-    "._qd/history/<feature>/phase-<n>-contract.md",
-    "._qd/history/<feature>/phase-<n>-story-map.md"
+    ".qd/history/<feature>/discovery.md",
+    ".qd/history/<feature>/approach.md",
+    ".qd/history/<feature>/phase-plan.md",
+    ".qd/history/<feature>/phase-<n>-contract.md",
+    ".qd/history/<feature>/phase-<n>-story-map.md"
   ],
   "current_phase": "Phase <n> - <phase name>",
   "stories_defined": ["Story 1", "Story 2"],
@@ -574,11 +574,11 @@ On successful completion:
 
 > **Phase plan approved and current phase prepared.**
 >
-> - Discovery: `._qd/history/<feature>/discovery.md`
-> - Approach: `._qd/history/<feature>/approach.md`
-> - Phase Plan: `._qd/history/<feature>/phase-plan.md`
-> - Current Phase Contract: `._qd/history/<feature>/phase-<n>-contract.md`
-> - Current Phase Story Map: `._qd/history/<feature>/phase-<n>-story-map.md`
+> - Discovery: `.qd/history/<feature>/discovery.md`
+> - Approach: `.qd/history/<feature>/approach.md`
+> - Phase Plan: `.qd/history/<feature>/phase-plan.md`
+> - Current Phase Contract: `.qd/history/<feature>/phase-<n>-contract.md`
+> - Current Phase Story Map: `.qd/history/<feature>/phase-<n>-story-map.md`
 > - HIGH-risk components flagged for this phase: [list or "none"]
 >
 > **Invoke exploringvalidating skill for Phase <n> before execution.**

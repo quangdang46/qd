@@ -13,12 +13,12 @@ You do not implement anything. You do not praise the plan. You verify structural
 You receive:
 
 - the current phase bead set
-- `._qd/history/<feature>/CONTEXT.md`
-- `._qd/history/<feature>/discovery.md`
-- `._qd/history/<feature>/approach.md`
-- `._qd/history/<feature>/phase-plan.md`
-- `._qd/history/<feature>/phase-<n>-contract.md`
-- `._qd/history/<feature>/phase-<n>-story-map.md`
+- `.qd/history/<feature>/CONTEXT.md`
+- `.qd/history/<feature>/discovery.md`
+- `.qd/history/<feature>/approach.md`
+- `.qd/history/<feature>/phase-plan.md`
+- `.qd/history/<feature>/phase-<n>-contract.md`
+- `.qd/history/<feature>/phase-<n>-story-map.md`
 
 Read all inputs in full before verifying.
 

@@ -57,15 +57,15 @@ Bootstrap meta-skill. Load this first. It tells you which skill to invoke next a
 Use the repo-local scout command as the first quick orientation step whenever it is available:
 
 ```bash
-node {IDE_TARGET_DIR}/_qd_status.mjs --json
+node {IDE_TARGET_DIR}/qd_status.mjs --json
 ```
 
 The scout is read-only. It summarizes:
 
 - gkg readiness for this repo
-- `._qd/state.json`
-- `._qd/STATE.md`
-- `._qd/HANDOFF.json`
+- `.qd/state.json`
+- `.qd/STATE.md`
+- `.qd/HANDOFF.json`
 - recommended next reads/actions
 
 Use it to get the current truth quickly, then open the deeper files it points to.
@@ -98,7 +98,7 @@ Do not leave a packaged skill with undeclared dependency posture. A missing decl
 
 When updating or adding packaged QD skills, keep the docs and the live report aligned by running:
 
-- `node scripts/_qd_dependencies.mjs`
+- `node scripts/qd_dependencies.mjs`
 - `bash scripts/check-markdown-links.sh SKILL.md`
 - `bash scripts/sync-skills.sh --dry-run`
 
@@ -117,7 +117,7 @@ These checks are the package-wide contract: the report should stay fully covered
 | 5 | `exploringswarming` | Launch+tend worker pool via Agent Mail + bv | Beads are validated; ready to execute at scale |
 | 6 | `exploringexecuting` | Single worker loop: priority → reserve → implement bead → close → loop | Spawned by swarming; one agent, self-routing from the live graph |
 | 7 | `exploringreviewing` | 5 parallel review agents (P1/P2/P3) + artifact verification + UAT | Execution complete; need quality gate before merge |
-| 8 | `exploringcompounding` | Capture learnings → ._qd/history/learnings/ → critical-patterns.md | Feature shipped; extract patterns/decisions/failures for future runs |
+| 8 | `exploringcompounding` | Capture learnings → .qd/history/learnings/ → critical-patterns.md | Feature shipped; extract patterns/decisions/failures for future runs |
 | 9 | `exploringwriting-qd-skills` | TDD-for-skills: RED-GREEN-REFACTOR + persuasion psychology | Improving or creating qd skills themselves |
 | 10 | `exploringdebugging` | Root-cause analysis for blocked beads and execution failures | Agent stuck, bead blocked, unexpected error |
 | 11 | `exploringgkg` | Codebase intelligence via gkg MCP tools after readiness is green | Need deep codebase understanding before planning |
@@ -161,7 +161,7 @@ Given a user request, determine which skill to invoke first:
 On every session start, before doing anything else:
 
 ```
-0. If {IDE_TARGET_DIR}/_qd_status.mjs exists: run `node {IDE_TARGET_DIR}/_qd_status.mjs --json`
+0. If {IDE_TARGET_DIR}/qd_status.mjs exists: run `node {IDE_TARGET_DIR}/qd_status.mjs --json`
    → Use the scout output to decide which files to open next
 
 1. Check `gkg_readiness` from the scout output
@@ -169,10 +169,10 @@ On every session start, before doing anything else:
    → Supported repo + server/index not ready: make gkg ready before planning or deep discovery
    → Supported repo + ready: planning should use gkg MCP tools as the default discovery path
 
-1. Check for ._qd/ directory in project root
-   → If missing: mkdir -p ._qd/ and create defaults below
+1. Check for .qd/ directory in project root
+   → If missing: mkdir -p .qd/ and create defaults below
    
-2. Check ._qd/state.json
+2. Check .qd/state.json
    → If missing: create with defaults:
      {
        "schema_version": "1.0",
@@ -185,21 +185,21 @@ On every session start, before doing anything else:
        }
      }
 
-3. Check ._qd/STATE.md
+3. Check .qd/STATE.md
    → If missing: create with template:
      # STATE
      focus: (none)
      phase: idle
      last_updated: <date>
    
-4. Check ._qd/HANDOFF.json
+4. Check .qd/HANDOFF.json
    → If exists → go to Resume Logic below
    → If missing → proceed normally
    
-5. Check ._qd/config.json
+5. Check .qd/config.json
    → If missing: create {} (all features enabled by default — absent=enabled)
 
-6. Check for ._qd/history/learnings/critical-patterns.md
+6. Check for .qd/history/learnings/critical-patterns.md
    → If exists: read it now. These are mandatory context for all subsequent skills.
 ```
 
@@ -207,10 +207,10 @@ On every session start, before doing anything else:
 
 ## Resume Logic
 
-If `._qd/HANDOFF.json` exists:
+If `.qd/HANDOFF.json` exists:
 
 ```
-1. Read HANDOFF.json (and ._qd/state.json if present)
+1. Read HANDOFF.json (and .qd/state.json if present)
 2. Extract: { phase, skill, feature, context_pct, next_action, beads_in_flight }
 3. Present to user:
    "Session paused at [phase] during [feature].
@@ -234,7 +234,7 @@ Go mode chains all skills end-to-end with exactly 4 human gates. Load `reference
 
 ```
 GATE 1 (after exploring):
-  Present ._qd/history/<feature>/CONTEXT.md to user.
+  Present .qd/history/<feature>/CONTEXT.md to user.
   Ask: "Decisions locked. Approve CONTEXT.md before planning?"
   HARD-GATE: do not invoke planning until user approves.
 
@@ -314,7 +314,7 @@ Additional expectations:
 These override everything else:
 
 1. **P1 review findings always block.** Never merge, never close epic, never proceed to compounding while P1 findings are open.
-2. **Context budget always applies.** After each bead completion or major phase, if context >65% used: write `._qd/HANDOFF.json` and pause. Do not continue burning context.
+2. **Context budget always applies.** After each bead completion or major phase, if context >65% used: write `.qd/HANDOFF.json` and pause. Do not continue burning context.
 3. **CONTEXT.md is the source of truth.** If implementation diverges from a locked decision in CONTEXT.md, stop and surface the conflict before proceeding.
 4. **GATE 3 is the most critical gate.** Execution is irreversible. If there is any doubt about the current phase's soundness, do not approve. Loop back to validating.
 5. **Spike failures halt the pipeline.** A failed spike means the approach is broken. Do not proceed to swarming; return to planning.
@@ -412,17 +412,17 @@ Watch for these violations. Pause and surface them immediately when detected:
 ## File Quick Reference
 
 ```
-._qd/
+.qd/
   state.json        ← Machine-readable routing snapshot used by agents and tools
   STATE.md          ← Current phase, focus, blockers (update at every phase transition)
   config.json       ← Feature toggles (absent=enabled)
   HANDOFF.json      ← Session resume data (write when pausing)
 
 {IDE_TARGET_DIR}/
-  _qd_status.mjs  ← Read-only scout command for state and handoff
-  _qd_state.mjs   ← Shared state helpers used by the scout command
+  qd_status.mjs  ← Read-only scout command for state and handoff
+  qd_state.mjs   ← Shared state helpers used by the scout command
 
-._qd/history/<feature>/
+.qd/history/<feature>/
   CONTEXT.md        ← Locked decisions from exploring (source of truth)
   discovery.md      ← Research findings from planning
   approach.md       ← Synthesis + risk map from planning
@@ -430,7 +430,7 @@ Watch for these violations. Pause and surface them immediately when detected:
   phase-<n>-contract.md ← Current-phase entry state, exit state, demo, unlocks, pivot signals
   phase-<n>-story-map.md ← Story sequence inside the current phase; maps stories to beads
 
-._qd/history/learnings/
+.qd/history/learnings/
   critical-patterns.md      ← Promoted critical learnings (read always)
   YYYYMMDD-<slug>.md        ← Individual learning entries
 
@@ -447,13 +447,13 @@ Each skill reads from upstream artifacts and writes for downstream:
 
 | Skill | Reads | Writes |
 |-------|-------|--------|
-| exploring | (user conversation) | ._qd/history/\<feature>/CONTEXT.md |
+| exploring | (user conversation) | .qd/history/\<feature>/CONTEXT.md |
 | planning | CONTEXT.md, critical-patterns.md | discovery.md, approach.md, phase-plan.md, current-phase contract/story map, current-phase beads |
 | validating | phase-plan.md, current-phase contract/story map, current-phase beads, approach.md, CONTEXT.md | validated current phase, .spikes/ results |
 | swarming | validated beads, state.json, STATE.md | Agent Mail threads, HANDOFF.json, updated state.json, updated STATE.md |
 | executing | bead file, Agent Mail, CONTEXT.md | implementation commits, br close |
 | reviewing | diff, CONTEXT.md, approach.md, beads | P1/P2/P3 findings |
-| compounding | review findings, full feature history | ._qd/history/learnings/YYYYMMDD-\<slug>.md, critical-patterns.md |
+| compounding | review findings, full feature history | .qd/history/learnings/YYYYMMDD-\<slug>.md, critical-patterns.md |
 
 **Handoff phrase pattern:** Every skill ends with an explicit handoff:
 `"[Outcome]. Invoke [next-skill] skill."`
