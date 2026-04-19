@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { buildKhuymDependencyReport } from "./_qd_dependencies.mjs";
+import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
 
 export const STATE_SCHEMA_VERSION = "1.0";
 
@@ -378,7 +378,7 @@ function normalizeApprovedGates(value) {
 
 function readDependencyHealth(repoRoot) {
   try {
-    return buildKhuymDependencyReport({ repoRoot });
+    return buildQDDependencyReport({ repoRoot });
   } catch (error) {
     return {
       checked_at: utcNow(),
@@ -429,7 +429,7 @@ export function buildDefaultState(overrides = {}) {
   return state;
 }
 
-export function normalizeKhuymState(state) {
+export function normalizeQDState(state) {
   if (!state || typeof state !== "object" || Array.isArray(state)) {
     return buildDefaultState();
   }
@@ -437,7 +437,7 @@ export function normalizeKhuymState(state) {
   return buildDefaultState(state);
 }
 
-export function getKhuymStatePaths(repoRoot) {
+export function getQDStatePaths(repoRoot) {
   return {
     onboarding: path.join(repoRoot, "._qd", "onboarding.json"),
     stateJson: path.join(repoRoot, "._qd", "state.json"),
@@ -449,14 +449,14 @@ export function getKhuymStatePaths(repoRoot) {
   };
 }
 
-export function readKhuymState(repoRoot) {
-  const paths = getKhuymStatePaths(repoRoot);
-  return normalizeKhuymState(readJsonIfExists(paths.stateJson));
+export function readQDState(repoRoot) {
+  const paths = getQDStatePaths(repoRoot);
+  return normalizeQDState(readJsonIfExists(paths.stateJson));
 }
 
-export function writeKhuymState(repoRoot, nextState) {
-  const paths = getKhuymStatePaths(repoRoot);
-  const normalized = normalizeKhuymState(nextState);
+export function writeQDState(repoRoot, nextState) {
+  const paths = getQDStatePaths(repoRoot);
+  const normalized = normalizeQDState(nextState);
   ensureParent(paths.stateJson);
   fs.writeFileSync(paths.stateJson, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
   return normalized;
@@ -515,7 +515,7 @@ function buildNextReads(status) {
 function buildRecommendedActions(status) {
   if (!status.onboarding.exists) {
     return [
-      "Run Khuym onboarding before continuing.",
+      "Run QD onboarding before continuing.",
       "Use the plugin onboarding script in scripts/.",
     ];
   }
@@ -551,13 +551,13 @@ function buildRecommendedActions(status) {
   }
 
   return [
-    "Use this status snapshot to choose the next Khuym skill.",
+    "Use this status snapshot to choose the next QD skill.",
     "If you move into planning or execution, read critical-patterns.md first when it exists.",
   ];
 }
 
-export function readKhuymStatus(repoRoot) {
-  const paths = getKhuymStatePaths(repoRoot);
+export function readQDStatus(repoRoot) {
+  const paths = getQDStatePaths(repoRoot);
   const onboarding = readJsonIfExists(paths.onboarding);
   const stateJson = readJsonIfExists(paths.stateJson);
   const handoff = readJsonIfExists(paths.handoff);
@@ -575,7 +575,7 @@ export function readKhuymStatus(repoRoot) {
     },
     state_json: {
       exists: Boolean(stateJson),
-      ...normalizeKhuymState(stateJson),
+      ...normalizeQDState(stateJson),
     },
     state_markdown: {
       exists: stateMarkdownText.trim() !== "",
@@ -718,7 +718,7 @@ function renderGkgReadinessLines(status) {
   ];
 }
 
-export function renderKhuymStatus(status) {
+export function renderQDStatus(status) {
   const feature = deriveFeatureSlug(status) || "(none)";
   const skill = status.state_json.active_skill || status.state_markdown.skill || "(none)";
   const phase = status.state_json.phase || status.state_markdown.phase || "(none)";
@@ -730,7 +730,7 @@ export function renderKhuymStatus(status) {
     : "missing";
 
   return [
-    "Khuym Status",
+    "QD Status",
     `Repo: ${status.repo_root}`,
     `Onboarding: ${onboarding}`,
     `Feature: ${feature}`,

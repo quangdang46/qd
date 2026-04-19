@@ -388,7 +388,7 @@ function aggregateMissingDependencies(skills) {
   return [...byKey.values()].sort((left, right) => left.id.localeCompare(right.id));
 }
 
-export function collectKhuymSkillDependencies(options = {}) {
+export function collectQDSkillDependencies(options = {}) {
   const repoRoot = path.resolve(options.repoRoot || process.cwd());
   const skillsRoot = path.resolve(
     options.skillsRoot || path.join(repoRoot, "plugins", "qd", "skills"),
@@ -421,12 +421,12 @@ function getCoverageStatus(declaration) {
   return "uncovered";
 }
 
-export function buildKhuymDependencyReport(options = {}) {
+export function buildQDDependencyReport(options = {}) {
   const repoRoot = path.resolve(options.repoRoot || process.cwd());
   const skillsRoot = path.resolve(
     options.skillsRoot || path.join(repoRoot, "plugins", "qd", "skills"),
   );
-  const declarations = collectKhuymSkillDependencies({ repoRoot, skillsRoot });
+  const declarations = collectQDSkillDependencies({ repoRoot, skillsRoot });
   const commandProbe = options.commandProbe || defaultCommandProbe;
   const mcpSources = collectMcpSources({
     repoRoot,

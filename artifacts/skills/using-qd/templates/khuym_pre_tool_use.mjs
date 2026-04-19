@@ -22,7 +22,7 @@ export async function main() {
   let message = null;
   if (BARE_BV.test(command) && !command.includes("--robot-")) {
     message =
-      "Khuym expects `bv` only with `--robot-*` flags in agent sessions. Bare `bv` launches the interactive TUI.";
+      "QD expects `bv` only with `--robot-*` flags in agent sessions. Bare `bv` launches the interactive TUI.";
   }
 
   const output = { continue: true };

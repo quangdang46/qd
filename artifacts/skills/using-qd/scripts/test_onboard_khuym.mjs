@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { execFileSync, spawn } from "node:child_process";
 
 import { applyRepo, checkRepo, getNodeRuntimeStatus } from "./onboard_qd.mjs";
-import { buildKhuymDependencyReport } from "./_qd_dependencies.mjs";
+import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
 
 const LOCAL_ONBOARD_SCRIPT_PATH = fileURLToPath(new URL("./onboard_qd.mjs", import.meta.url));
 const LOCAL_USING_KHUYM_SKILL_PATH = fileURLToPath(new URL("../SKILL.md", import.meta.url));
@@ -88,7 +88,7 @@ test("applyRepo creates full repo onboarding with node-based hooks", () => {
     assert.equal(result.status, "up_to_date");
     assert.equal(result.details.runtime.supported, true);
     assert.ok(fs.existsSync(path.join(root, "AGENTS.md")));
-    assert.match(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8"), /Khuym Workflow/);
+    assert.match(fs.readFileSync(path.join(root, "AGENTS.md"), "utf8"), /QD Workflow/);
     assert.ok(fs.existsSync(path.join(root, ".codex", "config.toml")));
     assert.ok(fs.existsSync(path.join(root, ".codex", "hooks.json")));
     assert.ok(fs.existsSync(path.join(root, "._qd", "onboarding.json")));
@@ -165,7 +165,7 @@ test("checkRepo flags stale python hook commands and legacy hook files", () => {
                     type: "command",
                     command:
                       'python3 "$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.codex/hooks/_qd_session_start.py"',
-                    statusMessage: "Khuym: session bootstrap",
+                    statusMessage: "QD: session bootstrap",
                   },
                 ],
               },
@@ -374,7 +374,7 @@ test("dependency report distinguishes dependency-free packaged skills from uncov
       "utf8",
     );
 
-    const report = buildKhuymDependencyReport({
+    const report = buildQDDependencyReport({
       repoRoot: root,
       skillsRoot,
       globalCodexConfigPath: path.join(root, "missing-global.toml"),
@@ -775,7 +775,7 @@ test("dependency helper marks missing command and missing mcp_server dependencie
       "utf8",
     );
 
-    const report = buildKhuymDependencyReport({
+    const report = buildQDDependencyReport({
       repoRoot: root,
       skillsRoot,
       globalCodexConfigPath: path.join(root, "missing-global.toml"),
@@ -882,7 +882,7 @@ test("dependency helper respects declared MCP config_sources and can use package
       "utf8",
     );
 
-    const report = buildKhuymDependencyReport({
+    const report = buildQDDependencyReport({
       repoRoot: root,
       skillsRoot,
       globalCodexConfigPath: path.join(root, "missing-global.toml"),
@@ -965,7 +965,7 @@ test("dependency helper still accepts legacy root-level plugin MCP manifests", (
       "utf8",
     );
 
-    const report = buildKhuymDependencyReport({
+    const report = buildQDDependencyReport({
       repoRoot: root,
       skillsRoot,
       globalCodexConfigPath: path.join(root, "missing-global.toml"),
@@ -981,8 +981,8 @@ test("dependency helper still accepts legacy root-level plugin MCP manifests", (
   }
 });
 
-test("packaged Khuym inventory stays fully covered and the docs explain the declaration contract", () => {
-  const report = buildKhuymDependencyReport({ repoRoot: LOCAL_REPO_ROOT });
+test("packaged QD inventory stays fully covered and the docs explain the declaration contract", () => {
+  const report = buildQDDependencyReport({ repoRoot: LOCAL_REPO_ROOT });
   const skillText = fs.readFileSync(LOCAL_USING_KHUYM_SKILL_PATH, "utf8");
   const pluginManifest = JSON.parse(
     fs.readFileSync(

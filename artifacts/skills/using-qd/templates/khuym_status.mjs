@@ -3,7 +3,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readKhuymStatus, renderKhuymStatus, resolveRepoRoot } from "./_qd_state.mjs";
+import { readQDStatus, renderQDStatus, resolveRepoRoot } from "./_qd_state.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,7 +33,7 @@ function parseCliArgs(argv) {
         [
           "Usage: _qd_status.mjs [--repo-root <path>] [--json]",
           "",
-          "Shows a read-only Khuym status snapshot from onboarding, state, and handoff files.",
+          "Shows a read-only QD status snapshot from onboarding, state, and handoff files.",
         ].join("\n"),
       );
       process.exit(0);
@@ -47,10 +47,10 @@ function parseCliArgs(argv) {
 export function main(argv = process.argv.slice(2)) {
   const args = parseCliArgs(argv);
   const repoRoot = resolveRepoRoot(args.repoRoot, SCRIPT_DIR);
-  const status = readKhuymStatus(repoRoot);
+  const status = readQDStatus(repoRoot);
 
   process.stdout.write(
-    args.json ? `${JSON.stringify(status, null, 2)}\n` : `${renderKhuymStatus(status)}\n`,
+    args.json ? `${JSON.stringify(status, null, 2)}\n` : `${renderQDStatus(status)}\n`,
   );
   return 0;
 }

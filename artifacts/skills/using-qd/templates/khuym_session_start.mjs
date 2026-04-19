@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildKhuymDependencyReport } from "../_qd_dependencies.mjs";
+import { buildQDDependencyReport } from "../_qd_dependencies.mjs";
 import { readGkgReadiness } from "../_qd_state.mjs";
 
 function findRepoRoot(start) {
@@ -49,7 +49,7 @@ function uniqueSorted(values) {
 function buildSessionDependencyWarning(repoRoot) {
   let dependencyHealth;
   try {
-    dependencyHealth = buildKhuymDependencyReport({ repoRoot });
+    dependencyHealth = buildQDDependencyReport({ repoRoot });
   } catch {
     return "";
   }
@@ -83,7 +83,7 @@ function buildSessionDependencyWarning(repoRoot) {
 
   return (
     `Dependency warning: ${missingDependencies.length} declared dependencies are missing, ` +
-    `so some Khuym skills are degraded or unavailable. ` +
+    `so some QD skills are degraded or unavailable. ` +
     `Affected skills: ${affected}. ` +
     `Missing commands: ${commands}. ` +
     `Missing MCP server configuration: ${mcpServers}.`
@@ -99,10 +99,10 @@ export async function main() {
   const notes = [];
   if (fs.existsSync(onboardingPath)) {
     notes.push(
-      "Khuym onboarding is installed for this repo. Read AGENTS.md, then run node .codex/_qd_status.mjs --json for a quick scout before substantive work.",
+      "QD onboarding is installed for this repo. Read AGENTS.md, then run node .codex/_qd_status.mjs --json for a quick scout before substantive work.",
     );
   } else {
-    notes.push("Khuym onboarding is missing in this repo. Load exploringusing-qd before continuing.");
+    notes.push("QD onboarding is missing in this repo. Load exploringusing-qd before continuing.");
   }
 
   if (fs.existsSync(criticalPatterns)) {

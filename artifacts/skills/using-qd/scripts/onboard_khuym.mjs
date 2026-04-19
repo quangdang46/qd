@@ -7,12 +7,12 @@ import { fileURLToPath } from "node:url";
 
 import {
   buildDefaultState,
-  normalizeKhuymState,
+  normalizeQDState,
   readGkgReadiness,
-  readKhuymState,
-  writeKhuymState,
+  readQDState,
+  writeQDState,
 } from "./_qd_state.mjs";
-import { buildKhuymDependencyReport } from "./_qd_dependencies.mjs";
+import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const USING_KHUYM_DIR = path.dirname(path.dirname(SCRIPT_PATH));
@@ -43,7 +43,7 @@ const MANAGED_SUPPORT_FILES = {
 
 function readDependencyHealth(repoRoot) {
   try {
-    return buildKhuymDependencyReport({ repoRoot });
+    return buildQDDependencyReport({ repoRoot });
   } catch (error) {
     return {
       checked_at: utcNow(),
@@ -322,7 +322,7 @@ function renderCompactPromptBlock() {
   return [
     COMPACT_PROMPT_MARKER_START,
     'compact_prompt = """',
-    "MANDATORY: Khuym context compaction recovery.",
+    "MANDATORY: QD context compaction recovery.",
     "",
     "STOP. Before doing anything else:",
     "1. Read AGENTS.md completely.",
@@ -439,7 +439,7 @@ function renderManagedHookEntries() {
           {
             type: "command",
             command: buildManagedHookCommand("_qd_session_start.mjs"),
-            statusMessage: "Khuym: session bootstrap",
+            statusMessage: "QD: session bootstrap",
           },
         ],
       },
@@ -451,7 +451,7 @@ function renderManagedHookEntries() {
           {
             type: "command",
             command: buildManagedHookCommand("_qd_pre_tool_use.mjs"),
-            statusMessage: "Khuym: shell guardrails",
+            statusMessage: "QD: shell guardrails",
           },
         ],
       },
@@ -462,7 +462,7 @@ function renderManagedHookEntries() {
           {
             type: "command",
             command: buildManagedHookCommand("_qd_stop.mjs"),
-            statusMessage: "Khuym: end-of-turn check",
+            statusMessage: "QD: end-of-turn check",
           },
         ],
       },
@@ -470,11 +470,11 @@ function renderManagedHookEntries() {
   };
 }
 
-function isKhuymHookEntry(entry) {
+function isQDHookEntry(entry) {
   for (const hook of entry?.hooks || []) {
     const command = hook?.command || "";
     const status = hook?.statusMessage || "";
-    if (command.includes(".codex/hooks/_qd_") || status.startsWith("Khuym:")) {
+    if (command.includes(".codex/hooks/_qd_") || status.startsWith("QD:")) {
       return true;
     }
   }
@@ -497,7 +497,7 @@ function mergeHooksJson(hooksPath) {
 
   for (const [eventName, entries] of Object.entries(renderManagedHookEntries())) {
     const currentEntries = Array.isArray(mergedHooks[eventName]) ? mergedHooks[eventName] : [];
-    const filtered = currentEntries.filter((entry) => !isKhuymHookEntry(entry));
+    const filtered = currentEntries.filter((entry) => !isQDHookEntry(entry));
     const nextEntries = [...filtered, ...entries];
     if (JSON.stringify(currentEntries) !== JSON.stringify(nextEntries)) {
       changes.push(`upsert_${eventName}`);
@@ -583,7 +583,7 @@ function writeSupportScripts(repoRoot) {
 
 function needsStateUpdate(repoRoot) {
   const statePath = path.join(repoRoot, "._qd", "state.json");
-  const existing = normalizeKhuymState(readKhuymState(repoRoot));
+  const existing = normalizeQDState(readQDState(repoRoot));
   const sourceText = fs.existsSync(statePath) ? fs.readFileSync(statePath, "utf8") : "";
   const normalizedText = `${JSON.stringify(existing, null, 2)}\n`;
   return sourceText !== normalizedText;
@@ -597,7 +597,7 @@ function buildRuntimeBlockedPayload(repoRoot, action) {
     action,
     requires_confirmation: false,
     actions: ["install_supported_node_runtime"],
-    message: `Khuym requires Node.js ${MIN_NODE_MAJOR}+ before onboarding can continue. Install Node.js and rerun onboarding.`,
+    message: `QD requires Node.js ${MIN_NODE_MAJOR}+ before onboarding can continue. Install Node.js and rerun onboarding.`,
     details: {
       runtime,
     },
@@ -748,16 +748,16 @@ export function applyRepo(repoRoot, allowCompactPromptReplace) {
   const hookScripts = writeHookScripts(repoRoot);
   const supportScripts = writeSupportScripts(repoRoot);
   const statePayload = fs.existsSync(statePath)
-    ? normalizeKhuymState(readKhuymState(repoRoot))
+    ? normalizeQDState(readQDState(repoRoot))
     : buildDefaultState();
-  writeKhuymState(repoRoot, statePayload);
+  writeQDState(repoRoot, statePayload);
 
   const onboardingNotes = [];
   let status = "complete";
   if (configResult.changes.includes("compact_prompt_conflict_preserved")) {
     status = "partial";
     onboardingNotes.push(
-      "Existing compact_prompt preserved; Khuym compaction recovery was not installed.",
+      "Existing compact_prompt preserved; QD compaction recovery was not installed.",
     );
   }
 
@@ -821,7 +821,7 @@ function parseCliArgs(argv) {
         [
           "Usage: onboard_qd.mjs [--repo-root <path>] [--apply] [--allow-compact-prompt-replace]",
           "",
-          "Checks or applies Khuym repo onboarding.",
+          "Checks or applies QD repo onboarding.",
         ].join("\n"),
       );
       process.exit(0);
