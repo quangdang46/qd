@@ -23,8 +23,10 @@ const PLATFORM_CODES_PATH = path.join(PLUGIN_ROOT, "..", "..", "platform-codes.y
 const AGENTS_TEMPLATE_PATH = path.join(PLUGIN_ROOT, "AGENTS.template.md");
 const HOOK_TEMPLATES_DIR = path.join(USING_QD_DIR, "templates");
 
-// Detect IDE target directory based on environment
+// Detect IDE target directory from environment (set by QD installer)
+// Fallback auto-detect for Claude Code vs Codex only
 function getIdeTargetDir() {
+  if (process.env.IDE_TARGET_DIR) return process.env.IDE_TARGET_DIR;
   return fs.existsSync(path.join(resolveRepoRoot(), ".claude")) ? ".claude" : ".codex";
 }
 
