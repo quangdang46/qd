@@ -14,7 +14,9 @@ export class ArtifactResolver {
    * Files at root go to "skills" by default
    */
   getArtifactType(relativePath) {
-    const parts = relativePath.split(path.sep);
+    // Always use forward slash since artifact relativePaths always use '/'
+    // regardless of OS (paths in artifacts are arch-neutral)
+    const parts = relativePath.split('/');
     if (parts.length > 1) {
       return parts[0];
     }

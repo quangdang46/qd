@@ -609,9 +609,9 @@ class Installer {
     const ides = manifestData?.ides || existingInstall?.ides || [];
     const installedFiles = manifestData?.artifacts || [];
 
-    // Collect skill-level directories to remove (e.g., .claude/hooks/docs, .claude/skills/agent-browser)
-    // This ensures ALL files in that skill directory are removed, including duplicates not in manifest
-    const skillDirsToRemove = new Set();
+    // Collect ALL parent directories of installed files for cleanup
+    // This includes skill directories (depth > 2) AND artifact type dirs like hooks/ (depth == 2)
+    const allParentDirs = new Set();
     const ideRootsToClean = new Set();
 
     for (const entry of installedFiles) {
@@ -621,16 +621,10 @@ class Installer {
         await fs.remove(targetPath);
       }
 
-      // Use installedDir from manifest - it already contains the correct skill-level directory
-      // e.g., for .claude/hooks/notifications/lib/env-loader.cjs, installedDir is .claude/hooks/notifications
-      // Only add if it's a nested directory (depth > 2), not the type root itself
-      // Type root deletion would delete ALL content including user's custom skills
+      // Collect all parent directories of installed files (for depth >= 2 dirs)
+      // This ensures nested structure directories are removed even at depth == 2
       if (entry.installedDir) {
-        const relDir = path.relative(projectDir, entry.installedDir);
-        const depth = relDir.split(path.sep).length;
-        if (depth > 2) {
-          skillDirsToRemove.add(entry.installedDir);
-        }
+        allParentDirs.add(entry.installedDir);
       }
 
       // Track IDE root
@@ -638,11 +632,11 @@ class Installer {
       ideRootsToClean.add(path.join(projectDir, parts[0]));
     }
 
-    // Remove all skill-level directories (this removes duplicates and all nested content)
-    for (const skillDir of skillDirsToRemove) {
+    // Remove all parent directories (this handles depth == 2 artifact dirs like .claude/hooks/)
+    for (const parentDir of allParentDirs) {
       try {
-        if (await fs.pathExists(skillDir)) {
-          await fs.remove(skillDir);
+        if (await fs.pathExists(parentDir)) {
+          await fs.remove(parentDir);
         }
       } catch {
         // Ignore errors
