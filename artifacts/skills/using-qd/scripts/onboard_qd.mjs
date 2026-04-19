@@ -25,9 +25,7 @@ const HOOK_TEMPLATES_DIR = path.join(USING_QD_DIR, "templates");
 
 // Detect IDE target directory based on environment
 function getIdeTargetDir() {
-  const repoRoot = resolveRepoRoot();
-  const targetDir = fs.existsSync(path.join(repoRoot, ".claude")) ? ".claude" : ".codex";
-  return targetDir;
+  return fs.existsSync(path.join(resolveRepoRoot(), ".claude")) ? ".claude" : ".codex";
 }
 
 const ONBOARDING_SCHEMA_VERSION = "1.0";
