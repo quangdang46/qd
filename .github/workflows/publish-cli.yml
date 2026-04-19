@@ -2,12 +2,11 @@ name: Publish CLI to npm
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'cli-[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: "!startsWith(github.ref_name, 'v')"
     steps:
       - uses: actions/checkout@v4
 

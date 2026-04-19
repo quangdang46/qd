@@ -356,13 +356,11 @@ name: Release Artifacts
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'   # v prefix only
+      - 'spec-[0-9]+.[0-9]+.[0-9]+'   # spec prefix for artifacts
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Guard: skip if non-v tag (those are for npm releases)
-    if: "startsWith(github.ref_name, 'v')"
     steps:
       - uses: actions/checkout@v4
 

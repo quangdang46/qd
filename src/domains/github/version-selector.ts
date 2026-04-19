@@ -59,8 +59,8 @@ class VersionSelector {
 
       if (selected === '__manual__') {
         const manualVersion = await prompts.text({
-          message: 'Enter version tag (e.g., v0.1.0):',
-          placeholder: 'v0.1.0',
+          message: 'Enter version tag (e.g., spec-0.1.0):',
+          placeholder: 'spec-0.1.0',
           validate: (value) => {
             if (!value || value.trim().length === 0) {
               return 'Version is required';

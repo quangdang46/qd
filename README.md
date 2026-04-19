@@ -122,10 +122,10 @@ convert:
 
 QD uses a two-part release system:
 
-1. **CLI** - Published to npm with semver tags (e.g., `0.1.1`)
-2. **Artifacts** - Published to GitHub Releases with v-prefixed tags (e.g., `v0.1.0`)
+1. **CLI** - Published to npm with `cli-*.*.*` tags (e.g., `cli-0.1.1`)
+2. **Artifacts** - Published to GitHub Releases with `spec-*.*.*` tags (e.g., `spec-0.1.0`)
 
-When you run `qd init --version v0.1.0`, the CLI downloads artifacts from the matching GitHub release.
+When you run `qd init --version spec-0.1.0`, the CLI downloads artifacts from the matching GitHub release.
 
 ## License
 
