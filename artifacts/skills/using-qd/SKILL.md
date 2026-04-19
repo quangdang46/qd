@@ -79,11 +79,11 @@ Then run `node scripts/onboard_qd.mjs --repo-root <repo-root>` from this skill d
 Onboarding installs or updates:
 
 - root `AGENTS.md` from the plugin's `AGENTS.template.md`
-- repo-local `.codex/config.toml`
-- repo-local `.codex/hooks.json`
-- repo-local `.codex/hooks/_qd_*.mjs`
-- repo-local `.codex/_qd_status.mjs`
-- repo-local `.codex/_qd_state.mjs`
+- repo-local `{IDE_TARGET_DIR}/config.toml`
+- repo-local `{IDE_TARGET_DIR}/hooks.json`
+- repo-local `{IDE_TARGET_DIR}/hooks/_qd_*.mjs`
+- repo-local `{IDE_TARGET_DIR}/_qd_status.mjs`
+- repo-local `{IDE_TARGET_DIR}/_qd_state.mjs`
 - `._qd/onboarding.json`
 - `._qd/state.json`
 
@@ -96,7 +96,7 @@ If onboarding is not complete, do not continue into the rest of the QD workflow.
 After onboarding succeeds, use the repo-local scout command as the first quick orientation step whenever it is available:
 
 ```bash
-node .codex/_qd_status.mjs --json
+node {IDE_TARGET_DIR}/_qd_status.mjs --json
 ```
 
 The scout is read-only. It summarizes:
@@ -204,7 +204,7 @@ On every session start, before doing anything else:
 0. Confirm QD onboarding is current via ._qd/onboarding.json
    → If missing or stale: return to Plugin Onboarding above
 
-0.5. If .codex/_qd_status.mjs exists: run `node .codex/_qd_status.mjs --json`
+0.5. If {IDE_TARGET_DIR}/_qd_status.mjs exists: run `node {IDE_TARGET_DIR}/_qd_status.mjs --json`
    → Use the scout output to decide which files to open next
 
 0.6. Check `gkg_readiness` from the scout output
@@ -462,7 +462,7 @@ Watch for these violations. Pause and surface them immediately when detected:
   config.json       ← Feature toggles (absent=enabled)
   HANDOFF.json      ← Session resume data (write when pausing)
 
-.codex/
+{IDE_TARGET_DIR}/
   _qd_status.mjs  ← Read-only scout command for onboarding, state, and handoff
   _qd_state.mjs   ← Shared state helpers used by the scout command
 

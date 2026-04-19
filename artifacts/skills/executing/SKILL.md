@@ -74,7 +74,7 @@ From this point on, use `resolved_agent_mail_name` for every Agent Mail call.
 ### 1b. Read Project Context (in this order)
 
 1. **AGENTS.md** — project operating manual (mandatory; skip nothing)
-2. If present, run **`node .codex/_qd_status.mjs --json`** — quick onboarding/state/handoff scout
+2. If present, run **`node {IDE_TARGET_DIR}/_qd_status.mjs --json`** — quick onboarding/state/handoff scout
 3. **._qd/state.json** — machine-readable routing snapshot
 4. **._qd/STATE.md** — current project focus, decisions, active blockers
 5. **._qd/history/\<feature\>/CONTEXT.md** — locked decisions that MUST be honored

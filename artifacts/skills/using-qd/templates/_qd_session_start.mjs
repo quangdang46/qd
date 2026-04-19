@@ -99,7 +99,7 @@ export async function main() {
   const notes = [];
   if (fs.existsSync(onboardingPath)) {
     notes.push(
-      "QD onboarding is installed for this repo. Read AGENTS.md, then run node .codex/_qd_status.mjs --json for a quick scout before substantive work.",
+      "QD onboarding is installed for this repo. Read AGENTS.md, then run node {IDE_TARGET_DIR}/_qd_status.mjs --json for a quick scout before substantive work.",
     );
   } else {
     notes.push("QD onboarding is missing in this repo. Load exploringusing-qd before continuing.");

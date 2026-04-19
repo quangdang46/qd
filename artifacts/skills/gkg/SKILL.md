@@ -4,7 +4,7 @@ description: >-
   Codebase intelligence support skill for QD using the gkg MCP tools. Use when
   planning or discovery needs an architecture snapshot, file/definition discovery,
   existing-pattern evidence, importer lookups, or a quick symbol trace in a
-  supported repo. Primary path: scout readiness with `node .codex/_qd_status.mjs --json`,
+  supported repo. Primary path: scout readiness with `node {IDE_TARGET_DIR}/_qd_status.mjs --json`,
   then `repo_map` plus `search_codebase_definitions` plus `read_definitions`.
 metadata:
   version: "1.1"
@@ -30,7 +30,7 @@ Do not start with `which gkg` or any imagined `gkg <subcommand>` discovery flow.
 Run:
 
 ```bash
-node .codex/_qd_status.mjs --json
+node {IDE_TARGET_DIR}/_qd_status.mjs --json
 ```
 
 Use the scout output as the source of truth for this repo:

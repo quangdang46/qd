@@ -19,8 +19,34 @@ const USING_QD_DIR = path.dirname(path.dirname(SCRIPT_PATH));
 const USING_QD_SCRIPTS_DIR = path.dirname(SCRIPT_PATH);
 const PLUGIN_ROOT = path.dirname(path.dirname(USING_QD_DIR));
 const PLUGIN_MANIFEST_PATH = path.join(PLUGIN_ROOT, ".codex-plugin", "plugin.json");
+const PLATFORM_CODES_PATH = path.join(PLUGIN_ROOT, "..", "..", "platform-codes.yaml");
 const AGENTS_TEMPLATE_PATH = path.join(PLUGIN_ROOT, "AGENTS.template.md");
 const HOOK_TEMPLATES_DIR = path.join(USING_QD_DIR, "templates");
+
+// Detect IDE target directory based on environment
+function getIdeTargetDir() {
+  // Check if Claude Code is running (has .claude directory)
+  const repoRoot = resolveRepoRoot();
+  const claudeDir = path.join(repoRoot, ".claude");
+  const codexDir = path.join(repoRoot, ".codex");
+
+  if (fs.existsSync(claudeDir)) {
+    return ".claude";
+  }
+  if (fs.existsSync(codexDir)) {
+    return ".codex";
+  }
+
+  // Default to .claude for Claude Code environment
+  return ".claude";
+}
+
+// Resolve placeholder in paths
+function resolveIdePath(template) {
+  const targetDir = getIdeTargetDir();
+  return template.replace(/\{IDE_TARGET_DIR\}/g, targetDir);
+}
+
 const ONBOARDING_SCHEMA_VERSION = "1.0";
 const COMPACT_PROMPT_MARKER_START = "# QD: compact_prompt start";
 const COMPACT_PROMPT_MARKER_END = "# QD: compact_prompt end";
@@ -326,7 +352,7 @@ function renderCompactPromptBlock() {
     "",
     "STOP. Before doing anything else:",
     "1. Read AGENTS.md completely.",
-    "2. If present, run node .codex/_qd_status.mjs --json.",
+    "2. If present, run node {IDE_TARGET_DIR}/_qd_status.mjs --json.",
     "3. If present, read ._qd/HANDOFF.json, ._qd/state.json, and ._qd/STATE.md.",
     "4. Re-open the active feature CONTEXT.md before more planning or edits.",
     "5. Re-open the current bead or task before running more implementation commands.",
@@ -427,7 +453,8 @@ function mergeCodexConfig(configPath, allowCompactPromptReplace) {
 }
 
 function buildManagedHookCommand(fileName) {
-  return `node .codex/hooks/${fileName}`;
+  const targetDir = getIdeTargetDir();
+  return `node ${targetDir}/hooks/${fileName}`;
 }
 
 function renderManagedHookEntries() {
@@ -471,10 +498,11 @@ function renderManagedHookEntries() {
 }
 
 function isQDHookEntry(entry) {
+  const targetDir = getIdeTargetDir();
   for (const hook of entry?.hooks || []) {
     const command = hook?.command || "";
     const status = hook?.statusMessage || "";
-    if (command.includes(".codex/hooks/_qd_") || status.startsWith("QD:")) {
+    if (command.includes(`${targetDir}/hooks/_qd_`) || status.startsWith("QD:")) {
       return true;
     }
   }
@@ -512,7 +540,8 @@ function mergeHooksJson(hooksPath) {
 }
 
 function hookScriptsNeedUpdate(repoRoot) {
-  const hooksDir = path.join(repoRoot, ".codex", "hooks");
+  const targetDir = getIdeTargetDir();
+  const hooksDir = path.join(repoRoot, targetDir, "hooks");
 
   for (const name of MANAGED_HOOK_FILENAMES) {
     const source = fs.readFileSync(path.join(HOOK_TEMPLATES_DIR, name), "utf8");
@@ -532,7 +561,8 @@ function hookScriptsNeedUpdate(repoRoot) {
 }
 
 function supportScriptsNeedUpdate(repoRoot) {
-  const codexDir = path.join(repoRoot, ".codex");
+  const targetDir = getIdeTargetDir();
+  const codexDir = path.join(repoRoot, targetDir);
 
   for (const [name, sourcePath] of Object.entries(MANAGED_SUPPORT_FILES)) {
     const targetPath = path.join(codexDir, name);
@@ -546,7 +576,8 @@ function supportScriptsNeedUpdate(repoRoot) {
 }
 
 function writeHookScripts(repoRoot) {
-  const hooksDir = path.join(repoRoot, ".codex", "hooks");
+  const targetDir = getIdeTargetDir();
+  const hooksDir = path.join(repoRoot, targetDir, "hooks");
   fs.mkdirSync(hooksDir, { recursive: true });
 
   for (const name of LEGACY_HOOK_FILENAMES) {
@@ -568,7 +599,8 @@ function writeHookScripts(repoRoot) {
 }
 
 function writeSupportScripts(repoRoot) {
-  const codexDir = path.join(repoRoot, ".codex");
+  const targetDir = getIdeTargetDir();
+  const codexDir = path.join(repoRoot, targetDir);
   fs.mkdirSync(codexDir, { recursive: true });
 
   const written = [];
@@ -614,9 +646,10 @@ export function checkRepo(repoRoot) {
   const gkgReadiness = readGkgReadiness(repoRoot);
 
   const pluginVersion = loadPluginVersion();
+  const targetDir = getIdeTargetDir();
   const agentsPath = path.join(repoRoot, "AGENTS.md");
-  const configPath = path.join(repoRoot, ".codex", "config.toml");
-  const hooksPath = path.join(repoRoot, ".codex", "hooks.json");
+  const configPath = path.join(repoRoot, targetDir, "config.toml");
+  const hooksPath = path.join(repoRoot, targetDir, "hooks.json");
   const onboardingPath = path.join(repoRoot, "._qd", "onboarding.json");
 
   const agentsText = readTextIfExists(agentsPath);
@@ -646,7 +679,7 @@ export function checkRepo(repoRoot) {
   }
 
   if (!configText) {
-    actions.push("create_.codex/config.toml");
+    actions.push("create_" + targetDir + "/config.toml");
   } else {
     const projectDocMaxBytes = findProjectDocMaxBytes(configText);
     if (projectDocMaxBytes === undefined || projectDocMaxBytes < 65536) {
@@ -664,7 +697,7 @@ export function checkRepo(repoRoot) {
 
   let hooksNeedMerge = false;
   if (!hooksText) {
-    actions.push("create_.codex/hooks.json");
+    actions.push("create_" + targetDir + "/hooks.json");
     hooksNeedMerge = true;
   } else {
     try {
@@ -724,9 +757,10 @@ export function applyRepo(repoRoot, allowCompactPromptReplace) {
   const pluginVersion = loadPluginVersion();
   const template = readTemplate();
 
+  const targetDir = getIdeTargetDir();
   const agentsPath = path.join(repoRoot, "AGENTS.md");
-  const configPath = path.join(repoRoot, ".codex", "config.toml");
-  const hooksPath = path.join(repoRoot, ".codex", "hooks.json");
+  const configPath = path.join(repoRoot, targetDir, "config.toml");
+  const hooksPath = path.join(repoRoot, targetDir, "hooks.json");
   const onboardingPath = path.join(repoRoot, "._qd", "onboarding.json");
   const statePath = path.join(repoRoot, "._qd", "state.json");
 

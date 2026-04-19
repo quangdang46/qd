@@ -75,7 +75,7 @@ Prerequisites:
 - Current-phase beads are in `open` status and approved for execution
 - EPIC_ID is known (from STATE.md or user input)
 - Agent Mail server is reachable
-- If `.codex/_qd_status.mjs` exists, run `node .codex/_qd_status.mjs --json` first to confirm onboarding, current phase, and any saved handoff before launching the swarm
+- If `{IDE_TARGET_DIR}/_qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/_qd_status.mjs --json` first to confirm onboarding, current phase, and any saved handoff before launching the swarm
 
 ---
 
