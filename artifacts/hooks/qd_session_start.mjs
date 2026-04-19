@@ -3,8 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildQDDependencyReport } from "../../scripts/qd_dependencies.mjs";
-import { readGkgReadiness } from "../../scripts/qd_state.mjs";
+import { buildQDDependencyReport } from "../scripts/qd_dependencies.mjs";
+import { readGkgReadiness } from "../scripts/qd_state.mjs";
 
 function findRepoRoot(start) {
   let candidate = path.resolve(start || ".");

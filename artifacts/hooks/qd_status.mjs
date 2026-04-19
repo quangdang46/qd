@@ -3,7 +3,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readQDStatus, renderQDStatus, resolveRepoRoot } from "../../scripts/qd_state.mjs";
+import { readQDStatus, renderQDStatus, resolveRepoRoot } from "../scripts/qd_state.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 

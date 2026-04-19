@@ -7,7 +7,7 @@ Use `using-qd` first in this repo unless you are resuming an already approved ha
 
 1. Read this file at session start and again after any context compaction.
 2. If `.qd/HANDOFF.json` exists, do not auto-resume. Surface the saved state and wait for user confirmation.
-4. If `.qd/history/learnings/critical-patterns.md` exists, read it before planning or execution work.
+3. If `.qd/history/learnings/critical-patterns.md` exists, read it before planning or execution work.
 
 ## Chain
 
