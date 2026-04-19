@@ -1,4 +1,4 @@
-<!-- AGENTS:START -->
+<!-- QD:START -->
 # QD Workflow
 
 Use `using-qd` first in this repo unless you are resuming an already approved handoff.
@@ -73,4 +73,4 @@ Before ending a substantial work chunk:
 1. Update or close the active bead/task if one exists.
 2. Leave `._qd/state.json`, `._qd/STATE.md`, and `._qd/HANDOFF.json` consistent with the current pause/resume state.
 3. Mention any remaining blockers, open questions, or next actions in the final response.
-<!-- AGENTS:END -->
+<!-- QD:END -->

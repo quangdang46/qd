@@ -128,8 +128,8 @@ function registerUninstall(program) {
           const agentsFile = path.join(projectDir, 'AGENTS.md');
           if (await fs.pathExists(agentsFile)) {
             const content = await fs.readFile(agentsFile, 'utf8');
-            const startMarker = '<!-- AGENTS:START -->';
-            const endMarker = '<!-- AGENTS:END -->';
+            const startMarker = '<!-- QD:START -->';
+            const endMarker = '<!-- QD:END -->';
             const startIdx = content.indexOf(startMarker);
             const endIdx = content.indexOf(endMarker);
             if (startIdx !== -1 && endIdx !== -1) {

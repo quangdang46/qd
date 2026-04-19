@@ -12,7 +12,7 @@ async function mergeAgentsTemplate(sourceFile, targetFile) {
 
   if (!(await fs.pathExists(targetFile))) {
     // No existing file - write with markers
-    await fs.writeFile(targetFile, '<!-- AGENTS:START -->\n' + templateContent.trim() + '\n<!-- AGENTS:END -->\n', 'utf8');
+    await fs.writeFile(targetFile, '<!-- QD:START -->\n' + templateContent.trim() + '\n<!-- QD:END -->\n', 'utf8');
     return;
   }
 
@@ -22,15 +22,15 @@ async function mergeAgentsTemplate(sourceFile, targetFile) {
     const merged = replaceAgentsBlock(existing, templateContent);
     await fs.writeFile(targetFile, merged, 'utf8');
   } else {
-    const merged = existing.trimEnd() + '\n\n<!-- AGENTS:START -->\n' + templateContent.trim() + '\n<!-- AGENTS:END -->\n';
+    const merged = existing.trimEnd() + '\n\n<!-- QD:START -->\n' + templateContent.trim() + '\n<!-- QD:END -->\n';
     await fs.writeFile(targetFile, merged, 'utf8');
   }
 }
 
 function extractAgentsBlock(content) {
-  const start = content.indexOf('<!-- AGENTS:START -->');
+  const start = content.indexOf('<!-- QD:START -->');
   if (start !== -1) {
-    const end = content.indexOf('<!-- AGENTS:END -->') + '<!-- AGENTS:END -->'.length;
+    const end = content.indexOf('<!-- QD:END -->') + '<!-- QD:END -->'.length;
     return content.slice(start, end);
   }
   // No markers - treat entire content as the QD block (wrapped with markers on output)
@@ -38,20 +38,20 @@ function extractAgentsBlock(content) {
 }
 
 function hasAgentsBlock(content) {
-  return content.includes('<!-- AGENTS:START -->') && content.includes('<!-- AGENTS:END -->');
+  return content.includes('<!-- QD:START -->') && content.includes('<!-- QD:END -->');
 }
 
 function replaceAgentsBlock(existing, newBlock) {
-  const start = existing.indexOf('<!-- AGENTS:START -->');
-  const end = existing.indexOf('<!-- AGENTS:END -->');
+  const start = existing.indexOf('<!-- QD:START -->');
+  const end = existing.indexOf('<!-- QD:END -->');
   if (start === -1 || end === -1) {
     // No existing block - just append new block with markers
-    return existing.trimEnd() + '\n\n<!-- AGENTS:START -->\n' + newBlock.trim() + '\n<!-- AGENTS:END -->\n';
+    return existing.trimEnd() + '\n\n<!-- QD:START -->\n' + newBlock.trim() + '\n<!-- QD:END -->\n';
   }
   // Replace existing block with new content (wrap with markers if not present)
-  const hasMarkers = newBlock.includes('<!-- AGENTS:START -->');
-  const blockToInsert = hasMarkers ? newBlock.trim() : '<!-- AGENTS:START -->\n' + newBlock.trim() + '\n<!-- AGENTS:END -->';
-  return existing.slice(0, start) + blockToInsert + '\n' + existing.slice(end + '<!-- AGENTS:END -->'.length);
+  const hasMarkers = newBlock.includes('<!-- QD:START -->');
+  const blockToInsert = hasMarkers ? newBlock.trim() : '<!-- QD:START -->\n' + newBlock.trim() + '\n<!-- QD:END -->';
+  return existing.slice(0, start) + blockToInsert + '\n' + existing.slice(end + '<!-- QD:END -->'.length);
 }
 
 module.exports = {
