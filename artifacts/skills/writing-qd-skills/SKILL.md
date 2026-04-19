@@ -8,8 +8,6 @@ metadata:
 
 # Writing QD Skills
 
-If `./onboarding.json` is missing or stale for the current repo, stop and invoke `using-qd` before continuing.
-
 ## Overview
 
 Skills are code. They have bugs. Test them before deploying.

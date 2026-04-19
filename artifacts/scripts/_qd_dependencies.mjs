@@ -248,25 +248,9 @@ function resolvePluginMcpManifestPath(pluginRoot) {
   }
 }
 
-function collectMcpSources({ repoRoot, skillsRoot, globalCodexConfigPath }) {
+function collectMcpSources({ repoRoot, skillsRoot }) {
   const sources = [];
-  const repoCodexConfigPath = path.join(repoRoot, ".codex", "config.toml");
-  const globalConfigPath = globalCodexConfigPath || path.join(os.homedir(), ".codex", "config.toml");
   const pluginRoot = path.resolve(path.join(skillsRoot, ".."));
-
-  sources.push({
-    key: "repo_codex_config",
-    type: "toml",
-    path: repoCodexConfigPath,
-    server_names: parseMcpServerNamesFromToml(repoCodexConfigPath),
-  });
-
-  sources.push({
-    key: "global_codex_config",
-    type: "toml",
-    path: globalConfigPath,
-    server_names: parseMcpServerNamesFromToml(globalConfigPath),
-  });
 
   const pluginMcpManifestPath =
     resolvePluginMcpManifestPath(pluginRoot) || path.join(pluginRoot, ".mcp.json");

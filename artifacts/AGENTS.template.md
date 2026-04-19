@@ -6,8 +6,7 @@ Use `using-qd` first in this repo unless you are resuming an already approved ha
 ## Startup
 
 1. Read this file at session start and again after any context compaction.
-2. If `._qd/onboarding.json` is missing or outdated, stop and run `using-qd` before continuing.
-3. If `._qd/HANDOFF.json` exists, do not auto-resume. Surface the saved state and wait for user confirmation.
+2. If `._qd/HANDOFF.json` exists, do not auto-resume. Surface the saved state and wait for user confirmation.
 4. If `._qd/history/learnings/critical-patterns.md` exists, read it before planning or execution work.
 
 ## Chain
@@ -36,7 +35,6 @@ using-qd
 
 ```
 ._qd/
-  onboarding.json     ← onboarding state
   state.json         ← machine-readable routing snapshot for agents and tools
   STATE.md           ← current phase and focus
   HANDOFF.json       ← pause/resume artifact
@@ -57,7 +55,6 @@ using-qd
 
 - Treat `compact_prompt` recovery instructions as mandatory.
 - Use `bv` only with `--robot-*` flags. Bare `bv` launches the TUI and should be avoided in agent sessions.
-- If the repo is only partially onboarded, stay in bootstrap/planning mode and surface what is missing before implementation.
 
 ## Session Finish
 

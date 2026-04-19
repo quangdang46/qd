@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { buildQdDependencyReport } from "./qd_dependencies.mjs";
+import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
 
 export const STATE_SCHEMA_VERSION = "1.0";
 
@@ -47,7 +47,6 @@ const WALK_SKIP_DIRS = new Set([
   ".git",
   ".hg",
   ".idea",
-  ".codex",
   "._qd",
   ".next",
   ".pnpm-store",
@@ -310,8 +309,7 @@ export function resolveRepoRoot(explicitRoot, startFrom = process.cwd()) {
     let candidate = cwd;
     while (true) {
       if (
-        fs.existsSync(path.join(candidate, ".git")) ||
-        fs.existsSync(path.join(candidate, "._qd", "onboarding.json"))
+        fs.existsSync(path.join(candidate, ".git"))
       ) {
         return candidate;
       }
@@ -358,7 +356,7 @@ function normalizeActiveWorkers(value) {
   return value
     .filter((item) => item && typeof item === "object" && !Array.isArray(item))
     .map((worker) => ({
-      codex_name: typeof worker.codex_name === "string" ? worker.codex_name : "",
+      agent_name: typeof worker.codex_name === "string" ? worker.codex_name : "",
       agent_mail_name:
         typeof worker.agent_mail_name === "string" ? worker.agent_mail_name : "",
       status: typeof worker.status === "string" ? worker.status : "",
@@ -378,7 +376,7 @@ function normalizeApprovedGates(value) {
 
 function readDependencyHealth(repoRoot) {
   try {
-    return buildQdDependencyReport({ repoRoot });
+    return buildQDDependencyReport({ repoRoot });
   } catch (error) {
     return {
       checked_at: utcNow(),
@@ -429,7 +427,7 @@ export function buildDefaultState(overrides = {}) {
   return state;
 }
 
-export function normalizeQdState(state) {
+export function normalizeQDState(state) {
   if (!state || typeof state !== "object" || Array.isArray(state)) {
     return buildDefaultState();
   }
@@ -437,9 +435,8 @@ export function normalizeQdState(state) {
   return buildDefaultState(state);
 }
 
-export function getQdStatePaths(repoRoot) {
+export function getQDStatePaths(repoRoot) {
   return {
-    onboarding: path.join(repoRoot, "._qd", "onboarding.json"),
     stateJson: path.join(repoRoot, "._qd", "state.json"),
     stateMarkdown: path.join(repoRoot, "._qd", "STATE.md"),
     handoff: path.join(repoRoot, "._qd", "HANDOFF.json"),
@@ -449,14 +446,14 @@ export function getQdStatePaths(repoRoot) {
   };
 }
 
-export function readQdState(repoRoot) {
-  const paths = getQdStatePaths(repoRoot);
-  return normalizeQdState(readJsonIfExists(paths.stateJson));
+export function readQDState(repoRoot) {
+  const paths = getQDStatePaths(repoRoot);
+  return normalizeQDState(readJsonIfExists(paths.stateJson));
 }
 
-export function writeQdState(repoRoot, nextState) {
-  const paths = getQdStatePaths(repoRoot);
-  const normalized = normalizeQdState(nextState);
+export function writeQDState(repoRoot, nextState) {
+  const paths = getQDStatePaths(repoRoot);
+  const normalized = normalizeQDState(nextState);
   ensureParent(paths.stateJson);
   fs.writeFileSync(paths.stateJson, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
   return normalized;
@@ -502,24 +499,17 @@ function buildNextReads(status) {
 
   const featureSlug = deriveFeatureSlug(status);
   if (featureSlug) {
-    reads.push(`history/${featureSlug}/CONTEXT.md`);
+    reads.push(`._qd/._qd/history/${featureSlug}/CONTEXT.md`);
   }
 
   if (status.critical_patterns_exists) {
-    reads.push("history/learnings/critical-patterns.md");
+    reads.push("._qd/history/learnings/critical-patterns.md");
   }
 
   return reads;
 }
 
 function buildRecommendedActions(status) {
-  if (!status.onboarding.exists) {
-    return [
-      "Run QD onboarding before continuing.",
-      "Use the plugin onboarding script in plugins/qd/skills/using-qd/scripts/.",
-    ];
-  }
-
   if (status.handoff.exists) {
     return [
       "Surface the saved handoff to the user before resuming.",
@@ -556,9 +546,8 @@ function buildRecommendedActions(status) {
   ];
 }
 
-export function readQdStatus(repoRoot) {
-  const paths = getQdStatePaths(repoRoot);
-  const onboarding = readJsonIfExists(paths.onboarding);
+export function readQDStatus(repoRoot) {
+  const paths = getQDStatePaths(repoRoot);
   const stateJson = readJsonIfExists(paths.stateJson);
   const handoff = readJsonIfExists(paths.handoff);
   const stateMarkdownText = fileTextIfExists(paths.stateMarkdown);
@@ -568,14 +557,9 @@ export function readQdStatus(repoRoot) {
 
   const status = {
     repo_root: repoRoot,
-    onboarding: {
-      exists: Boolean(onboarding),
-      status: onboarding?.status || "",
-      plugin_version: onboarding?.plugin_version || "",
-    },
     state_json: {
       exists: Boolean(stateJson),
-      ...normalizeQdState(stateJson),
+      ...normalizeQDState(stateJson),
     },
     state_markdown: {
       exists: stateMarkdownText.trim() !== "",
@@ -718,21 +702,16 @@ function renderGkgReadinessLines(status) {
   ];
 }
 
-export function renderQdStatus(status) {
+export function renderQDStatus(status) {
   const feature = deriveFeatureSlug(status) || "(none)";
   const skill = status.state_json.active_skill || status.state_markdown.skill || "(none)";
   const phase = status.state_json.phase || status.state_markdown.phase || "(none)";
   const mode = status.state_json.mode || "(unspecified)";
   const epicId = status.state_json.epic_id || status.state_markdown.epic || "(none)";
   const handoff = status.handoff.exists ? "present" : "absent";
-  const onboarding = status.onboarding.exists
-    ? `${status.onboarding.status || "installed"}${status.onboarding.plugin_version ? ` (${status.onboarding.plugin_version})` : ""}`
-    : "missing";
-
   return [
     "QD Status",
     `Repo: ${status.repo_root}`,
-    `Onboarding: ${onboarding}`,
     `Feature: ${feature}`,
     `Mode: ${mode}`,
     `Skill: ${skill}`,

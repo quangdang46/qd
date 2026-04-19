@@ -3,15 +3,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildQdDependencyReport } from "./qd_dependencies.mjs";
-import { readGkgReadiness } from "./qd_state.mjs";
+import { buildQDDependencyReport } from "../../scripts/_qd_dependencies.mjs";
+import { readGkgReadiness } from "../../scripts/_qd_state.mjs";
 
 function findRepoRoot(start) {
   let candidate = path.resolve(start || ".");
   while (true) {
-    if (fs.existsSync(path.join(candidate, "._qd", "onboarding.json"))) {
-      return candidate;
-    }
     if (fs.existsSync(path.join(candidate, ".git"))) {
       return candidate;
     }
@@ -49,7 +46,7 @@ function uniqueSorted(values) {
 function buildSessionDependencyWarning(repoRoot) {
   let dependencyHealth;
   try {
-    dependencyHealth = buildQdDependencyReport({ repoRoot });
+    dependencyHealth = buildQDDependencyReport({ repoRoot });
   } catch {
     return "";
   }
@@ -93,20 +90,11 @@ function buildSessionDependencyWarning(repoRoot) {
 export async function main() {
   const payload = await readPayload();
   const repoRoot = findRepoRoot(payload.cwd || ".");
-  const onboardingPath = path.join(repoRoot, "._qd", "onboarding.json");
   const criticalPatterns = path.join(repoRoot, "history", "learnings", "critical-patterns.md");
 
   const notes = [];
-  if (fs.existsSync(onboardingPath)) {
-    notes.push(
-      "QD onboarding is installed for this repo. Read AGENTS.md, then run node {IDE_TARGET_DIR}/_qd_status.mjs --json for a quick scout before substantive work.",
-    );
-  } else {
-    notes.push("QD onboarding is missing in this repo. Load qd:using-qd before continuing.");
-  }
-
   if (fs.existsSync(criticalPatterns)) {
-    notes.push("If you move into planning or execution, read history/learnings/critical-patterns.md.");
+    notes.push("If you move into planning or execution, read ._qd/history/learnings/critical-patterns.md.");
   }
 
   const gkgReadiness = readGkgReadiness(repoRoot);

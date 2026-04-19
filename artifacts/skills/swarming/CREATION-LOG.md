@@ -30,7 +30,7 @@ What to include:
 What to leave out:
 - Automatic worker replacement or forced reassignment logic
 - Runtime implementation changes outside the skill and reference artifacts
-- Any onboarding rewrite for `._qd/onboarding.json`
+- Any onboarding setup changes
 
 ## Structure Decisions
 

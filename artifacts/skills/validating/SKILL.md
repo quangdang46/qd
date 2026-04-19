@@ -23,8 +23,6 @@ metadata:
 
 # Validating
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 > "Don't jump off the wall without checking."
 > — The qd principle on verification
 

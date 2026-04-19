@@ -24,8 +24,6 @@ metadata:
 
 # Compounding Skill
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 Research shows that engineering teams who systematically capture and re-inject learnings reduce
 time-to-complete on subsequent features by 30–50% ([Compound Engineering, Every.to](https://every.to/guides/compound-engineering)).
 This skill closes the loop. Each feature that runs through compounding makes the next one cheaper.

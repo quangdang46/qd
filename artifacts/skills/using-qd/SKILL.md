@@ -51,49 +51,10 @@ Bootstrap meta-skill. Load this first. It tells you which skill to invoke next a
 
 ---
 
-## Plugin Onboarding
-
-Before any normal bootstrap, verify that the current machine has Node.js available and that the current repo is onboarded for the QD plugin.
-
-Run `node --version` first.
-
-- If `node` is missing or too old: stop immediately, tell the user QD requires Node.js 18+, and ask them to install or upgrade Node before continuing.
-
-Then run `node scripts/onboard_qd.mjs --repo-root <repo-root>` from this skill directory and inspect the JSON result.
-
-- If `status = "up_to_date"`: proceed immediately.
-- Always inspect `details.dependency_warning` in the JSON output:
-  - If `status = "warning"`, treat bootstrap as non-blocking but degraded and read the summary message.
-  - Confirm which skills are affected plus the explicit split:
-    - `Missing commands: ...`
-    - `Missing MCP server configuration: ...`
-  - Cross-check the same command-vs-MCP wording boundary against the session-start note and scout output.
-- If onboarding is missing or stale:
-  - summarize what the script wants to create or update
-  - if `status = "missing_runtime"`: stop, tell the user QD requires Node.js 18+, and ask them to install or upgrade Node before continuing
-  - if `requires_confirmation = true`, explain that an existing `compact_prompt` was found and QD will preserve it unless the user explicitly approves replacement
-  - ask before making repo changes
-  - after approval, run `node scripts/onboard_qd.mjs --repo-root <repo-root> --apply`
-  - only use `--allow-compact-prompt-replace` when the user explicitly approved replacing the repo's existing compaction prompt
-
-Onboarding installs or updates:
-
-- root `AGENTS.md` from the plugin's `AGENTS.template.md`
-- repo-local `{IDE_TARGET_DIR}/config.toml`
-- repo-local `{IDE_TARGET_DIR}/hooks.json`
-- repo-local `{IDE_TARGET_DIR}/hooks/_qd_*.mjs`
-- repo-local `{IDE_TARGET_DIR}/_qd_status.mjs`
-- repo-local `{IDE_TARGET_DIR}/_qd_state.mjs`
-- `._qd/onboarding.json`
-- `._qd/state.json`
-
-If onboarding is not complete, do not continue into the rest of the QD workflow.
-
----
 
 ## Session Scout
 
-After onboarding succeeds, use the repo-local scout command as the first quick orientation step whenever it is available:
+Use the repo-local scout command as the first quick orientation step whenever it is available:
 
 ```bash
 node {IDE_TARGET_DIR}/_qd_status.mjs --json
@@ -101,7 +62,6 @@ node {IDE_TARGET_DIR}/_qd_status.mjs --json
 
 The scout is read-only. It summarizes:
 
-- onboarding health
 - gkg readiness for this repo
 - `._qd/state.json`
 - `._qd/STATE.md`
@@ -138,7 +98,7 @@ Do not leave a packaged skill with undeclared dependency posture. A missing decl
 
 When updating or adding packaged QD skills, keep the docs and the live report aligned by running:
 
-- `node scripts/test_onboard_qd.mjs`
+- `node scripts/_qd_dependencies.mjs`
 - `bash scripts/check-markdown-links.sh SKILL.md`
 - `bash scripts/sync-skills.sh --dry-run`
 
@@ -201,13 +161,10 @@ Given a user request, determine which skill to invoke first:
 On every session start, before doing anything else:
 
 ```
-0. Confirm QD onboarding is current via ._qd/onboarding.json
-   → If missing or stale: return to Plugin Onboarding above
-
-0.5. If {IDE_TARGET_DIR}/_qd_status.mjs exists: run `node {IDE_TARGET_DIR}/_qd_status.mjs --json`
+0. If {IDE_TARGET_DIR}/_qd_status.mjs exists: run `node {IDE_TARGET_DIR}/_qd_status.mjs --json`
    → Use the scout output to decide which files to open next
 
-0.6. Check `gkg_readiness` from the scout output
+1. Check `gkg_readiness` from the scout output
    → Unsupported repo: note the fallback and continue without gkg
    → Supported repo + server/index not ready: make gkg ready before planning or deep discovery
    → Supported repo + ready: planning should use gkg MCP tools as the default discovery path
@@ -456,14 +413,13 @@ Watch for these violations. Pause and surface them immediately when detected:
 
 ```
 ._qd/
-  onboarding.json   ← QD plugin onboarding status + managed asset versions
   state.json        ← Machine-readable routing snapshot used by agents and tools
   STATE.md          ← Current phase, focus, blockers (update at every phase transition)
   config.json       ← Feature toggles (absent=enabled)
   HANDOFF.json      ← Session resume data (write when pausing)
 
 {IDE_TARGET_DIR}/
-  _qd_status.mjs  ← Read-only scout command for onboarding, state, and handoff
+  _qd_status.mjs  ← Read-only scout command for state and handoff
   _qd_state.mjs   ← Shared state helpers used by the scout command
 
 ._qd/history/<feature>/

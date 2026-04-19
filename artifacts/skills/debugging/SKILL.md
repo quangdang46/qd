@@ -25,8 +25,6 @@ metadata:
 
 # Debugging
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 Resolve blockers and failures systematically. Do not guess — triage first, then reproduce, then diagnose, then fix.
 
 ## When to Use This Skill

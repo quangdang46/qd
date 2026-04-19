@@ -15,8 +15,6 @@ metadata:
 
 # Dream Skill
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 This skill performs one manual consolidation pass. It updates durable learnings in place and keeps
 the write surface narrow: `._qd/history/learnings/*.md`. It may propose critical promotions, but it must
 never edit `._qd/history/learnings/critical-patterns.md` without explicit user approval.

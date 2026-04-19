@@ -8,8 +8,6 @@ metadata:
 
 # Prompt Leverage
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 Turn the user's current prompt into a stronger working prompt without changing the underlying intent. Preserve the task, fill in missing execution structure, and add only enough scaffolding to improve reliability.
 
 ## Workflow

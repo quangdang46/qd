@@ -41,8 +41,6 @@ metadata:
 
 # Planning Skill
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 Planning has two jobs:
 
 1. Show the whole feature in a way a human can immediately understand.
@@ -152,7 +150,7 @@ Handoff: "Invoke exploringvalidating skill for Phase <n>."
 
 ## Before You Start
 
-If `{IDE_TARGET_DIR}/_qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/_qd_status.mjs --json` first so you start from the latest onboarding/state/handoff snapshot instead of inferring it from memory.
+If `{IDE_TARGET_DIR}/_qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/_qd_status.mjs --json` first so you start from the latest state/handoff snapshot instead of inferring it from memory.
 
 If the scout reports a supported gkg repo, treat `gkg` as the default discovery path:
 

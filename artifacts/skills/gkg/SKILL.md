@@ -21,8 +21,6 @@ metadata:
 
 # gkg
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` first.
-
 ## Start With The Repo Scout
 
 Do not start with `which gkg` or any imagined `gkg <subcommand>` discovery flow.

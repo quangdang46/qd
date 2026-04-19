@@ -30,8 +30,6 @@ metadata:
 
 # Swarming
 
-If `._qd/onboarding.json` is missing or stale for the current repo, stop and invoke `exploringusing-qd` before continuing.
-
 ## Role Boundary — Read First
 
 You are the **ORCHESTRATOR**. You launch workers, monitor coordination, handle escalations, and keep the swarm moving. You do NOT implement beads. If you find yourself editing source files, stop immediately — that is the exploringexecuting skill's job.
@@ -75,7 +73,7 @@ Prerequisites:
 - Current-phase beads are in `open` status and approved for execution
 - EPIC_ID is known (from STATE.md or user input)
 - Agent Mail server is reachable
-- If `{IDE_TARGET_DIR}/_qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/_qd_status.mjs --json` first to confirm onboarding, current phase, and any saved handoff before launching the swarm
+- If `{IDE_TARGET_DIR}/_qd_status.mjs` exists, run `node {IDE_TARGET_DIR}/_qd_status.mjs --json` first to confirm current phase and any saved handoff before launching the swarm
 
 ---
 
