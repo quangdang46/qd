@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node hooks/session_start.mjs",
+            "statusMessage": "QD: session bootstrap"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node hooks/pre_tool_use.mjs",
+            "statusMessage": "QD: shell guardrails"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node hooks/stop.mjs",
+            "statusMessage": "QD: end-of-turn check"
+          }
+        ]
+      }
+    ]
+  }
+}

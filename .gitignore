@@ -27,7 +27,6 @@ CLAUDE.md
 .ai/*
 cursor
 .gemini
-.mcp.json
 CLAUDE.local.md
 .serena/
 .claude/settings.local.json
