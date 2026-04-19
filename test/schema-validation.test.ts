@@ -76,7 +76,7 @@ describe('Schema Validation', () => {
       const parsed = yaml.parse(content);
 
       // Expected top-level keys
-      const allowedKeys = ['code', 'name', 'description', 'supported_ides', 'ignored_ides', 'overrides', 'convert'];
+      const allowedKeys = ['code', 'name', 'description', 'supported_ides', 'ignored_ides', 'overrides', 'convert', 'skip'];
       const actualKeys = Object.keys(parsed);
 
       for (const key of actualKeys) {
