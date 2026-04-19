@@ -2,17 +2,33 @@
 
 ## QD Vision
 
-**QD là một CLI để init nhiều IDE từ một artifacts source duy nhất.**
-
-- Một artifacts source → nhiều IDE targets (`.claude`, `.cursor`, `.windsurf`, etc.)
-- Không cần config.json cho username, language
-- `_qd/` internal folder contains `_qd/history/` with `<feature>/` and `learnings/` subfolders
-- Học hỏi Claudekit CLI về phase-based architecture
-- Học hỏi BMAD method về config-driven IDE setup
+**QD is a CLI tool that generates implementations for multiple developer IDEs (integrated development environments) from a single source of artifacts.**
+- One central artifacts directory → multiple IDE output folders (`.claude`, `.cursor`, `.windsurf`, etc.)
+- The internal `_qd/` directory holds runtime data and a `history/` with per-feature records and learnings.
+- Artifacts are versioned independently from the CLI and published as GitHub Releases.
 
 ---
 
-## Before QD Init (Typical Project)
+## Release Architecture
+
+QD uses a **two-part release** model:
+
+| Component | Where | Tag Format | Trigger |
+|-----------|-------|-----------|---------|
+| CLI (`qdspec`) | npmjs.org | `0.1.0` (semver) | `git tag 0.1.0` |
+| Artifacts | GitHub Releases | `v0.1.0` (semver with v prefix) | `git tag v0.1.0` |
+
+**Key invariant:** CLI and artifacts are versioned independently. Any CLI version works with any artifacts version. Dev mode (`QD_ENV=development`) uses local `artifacts/` without GitHub.
+
+```
+Release flow:
+  git tag v0.1.0 && git push  →  GitHub Release with artifacts/ as .zip/.tar.gz
+  git tag 0.1.0  && git push  →  npm publish (CLI only, excludes artifacts/)
+```
+
+---
+
+## Before QD Init (Standard Project Layout)
 
 ```
 project/
@@ -26,141 +42,159 @@ project/
 
 ## After QD Init (`qd init`)
 
-Running `qd init` creates:
+Running `qd init` fetches artifacts from GitHub (or local in dev mode) and installs:
 
 ```
 project/
-├── _qd/                        # QD runtime + history (created at runtime)
+├── _qd/                        # QD runtime files & history (created at runtime)
 │   └── history/
-├── .claude/                    # (if Claude Code selected)
+├── .claude/                    # (if Claude Code is selected)
 │   ├── skills/
 │   ├── commands/
 │   └── agents/
-├── .cursor/                    # (if Cursor selected)
-│   ├── rules/                  # Cursor uses "rules" instead of "skills/commands/agents"
+├── .cursor/                    # (if Cursor is selected)
+│   ├── rules/                  # Cursor groups all artifacts here
 │   └── ...
-├── .windsurf/                  # (if Windsurf selected)
+├── .windsurf/                  # (if Windsurf is selected)
 │   ├── skills/
 │   ├── commands/
 │   └── agents/
-└── ... (other IDEs as selected)
+└── ... (other selected IDEs)
 ```
 
 ---
 
 ## Key Architecture Decisions
 
-| Decision | Status | Notes |
-|----------|--------|-------|
-| `_qd/` internal only | CHOSED | Not exposed to users |
-| `_qd/` for workflow | CHOSED | QD workflow pattern - history + runtime |
-| No config.json | CHOSED | No username, language, project_name prompts |
-| CLI IDE handling logic | KEEP | Current implementation in cli/ide/ is good |
-| schema.yaml per folder + overrides | CHOSED | IDE selection per artifact folder + file-level |
-| module.yaml for conversion | CHOSED | Format conversion (MD → TOML for Codex) |
-| Glob pattern for convert paths | CHOSED | Clear path matching for format conversion |
-| Conflict = throw error | CHOSED | supported_ides + ignored_ides cannot coexist |
-| platform-codes.yaml subdir mapping | CHOSED | Per-IDE artifact type → target dir mapping |
+| Decision                                | Status   | Notes                                                  |
+|------------------------------------------|----------|--------------------------------------------------------|
+| `_qd/` is internal only                  | CHOSEN   | Not exposed to the user                                |
+| `_qd/` used for workflow                | CHOSEN   | Used for storing history and runtime data              |
+| No `config.json` file                    | CHOSEN   | No prompts for username, language, project name        |
+| CLI IDE logic (in `cli/ide/`) is kept    | CHOSEN   | Current CLI implementation remains                      |
+| `schema.yaml` in folders + overrides     | CHOSEN   | Controls IDE selection per artifact folder/file         |
+| `module.yaml` for format conversion      | CHOSEN   | Used for rules such as markdown→TOML for Codex         |
+| Glob pattern for convert paths           | CHOSEN   | Enables clear file matching for format conversion       |
+| Conflict (supported+ignored IDEs) = error| CHOSEN   | Cannot specify both; throws an error                   |
+| `platform-codes.yaml` controls mapping   | CHOSEN   | Maps artifact type to IDE subdir                       |
+| Artifacts versioned separately from CLI  | CHOSEN   | `v*.*.*` GitHub tags for artifacts, semver for CLI   |
+| Dev mode uses local `artifacts/`        | CHOSEN   | `QD_ENV=development` bypasses GitHub fetch           |
 
 ---
 
 ## Directory Breakdown
 
-### `_qd/` — QD Runtime + History
+### `_qd/` — QD Runtime & History
 
-| Path | Description |
-|------|-------------|
-| `CONTEXT.md` | Locked decisions from exploring phase |
-| `discovery.md` | Research findings |
-| `approach.md` | Chosen approach |
-| `phase-plan.md` | Phase breakdown |
-| `learnings/` | Dated learnings (YYYY-MM-DD-*.md) |
+| Path           | Description                                 |
+|----------------|---------------------------------------------|
+| `CONTEXT.md`   | Records locked decisions from exploration    |
+| `discovery.md` | Stores research findings                     |
+| `approach.md`  | Contains the chosen technical approach       |
+| `phase-plan.md`| Lists breakdown of planned phases            |
+| `learnings/`   | Dated learning entries (format: YYYY-MM-DD-*.md) |
 
-**Note:** `_qd/` created at runtime, not during install. Excluded from artifacts walk.
+**Note:** `_qd/` is created only at runtime and excluded from artifact processing.
 
 ---
 
-## Artifacts Structure
+## Artifacts Directory Structure
+
+`artifacts/` contains **arbitrary files and folders** — the structure is flexible and defined by the project author. There is no fixed schema. `module.yaml` and `schema.yaml` at each level are the **only** files that control how contents are processed and distributed to IDEs.
 
 ```
 artifacts/
-├── module.yaml                 # Module config + format conversion
-├── schema.yaml               # (optional) root-level IDE selection
-├── skills/
-│   ├── schema.yaml           # override cho skills folder
+├── module.yaml                 # (optional) Module config — format conversion rules + artifact type mappings
+├── schema.yaml                 # (optional) Root-level IDE selection (inherited by all subdirs unless overridden)
+├── skills/                     # Any folder — processed by phase3WalkArtifacts
+│   ├── schema.yaml            # IDE selection for this subtree (overrides parent)
+│   ├── planning/
+│   │   └── SKILL.md
+│   └── exploring/
+│       └── SKILL.md
+├── commands/                   # Any folder name — type determined by parent dir
 │   └── ...
-├── commands/
-│   └── schema.yaml
-├── agents/
-│   └── schema.yaml
-└── subagents/
-    └── schema.yaml
+├── agents/                     # Any folder — no enforced naming
+│   └── atlas.md
+├── docs/                       # Any folder
+│   └── ...
+├── prompts/                    # Any folder
+├── .mcp.json                   # MCP config at root level
+├── AGENTS.template.md          # Template merged into AGENTS.md on install
+└── ...                         # Any files or folders — module.yaml decides what to do with each
 ```
+
+**Key principle:** `module.yaml` is the authority. It defines:
+- Which artifact types exist and how they're mapped to IDE subdirectories
+- Format conversion rules (e.g., `md→toml` for Codex agents)
+- Glob patterns to match files and apply specific handling
+
+**Note:** `artifacts/` is the source for GitHub Release assets. It is NOT published to npm.
 
 ---
 
-## schema.yaml — IDE Selection
+## `schema.yaml` — IDE Selection Rules
 
-Each folder can have a `schema.yaml` to control which IDEs receive its contents.
+Each folder can contain a `schema.yaml` to specify which IDEs receive its content.
 
-### Placement & Inheritance
+### Inheritance and Placement
 
 ```
 artifacts/
-├── schema.yaml                # Root-level (cascade down)
+├── schema.yaml                # Root-level (inherited by all subdirs unless overridden)
 ├── skills/
-│   ├── schema.yaml           # Override root + apply to all in skills/
+│   ├── schema.yaml           # Overrides root for everything in 'skills/'
 │   ├── exploring/
-│   │   └── SKILL.md         # inherits skills/schema.yaml
+│   │   └── SKILL.md         # inherits settings from skills/schema.yaml
 │   └── NESTED/
-│       ├── schema.yaml       # Override skills/schema.yaml
-│       └── file.md           # inherits NESTED/schema.yaml
+│       ├── schema.yaml       # Overrides skills/schema.yaml for this folder
+│       └── file.md           # inherits from NESTED/schema.yaml
 └── commands/
     └── schema.yaml
 ```
 
-### Supported IDEs
+### IDE Selection Options
 
 ```yaml
 # artifacts/FOLDER/schema.yaml
 
-# IDE selection (chọn 1 trong 2)
-supported_ides: [claude, cursor]   # Chỉ này được init
-# hoặc
-ignored_ides: [codex]             # Tất cả NGOs trừ này được init
+# Select IDEs with one of the following:
+supported_ides: [claude, cursor]   # Only these IDEs will receive this folder
+# or
+ignored_ides: [codex]             # All IDEs except these will receive this folder
 
-# File-level override
+# File-level overrides
 overrides:
   fileYYYY.md:
-    supported_ides: []              # exclude file này
+    supported_ides: []              # Exclude this file entirely
   fileZZZZ.md:
-    supported_ides: [claude]        # override - chỉ claude
+    supported_ides: [claude]        # Only Claude gets this file
 ```
 
-### Default Rules
+### Default Behavior
 
-| Condition | Behavior |
-|-----------|----------|
-| No schema.yaml | Init ALL IDEs (copy as-is) |
-| schema.yaml, no `supported_ides`/`ignored_ides` | Init ALL IDEs |
-| `supported_ides: []` | Skip - don't init anywhere |
-| `supported_ides: [a, b]` | Init only to a, b |
-| `ignored_ides: [x]` | Init to all EXCEPT x |
-| Both `supported_ides` AND `ignored_ides` | **ERROR** - throw error |
+| Condition                                | Result                                    |
+|-------------------------------------------|-------------------------------------------|
+| No schema.yaml present                    | All IDEs get the contents (copied as-is)  |
+| schema.yaml, but no `supported_ides`/`ignored_ides` | All IDEs get contents                    |
+| `supported_ides: []`                      | Skip: no IDEs get this content            |
+| `supported_ides: [a, b]`                  | Only IDEs a and b receive this content    |
+| `ignored_ides: [x]`                       | All except x receive the content          |
+| Both `supported_ides` AND `ignored_ides` set | **ERROR** (this is not allowed)          |
 
-### 5 Trường Hợp
+### 5 Example Scenarios
 
-| # | Trường hợp | Giải pháp |
-|---|------------|------------|
-| 1 | Folder không init cho IDE nào | `supported_ides: []` |
-| 2 | Folder chỉ init cho 1 số IDE | `supported_ides: [claude]` |
-| 3 | File trong folder không init cho IDE nào | `overrides: { file.md: { supported_ides: [] } }` |
-| 4 | Nested folder không init cho IDE nào | `supported_ides: []` trong nested/schema.yaml |
-| 5 | Format MD → TOML cho Codex agents | module.yaml convert |
+| # | Situation                               | Solution (in schema.yaml)                           |
+|---|-----------------------------------------|-----------------------------------------------------|
+| 1 | Folder not included in any IDE          | `supported_ides: []`                                |
+| 2 | Folder only included in some IDEs       | `supported_ides: [claude]`                          |
+| 3 | Specific file not included in any IDE   | `overrides: { file.md: { supported_ides: [] } }`    |
+| 4 | Nested folder not included in any IDE   | Use `supported_ides: []` in nested/schema.yaml       |
+| 5 | Convert MD→TOML for Codex agents        | Use `module.yaml` convert rule                      |
 
 ---
 
-## module.yaml — Module Config + Format Conversion
+## `module.yaml` — Module Configuration & Conversion
 
 ```yaml
 # artifacts/module.yaml
@@ -168,22 +202,21 @@ overrides:
 name: "QD Framework"
 version: 1.0.0
 
-# Format conversion (chỉ khi CẦN convert)
-# Default = copy as-is (không cần định nghĩa)
+# Optional: Only define if you want some files converted during install
 convert:
   codex:
-    "agents/**": toml     # artifacts/agents/**/*.md → TOML
-    "subagents/**": toml  # artifacts/subagents/**/*.md → TOML
-  # Tất cả others = copy as-is (default)
+    "agents/**": toml     # All artifacts/agents/**/*.md → TOML
+    "subagents/**": toml  # All artifacts/subagents/**/*.md → TOML
+  # Everything else is copied as-is by default
 ```
 
-**Path matching:** Glob patterns relative to `artifacts/` root.
+**Glob patterns** are relative to the `artifacts/` directory.
 
 ---
 
-## platform-codes.yaml — IDE Target Mapping
+## `platform-codes.yaml` — IDE Output Mapping
 
-Each IDE has its own target directory and artifact type mappings.
+Each IDE specifies its target directory and how artifact types map into that directory.
 
 ```yaml
 # cli/ide/platform-codes.yaml
@@ -234,45 +267,75 @@ platforms:
 
 ### Mapping Rules
 
-- `mappings.<type>: <target>` — maps `artifacts/<type>/` to `<target>/` in IDE dir
-- Default target = `type` name if not specified
-- Cursor merges skills/commands/agents into `rules/`
+- `mappings.<type>: <target>` — Maps contents of `artifacts/<type>/` to the specified `<target>/` in the IDE's folder.
+- If not specified, the default target uses the artifact folder name.
+- For Cursor, everything goes into `rules/`, combining all types.
 
 ---
 
-## Phase-Based Init (Claudekit Pattern)
+## Phase-Based Initialization (`qd init` Process Overview)
 
 ```
 qd init
-  → Phase 1: Collect config from module.yaml
-  → Phase 2: Detect selected IDEs + load platform-codes.yaml
-  → Phase 3: Walk artifacts tree
-       ├── Read schema.yaml at each level (cascade + override)
-       ├── Apply overrides for individual files
-       └── Skip _qd/ (hardcoded exclude)
-  → Phase 4: Copy/convert to IDE targets
-       ├── Apply mappings from platform-codes.yaml
-       ├── Convert format if convert rule exists (MD → TOML)
-       └── Skip files with supported_ides: [] or ignored_ides excludes
-  → Phase 5: (no output folder creation — _qd/ created at runtime)
-  → Phase 6: Display summary
+  → Phase 1: Read config from module.yaml (from resolved artifactsDir)
+  → Phase 2: Determine selected IDEs and load platform-codes.yaml
+  → Phase 3: Traverse artifacts directory tree (from GitHub tarball or local)
+       ├── Read schema.yaml at every level (apply inheritance/overrides)
+       ├── Apply file-level overrides
+       └── Always skip _qd/ (hardcoded exclusion)
+  → Phase 4: Copy or convert files for each selected IDE
+       ├── Use mappings from platform-codes.yaml
+       ├── Convert formats if convert rules exist (e.g., MD→TOML)
+       └── Skip files/folders based on supported_ides/ignored_ides
+  → Phase 5: (No output for _qd/ — created during runtime only)
+  → Phase 6: Show summary of operation
 ```
 
 ---
 
-## Example: After `qd init --ides claude,cursor`
+## Init Flow — Version Selection & Download
+
+```
+qd init
+  │
+  ├─ [DEV MODE] QD_ENV=development
+  │     → use local ./artifacts/ directly, skip all GitHub calls
+  │
+  ├─ 1. IDE selection (interactive or --ides flag)
+  │
+  ├─ 2. Version selection
+  │     ├─ API: GET /repos/quangdang46/qd/releases
+  │     ├─ Rate limit? → show error + fallback hint
+  │     └─ Fallback: use local artifacts/ (if exists)
+  │
+  ├─ 3. Download + Extract
+  │     ├─ URL: https://github.com/.../archive/refs/tags/v0.2.0.tar.gz
+  │     ├─ Extract to temp
+  │     ├─ Discover: find "qd-*/artifacts/" subdir dynamically
+  │     └─ Cache in ~/.cache/qdspec/ (with tag+sha key)
+  │
+  ├─ 4. Walk artifacts (Phase 3 — unchanged logic, different source)
+  │
+  ├─ 5..7. Copy/Merge/Manifest (unchanged logic)
+  │
+  └─ 8. Cleanup temp dir (keep cache)
+```
+
+---
+
+## Output Example: After `qd init --ides claude,cursor`
 
 ```
 myproject/
-├── _qd/                     # QD runtime + history (created at runtime, not during install)
+├── _qd/                     # QD runtime & history (runtime only, not installed)
 │   └── history/
 │       └── learnings/
 ├── .claude/
-│   ├── skills/                     # artifacts/skills/** → .claude/skills/
-│   ├── commands/                   # artifacts/commands/** → .claude/commands/
-│   └── agents/                     # artifacts/agents/** → .claude/agents/
+│   ├── skills/              # artifacts/skills/** → .claude/skills/
+│   ├── commands/            # artifacts/commands/** → .claude/commands/
+│   └── agents/              # artifacts/agents/** → .claude/agents/
 ├── .cursor/
-│   └── rules/                     # ALL artifacts types → .cursor/rules/
+│   └── rules/               # All artifact types → .cursor/rules/
 │       ├── skills/
 │       ├── commands/
 │       └── agents/
@@ -281,38 +344,45 @@ myproject/
 
 ---
 
-## File System
+## Directory & File Reference
 
 ```
-artifacts/
-├── module.yaml              # Global: name, version, convert rules
-├── schema.yaml             # (optional) root-level IDE selection
-├── skills/
-│   ├── schema.yaml         # override cho skills folder
-│   ├── exploring/
-│   │   └── SKILL.md
-│   └── planning/
-│       └── SKILL.md
-├── commands/
-│   └── schema.yaml
-├── agents/
-│   └── schema.yaml
-└── subagents/
-    └── schema.yaml
+qd/                          # Repository root
+├── src/
+│   ├── commands/
+│   │   ├── init.ts              # init command (modified: version selection + download)
+│   │   ├── status.ts            # unchanged (reads _qd/ only)
+│   │   └── uninstall.ts         # unchanged (reads _qd/ only)
+│   ├── domains/
+│   │   ├── github/              # GitHub API + version selection
+│   │   │   ├── github-client.ts # GitHub REST API client
+│   │   │   ├── download.ts      # tarball download + extract + cache
+│   │   │   └── version-selector.ts # interactive version picker
+│   │   ├── installation/
+│   │   │   └── installer.ts     # 6-phase installer (artifactsDir injected)
+│   │   └── ide/
+│   │       └── platform-codes.yaml # IDE target mapping
+│   ├── helpers/
+│   └── shared/
+├── artifacts/                   # Source for GitHub Release asset
+│   ├── module.yaml
+│   ├── skills/
+│   ├── commands/
+│   └── agents/
+├── dist/                       # CLI published to npm (excludes artifacts/)
+└── .github/workflows/
+    ├── publish-cli.yml         # on: semver tag → npm publish
+    └── release-artifacts.yml   # on: v* tag → GitHub Release
 
-cli/ide/
-└── platform-codes.yaml     # IDE → target dir + artifact type mappings
-
-_qd/                 # (created at runtime, excluded from artifacts walk)
+_qd/                        # (created at runtime, excluded from artifact walking)
 ```
 
 ---
 
 ## See Also
 
-- `cli/ide/manager.ts` — IDE discovery and setup
-- `cli/ide/_config-driven.ts` — Config-driven skill installation
-- `cli/ide/platform-codes.yaml` — IDE target directory + mapping
-- `artifacts/module.yaml` — Module configuration + convert rules
-- `references/BMAD-METHOD-main/tools/installer/` — BMAD config-driven IDE setup reference
-- `references/claudekit-engineer-main/` — Claudekit phase-based architecture reference
+- `cli/ide/manager.ts`: IDE discovery and project setup logic
+- `cli/ide/_config-driven.ts`: Configuration-based skill installation
+- `cli/ide/platform-codes.yaml`: IDE target mapping
+- `artifacts/module.yaml`: Module config & format conversion rules
+- `PLAN.md`: Full 2-part architecture migration plan

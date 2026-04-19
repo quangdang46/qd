@@ -1,0 +1,29 @@
+name: Release Artifacts
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref_name, 'v')"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package artifacts
+        run: |
+          tar -czf qdspec-artifacts.tar.gz artifacts/
+          zip -r qdspec-artifacts.zip artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            qdspec-artifacts.tar.gz
+            qdspec-artifacts.zip
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

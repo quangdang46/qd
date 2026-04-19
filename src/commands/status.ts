@@ -33,7 +33,7 @@ function registerStatus(program) {
           return;
         }
 
-        const manifestData = await manifest._readRaw(qdDir);
+        const manifestData = await manifest.read(qdDir);
 
         if (!manifestData) {
           const prompts = require('../shared/prompts');

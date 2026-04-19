@@ -33,11 +33,15 @@ class Installer {
     this.artifacts = [];
     this.results = [];
     this.resolver = new ArtifactResolver();
+    this.artifactsDir = null; // Can be injected for remote artifact installation
   }
 
   async install(options = {}) {
     const projectDir = path.resolve(options.directory || process.cwd());
     const autoConfirm = options.autoConfirm || false;
+
+    // Support external artifactsDir (for remote download) or default to local
+    this.artifactsDir = options.artifactsDir || path.join(projectDir, 'artifacts');
 
     try {
       const config = await this.phase1CollectConfig(projectDir);
@@ -99,7 +103,7 @@ class Installer {
   }
 
   async phase1CollectConfig(projectDir) {
-    const modulePath = path.join(projectDir, 'artifacts', 'module.yaml');
+    const modulePath = path.join(this.artifactsDir, 'module.yaml');
     let config = { convert: {} };
 
     if (await fs.pathExists(modulePath)) {
@@ -139,11 +143,11 @@ class Installer {
   }
 
   async phase3WalkArtifacts(projectDir, config) {
-    const artifactsDir = path.join(projectDir, 'artifacts');
+    const artifactsDir = this.artifactsDir;
     const entries = [];
 
     if (!(await fs.pathExists(artifactsDir))) {
-      throw new Error('artifacts/ directory not found');
+      throw new Error(`Artifacts directory not found: ${artifactsDir}`);
     }
 
     await this.walkDir(artifactsDir, artifactsDir, config, entries, config);

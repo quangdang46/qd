@@ -43,8 +43,15 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json"
+  ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
