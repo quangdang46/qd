@@ -7,9 +7,8 @@ Use `using-qd` first in this repo unless you are resuming an already approved ha
 
 1. Read this file at session start and again after any context compaction.
 2. If `._qd/onboarding.json` is missing or outdated, stop and run `using-qd` before continuing.
-3. If `.codex/status.mjs` exists, run `node .codex/status.mjs --json` as the first quick scout step.
-4. If `._qd/HANDOFF.json` exists, do not auto-resume. Surface the saved state and wait for user confirmation.
-5. If `._qd/history/learnings/critical-patterns.md` exists, read it before planning or execution work.
+3. If `._qd/HANDOFF.json` exists, do not auto-resume. Surface the saved state and wait for user confirmation.
+4. If `._qd/history/learnings/critical-patterns.md` exists, read it before planning or execution work.
 
 ## Chain
 
@@ -30,7 +29,7 @@ using-qd
 2. `CONTEXT.md` is the source of truth for locked decisions.
 3. If context usage passes roughly 65%, write `._qd/HANDOFF.json` and pause cleanly.
 4. Treat `._qd/state.json` as the routing mirror and `._qd/STATE.md` as the human-readable narrative; keep them aligned.
-5. After compaction, re-read `AGENTS.md`, run `node .codex/status.mjs --json` if present, then re-open `._qd/HANDOFF.json`, `._qd/state.json`, `._qd/STATE.md`, and the active feature context before more work.
+5. After compaction, re-read `AGENTS.md`, then re-open `._qd/HANDOFF.json`, `._qd/state.json`, `._qd/STATE.md`, and the active feature context before more work.
 6. P1 review findings block merge.
 
 ## Working Files
@@ -54,14 +53,8 @@ using-qd
 .spikes/             ← spike outputs when validation requires them
 ```
 
-.codex/
-  status.mjs         ← read-only scout command for onboarding, state, and handoff
-  state.mjs          ← shared state helpers used by the scout command
-
 ## Guardrails
 
-- Repo-local `.codex/` files installed by QD are workflow guardrails, not optional decoration.
-- Use `node .codex/status.mjs --json` as the preferred quick scout step when it is available.
 - Treat `compact_prompt` recovery instructions as mandatory.
 - Use `bv` only with `--robot-*` flags. Bare `bv` launches the TUI and should be avoided in agent sessions.
 - If the repo is only partially onboarded, stay in bootstrap/planning mode and surface what is missing before implementation.
