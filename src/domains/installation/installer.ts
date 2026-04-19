@@ -99,7 +99,7 @@ class Installer {
   }
 
   getTargetPath(projectDir, ide, artifact) {
-    return this.resolver.getTargetPath(projectDir, ide, artifact, this.platformConfig);
+    return this.resolver.getTargetPath(projectDir, ide, artifact, this.platformConfig, this.artifactsDir);
   }
 
   async phase1CollectConfig(projectDir) {
@@ -256,9 +256,9 @@ class Installer {
 
     // Check if sourceDir is directly the artifact type root (e.g., artifacts/agents)
     // vs a nested skill directory (e.g., artifacts/skills/agent-browser)
-    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+    const typeRootDir = path.join(this.artifactsDir, artifactType);
 
-    const artifactsDir = path.join(projectDir, 'artifacts');
+    const artifactsDir = this.artifactsDir;
 
     if (!sourceDir.startsWith(typeRootDir + path.sep) && sourceDir !== typeRootDir) {
       // File in artifacts root (like module.yaml, testfile.md) or in untracked nested dir
@@ -466,7 +466,7 @@ class Installer {
             installed = path.join(target_dir, artifactType, sourceBasename, fileName);
           }
         }
-        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig);
+        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig, this.artifactsDir);
 
         currentIdeArtifacts.push({
           source: artifact.relativePath,

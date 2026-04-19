@@ -1,217 +1,217 @@
 installation:
   version: 1.0.0
-  installDate: 2026-04-19T05:37:45.885Z
-  lastUpdated: 2026-04-19T05:37:45.885Z
+  installDate: 2026-04-19T05:34:12.311Z
+  lastUpdated: 2026-04-19T05:34:12.311Z
 ides:
   - claude-code
 artifacts:
   - source: AGENTS.template.md
     installed: .claude/skills/artifacts/AGENTS.template.md
-    installedDir: /home/quangdang/projects/qd/.claude
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/artifacts
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/SKILL.md
     installed: .claude/skills/book-sft-pipeline/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/book-sft-pipeline
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/book-sft-pipeline
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/README.md
     installed: .claude/skills/gertrude-stein/README.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/gertrude-stein
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/gertrude-stein
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/dataset_sample.jsonl
     installed: .claude/skills/gertrude-stein/dataset_sample.jsonl
-    installedDir: /home/quangdang/projects/qd/.claude/skills/gertrude-stein
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/gertrude-stein
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/pangram/Screenshot 2025-12-27 at 3.05.04 AM.png
     installed: .claude/skills/pangram/Screenshot 2025-12-27 at 3.05.04 AM.png
-    installedDir: /home/quangdang/projects/qd/.claude/skills/pangram
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/pangram
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/pangram/Screenshot 2025-12-27 at 3.05.36 AM.png
     installed: .claude/skills/pangram/Screenshot 2025-12-27 at 3.05.36 AM.png
-    installedDir: /home/quangdang/projects/qd/.claude/skills/pangram
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/pangram
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/pangram/Screenshot 2025-12-27 at 3.07.18 AM.png
     installed: .claude/skills/pangram/Screenshot 2025-12-27 at 3.07.18 AM.png
-    installedDir: /home/quangdang/projects/qd/.claude/skills/pangram
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/pangram
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/sample_outputs.md
     installed: .claude/skills/gertrude-stein/sample_outputs.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/gertrude-stein
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/gertrude-stein
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/examples/gertrude-stein/training_config.json
     installed: .claude/skills/gertrude-stein/training_config.json
-    installedDir: /home/quangdang/projects/qd/.claude/skills/gertrude-stein
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/gertrude-stein
     ide: claude-code
     artifactType: skills
   - source: skills/book-sft-pipeline/scripts/pipeline_example.py
     installed: .claude/skills/scripts/pipeline_example.py
-    installedDir: /home/quangdang/projects/qd/.claude/skills/scripts
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/scripts
     ide: claude-code
     artifactType: skills
   - source: skills/bootstrap-project-context/SKILL.md
     installed: .claude/skills/bootstrap-project-context/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/bootstrap-project-context
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/bootstrap-project-context
     ide: claude-code
     artifactType: skills
   - source: skills/bootstrap-project-context/agents/openai.yaml
     installed: .claude/skills/agents/openai.yaml
-    installedDir: /home/quangdang/projects/qd/.claude/skills/agents
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/agents
     ide: claude-code
     artifactType: skills
   - source: skills/compounding/SKILL.md
     installed: .claude/skills/compounding/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/compounding
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/compounding
     ide: claude-code
     artifactType: skills
   - source: skills/debugging/SKILL.md
     installed: .claude/skills/debugging/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/debugging
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/debugging
     ide: claude-code
     artifactType: skills
   - source: skills/dream/CREATION-LOG.md
     installed: .claude/skills/dream/CREATION-LOG.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/dream
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/dream
     ide: claude-code
     artifactType: skills
   - source: skills/dream/SKILL.md
     installed: .claude/skills/dream/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/dream
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/dream
     ide: claude-code
     artifactType: skills
   - source: skills/executing/SKILL.md
     installed: .claude/skills/executing/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/executing
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/executing
     ide: claude-code
     artifactType: skills
   - source: skills/exploring/SKILL.md
     installed: .claude/skills/exploring/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/exploring
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/exploring
     ide: claude-code
     artifactType: skills
   - source: skills/gkg/SKILL.md
     installed: .claude/skills/gkg/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/gkg
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/gkg
     ide: claude-code
     artifactType: skills
   - source: skills/planning/SKILL.md
     installed: .claude/skills/planning/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/planning
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/planning
     ide: claude-code
     artifactType: skills
   - source: skills/prompt-leverage/SKILL.md
     installed: .claude/skills/prompt-leverage/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/prompt-leverage
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/prompt-leverage
     ide: claude-code
     artifactType: skills
   - source: skills/prompt-leverage/agents/openai.yaml
     installed: .claude/skills/agents/openai.yaml
-    installedDir: /home/quangdang/projects/qd/.claude/skills/agents
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/agents
     ide: claude-code
     artifactType: skills
   - source: skills/prompt-leverage/scripts/augment_prompt.py
     installed: .claude/skills/scripts/augment_prompt.py
-    installedDir: /home/quangdang/projects/qd/.claude/skills/scripts
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/scripts
     ide: claude-code
     artifactType: skills
   - source: skills/refresh-project-docs/SKILL.md
     installed: .claude/skills/refresh-project-docs/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/refresh-project-docs
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/refresh-project-docs
     ide: claude-code
     artifactType: skills
   - source: skills/refresh-project-docs/agents/openai.yaml
     installed: .claude/skills/agents/openai.yaml
-    installedDir: /home/quangdang/projects/qd/.claude/skills/agents
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/agents
     ide: claude-code
     artifactType: skills
   - source: skills/reviewing/SKILL.md
     installed: .claude/skills/reviewing/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/reviewing
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/reviewing
     ide: claude-code
     artifactType: skills
   - source: skills/swarming/CREATION-LOG.md
     installed: .claude/skills/swarming/CREATION-LOG.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/swarming
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/swarming
     ide: claude-code
     artifactType: skills
   - source: skills/swarming/SKILL.md
     installed: .claude/skills/swarming/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/swarming
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/swarming
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/SKILL.md
     installed: .claude/skills/using-qd/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/using-qd
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/using-qd
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/scripts/khuym_dependencies.mjs
     installed: .claude/skills/scripts/khuym_dependencies.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/scripts
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/scripts
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/scripts/khuym_state.mjs
     installed: .claude/skills/scripts/khuym_state.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/scripts
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/scripts
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/scripts/onboard_khuym.mjs
     installed: .claude/skills/scripts/onboard_khuym.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/scripts
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/scripts
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/scripts/test_onboard_khuym.mjs
     installed: .claude/skills/scripts/test_onboard_khuym.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/scripts
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/scripts
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/templates/khuym_pre_tool_use.mjs
     installed: .claude/skills/templates/khuym_pre_tool_use.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/templates
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/templates
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/templates/khuym_session_start.mjs
     installed: .claude/skills/templates/khuym_session_start.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/templates
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/templates
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/templates/khuym_status.mjs
     installed: .claude/skills/templates/khuym_status.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/templates
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/templates
     ide: claude-code
     artifactType: skills
   - source: skills/using-qd/templates/khuym_stop.mjs
     installed: .claude/skills/templates/khuym_stop.mjs
-    installedDir: /home/quangdang/projects/qd/.claude/skills/templates
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/templates
     ide: claude-code
     artifactType: skills
   - source: skills/validating/SKILL.md
     installed: .claude/skills/validating/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/validating
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/validating
     ide: claude-code
     artifactType: skills
   - source: skills/writing-qd-skills/SKILL.md
     installed: .claude/skills/writing-qd-skills/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/writing-qd-skills
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/writing-qd-skills
     ide: claude-code
     artifactType: skills
   - source: skills/xia/CREATION-LOG.md
     installed: .claude/skills/xia/CREATION-LOG.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/xia
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/xia
     ide: claude-code
     artifactType: skills
   - source: skills/xia/SKILL.md
     installed: .claude/skills/xia/SKILL.md
-    installedDir: /home/quangdang/projects/qd/.claude/skills/xia
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/xia
     ide: claude-code
     artifactType: skills
   - source: skills/xia/agents/openai.yaml
     installed: .claude/skills/agents/openai.yaml
-    installedDir: /home/quangdang/projects/qd/.claude/skills/agents
+    installedDir: /home/quangdang/projects/qd/temp/.claude/skills/agents
     ide: claude-code
     artifactType: skills

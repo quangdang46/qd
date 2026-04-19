@@ -26,14 +26,15 @@ export class ArtifactResolver {
    * Calculate target path for an artifact
    * Returns the full path where the file should be installed
    */
-  getTargetPath(projectDir, ide, artifact, platformConfig) {
+  getTargetPath(projectDir, ide, artifact, platformConfig, artifactsDir) {
     const platform = platformConfig.platforms[ide];
     const { target_dir } = platform.installer;
     const artifactType = this.getArtifactType(artifact.relativePath);
+    const actualArtifactsDir = artifactsDir || path.join(projectDir, 'artifacts');
     const targetBase = path.join(projectDir, target_dir, artifactType);
 
     const sourceDir = path.dirname(artifact.sourcePath);
-    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+    const typeRootDir = path.join(actualArtifactsDir, artifactType);
 
     if (sourceDir === typeRootDir) {
       const fileName = path.basename(artifact.sourcePath);
@@ -51,13 +52,14 @@ export class ArtifactResolver {
   /**
    * Determine installed path for manifest (relative to project)
    */
-  getInstalledPath(projectDir, ide, artifact, platformConfig) {
+  getInstalledPath(projectDir, ide, artifact, platformConfig, artifactsDir) {
     const platform = platformConfig.platforms[ide];
     const { target_dir } = platform.installer;
     const artifactType = this.getArtifactType(artifact.relativePath);
     const sourceDir = path.dirname(artifact.sourcePath);
     const sourceBasename = path.basename(sourceDir);
-    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+    const actualArtifactsDir = artifactsDir || path.join(projectDir, 'artifacts');
+    const typeRootDir = path.join(actualArtifactsDir, artifactType);
     const fileName = path.basename(artifact.sourcePath);
     const baseName = path.basename(fileName, path.extname(fileName));
 
@@ -69,7 +71,7 @@ export class ArtifactResolver {
       return path.join(target_dir, artifactType, fileName);
     }
 
-    if (sourceDir === path.join(projectDir, 'artifacts')) {
+    if (sourceDir === actualArtifactsDir) {
       // File at artifacts root (e.g., testfile.md) → IDE root
       return path.join(target_dir, fileName);
     }
@@ -84,17 +86,17 @@ export class ArtifactResolver {
   /**
    * Determine installedDir for manifest (parent directory of installed file)
    */
-  getInstalledDir(projectDir, ide, artifact, platformConfig) {
+  getInstalledDir(projectDir, ide, artifact, platformConfig, artifactsDir) {
     const platform = platformConfig.platforms[ide];
     const { target_dir } = platform.installer;
     const artifactType = this.getArtifactType(artifact.relativePath);
     const sourceDir = path.dirname(artifact.sourcePath);
     const sourceBasename = path.basename(sourceDir);
-    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
-    const artifactsDir = path.join(projectDir, 'artifacts');
+    const actualArtifactsDir = artifactsDir || path.join(projectDir, 'artifacts');
+    const typeRootDir = path.join(actualArtifactsDir, artifactType);
 
     // File at artifacts root → IDE root directory
-    if (sourceDir === artifactsDir) {
+    if (sourceDir === actualArtifactsDir) {
       return path.join(projectDir, target_dir);
     }
 
@@ -110,10 +112,10 @@ export class ArtifactResolver {
   /**
    * Check if source path is valid artifact location
    */
-  isValidArtifactLocation(sourceDir, projectDir, artifactType) {
-    const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
-    const artifactsDir = path.join(projectDir, 'artifacts');
-    return sourceDir.startsWith(typeRootDir + path.sep) || sourceDir === typeRootDir || sourceDir === artifactsDir;
+  isValidArtifactLocation(sourceDir, projectDir, artifactType, artifactsDir) {
+    const typeRootDir = (artifactsDir ? path.join(artifactsDir, artifactType) : path.join(projectDir, 'artifacts', artifactType));
+    const artifactsRootDir = artifactsDir || path.join(projectDir, 'artifacts');
+    return sourceDir.startsWith(typeRootDir + path.sep) || sourceDir === typeRootDir || sourceDir === artifactsRootDir;
   }
 }
 
