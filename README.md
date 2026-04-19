@@ -26,8 +26,8 @@ qd init --ides <your-ide>
 ```bash
 git clone https://github.com/quangdang46/qd.git
 cd qd
-npm install
-npm run build
+pnpm install
+pnpm build
 
 # Run in dev mode (uses local artifacts)
 QD_ENV=development qd init --ides claude-code
