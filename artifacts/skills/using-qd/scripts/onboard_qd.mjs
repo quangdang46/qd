@@ -25,26 +25,9 @@ const HOOK_TEMPLATES_DIR = path.join(USING_QD_DIR, "templates");
 
 // Detect IDE target directory based on environment
 function getIdeTargetDir() {
-  // Check if Claude Code is running (has .claude directory)
   const repoRoot = resolveRepoRoot();
-  const claudeDir = path.join(repoRoot, ".claude");
-  const codexDir = path.join(repoRoot, ".codex");
-
-  if (fs.existsSync(claudeDir)) {
-    return ".claude";
-  }
-  if (fs.existsSync(codexDir)) {
-    return ".codex";
-  }
-
-  // Default to .claude for Claude Code environment
-  return ".claude";
-}
-
-// Resolve placeholder in paths
-function resolveIdePath(template) {
-  const targetDir = getIdeTargetDir();
-  return template.replace(/\{IDE_TARGET_DIR\}/g, targetDir);
+  const targetDir = fs.existsSync(path.join(repoRoot, ".claude")) ? ".claude" : ".codex";
+  return targetDir;
 }
 
 const ONBOARDING_SCHEMA_VERSION = "1.0";
