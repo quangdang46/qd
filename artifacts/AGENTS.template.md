@@ -1,4 +1,3 @@
-<!-- AGENTS:START -->
 # QD Workflow
 
 Use `using-qd` first in this repo unless you are resuming an already approved handoff.
