@@ -23,11 +23,51 @@ const PLATFORM_CODES_PATH = path.join(PLUGIN_ROOT, "..", "..", "platform-codes.y
 const AGENTS_TEMPLATE_PATH = path.join(PLUGIN_ROOT, "AGENTS.template.md");
 const HOOK_TEMPLATES_DIR = path.join(USING_QD_DIR, "templates");
 
-// Detect IDE target directory from environment (set by QD installer)
-// Fallback auto-detect for Claude Code vs Codex only
+// Platform detection — follows ClaudeKit's environment resolver priority:
+// 1. process.env (runtime override, highest)
+// 2. Auto-detect from repo root (pick first matching IDE directory)
+
+let _platformCodes = null;
+
+function loadPlatformCodes() {
+  if (_platformCodes !== null) return _platformCodes;
+  try {
+    const yamlText = fs.readFileSync(PLATFORM_CODES_PATH, "utf8");
+    _platformCodes = yamlText; // Keep as raw YAML - we only need target_dir values
+  } catch {
+    _platformCodes = "";
+  }
+  return _platformCodes;
+}
+
+function getAllTargetDirs() {
+  const yaml = loadPlatformCodes();
+  const targetDirs = [];
+  // Parse target_dir from YAML manually (simple extraction)
+  const regex = /^\s+target_dir:\s*(\S+)\s*$/gm;
+  let match;
+  while ((match = regex.exec(yaml)) !== null) {
+    targetDirs.push(match[1]);
+  }
+  return targetDirs;
+}
+
 function getIdeTargetDir() {
+  // Priority 1: Environment variable (runtime override)
   if (process.env.IDE_TARGET_DIR) return process.env.IDE_TARGET_DIR;
-  return fs.existsSync(path.join(resolveRepoRoot(), ".claude")) ? ".claude" : ".codex";
+
+  // Priority 2: Auto-detect from repo root
+  const repoRoot = resolveRepoRoot();
+  const candidates = getAllTargetDirs();
+
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(repoRoot, dir))) {
+      return dir;
+    }
+  }
+
+  // Fallback: Claude Code for backward compatibility
+  return ".claude";
 }
 
 const ONBOARDING_SCHEMA_VERSION = "1.0";
