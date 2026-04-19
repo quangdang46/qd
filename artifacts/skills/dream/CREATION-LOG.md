@@ -4,14 +4,14 @@
 
 Origin:
 - Dream behavior adaptation from archived reverse-engineering notes captured during the original Dream research pass
-- Khuym process contracts from `AGENTS.md`
+- QD process contracts from `AGENTS.md`
 - Locked decisions from `._qd/history/dream-skill/CONTEXT.md` (D1-D6)
 
 What the source does:
 - Defines a manual, repo-scoped dream consolidation pass over Codex artifacts and learnings files.
 - Constrains consolidation with safety gates around ownership, ambiguity handling, and critical promotions.
 
-Khuym context:
+QD context:
 - Supports the dream-skill epic `br-2z8`.
 - This bead (`br-13f`) is RED baseline only and intentionally does not finalize `SKILL.md`.
 

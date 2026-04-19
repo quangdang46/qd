@@ -5,7 +5,7 @@ metadata:
   dependencies: []
 ---
 
-# Writing Khuym Skills
+# Writing QD Skills
 
 If `./onboarding.json` is missing or stale for the current repo, stop and invoke `using-qd` before continuing.
 
@@ -77,7 +77,7 @@ Do not add content for hypothetical cases you didn't observe — hypothetical co
 - [ ] HARD-GATE markers on critical stops
 - [ ] `references/` files never nested more than one level deep
 
-For Khuym plugin skills specifically, keep frontmatter `name` bare. The plugin wrapper adds the `exploring` prefix when the skill is surfaced to agents.
+For QD plugin skills specifically, keep frontmatter `name` bare. The plugin wrapper adds the `exploring` prefix when the skill is surfaced to agents.
 
 **Description trap (most common mistake):**
 Workflow summary in description → Claude follows description instead of reading skill body. Every time.

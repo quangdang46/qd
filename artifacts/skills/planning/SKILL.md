@@ -70,7 +70,7 @@ Good:
 
 ## Core Planning Model
 
-Khuym now plans at five levels:
+QD now plans at five levels:
 
 ```text
 Whole Feature

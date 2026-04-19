@@ -2,7 +2,7 @@
 name: dream
 description: >-
   Use when you need a manual dream-style consolidation pass over Codex artifacts
-  and existing Khuym learnings, including bootstrap-first scans, recurring-window
+  and existing QD learnings, including bootstrap-first scans, recurring-window
   updates, ambiguity resolution for merge/create new/skip, and approval-gated
   critical-pattern proposals.
 metadata:

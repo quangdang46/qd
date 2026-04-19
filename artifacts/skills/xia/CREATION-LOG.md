@@ -86,7 +86,7 @@ Fresh-thread validation was completed on 2026-04-17 with three isolated subagent
 
 2. Scenario: Plugin/skills repo with maintainer tooling request
 - Target repo: `/Users/themrb/Documents/personal/skills`
-- Prompt shape: add a visual dependency health report for Khuym skills
+- Prompt shape: add a visual dependency health report for QD skills
 - Result: PASS
 - Why: the agent treated the repo as a plugin/skills repo rather than a web app, reused the existing dependency-health engine, checked upstream summary/visualization patterns, checked official GitHub/Mermaid docs, and recommended reuse plus built-in rendering rather than a new system.
 

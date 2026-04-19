@@ -1,7 +1,7 @@
 ---
 name: gkg
 description: >-
-  Codebase intelligence support skill for Khuym using the gkg MCP tools. Use when
+  Codebase intelligence support skill for QD using the gkg MCP tools. Use when
   planning or discovery needs an architecture snapshot, file/definition discovery,
   existing-pattern evidence, importer lookups, or a quick symbol trace in a
   supported repo. Primary path: scout readiness with `node .codex/_qd_status.mjs --json`,
@@ -66,7 +66,7 @@ The practical rule is simple: use `repo_map` plus `search_codebase_definitions` 
 
 ## Primary Discovery Path
 
-Use this path by default during Khuym planning and other codebase discovery work.
+Use this path by default during QD planning and other codebase discovery work.
 
 ### 1. `repo_map`
 
@@ -147,7 +147,7 @@ Use it only as a quick jump helper from a known call site to a likely definition
 
 If it cannot resolve the symbol cleanly, do not fight it. Fall back to `search_codebase_definitions`, `read_definitions`, and `rg`.
 
-## Khuym Workflow Fit
+## QD Workflow Fit
 
 Use this skill mainly during `exploringplanning` discovery work.
 

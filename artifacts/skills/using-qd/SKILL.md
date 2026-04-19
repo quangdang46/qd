@@ -52,11 +52,11 @@ Bootstrap meta-skill. Load this first. It tells you which skill to invoke next a
 
 ## Plugin Onboarding
 
-Before any normal bootstrap, verify that the current machine has Node.js available and that the current repo is onboarded for the Khuym plugin.
+Before any normal bootstrap, verify that the current machine has Node.js available and that the current repo is onboarded for the QD plugin.
 
 Run `node --version` first.
 
-- If `node` is missing or too old: stop immediately, tell the user Khuym requires Node.js 18+, and ask them to install or upgrade Node before continuing.
+- If `node` is missing or too old: stop immediately, tell the user QD requires Node.js 18+, and ask them to install or upgrade Node before continuing.
 
 Then run `node scripts/onboard_qd.mjs --repo-root <repo-root>` from this skill directory and inspect the JSON result.
 
@@ -69,8 +69,8 @@ Then run `node scripts/onboard_qd.mjs --repo-root <repo-root>` from this skill d
   - Cross-check the same command-vs-MCP wording boundary against the session-start note and scout output.
 - If onboarding is missing or stale:
   - summarize what the script wants to create or update
-  - if `status = "missing_runtime"`: stop, tell the user Khuym requires Node.js 18+, and ask them to install or upgrade Node before continuing
-  - if `requires_confirmation = true`, explain that an existing `compact_prompt` was found and Khuym will preserve it unless the user explicitly approves replacement
+  - if `status = "missing_runtime"`: stop, tell the user QD requires Node.js 18+, and ask them to install or upgrade Node before continuing
+  - if `requires_confirmation = true`, explain that an existing `compact_prompt` was found and QD will preserve it unless the user explicitly approves replacement
   - ask before making repo changes
   - after approval, run `node scripts/onboard_qd.mjs --repo-root <repo-root> --apply`
   - only use `--allow-compact-prompt-replace` when the user explicitly approved replacing the repo's existing compaction prompt
@@ -86,7 +86,7 @@ Onboarding installs or updates:
 - `._qd/onboarding.json`
 - `._qd/state.json`
 
-If onboarding is not complete, do not continue into the rest of the Khuym workflow.
+If onboarding is not complete, do not continue into the rest of the QD workflow.
 
 ---
 
@@ -127,7 +127,7 @@ Use the scout's `supported_languages` and `primary_supported_language` fields in
 
 ## Dependency Declaration Contract
 
-Every packaged Khuym skill must make its dependency posture explicit. There are only three valid states:
+Every packaged QD skill must make its dependency posture explicit. There are only three valid states:
 
 1. **Command-backed skill** — declare each required CLI under `metadata.dependencies` with `kind: command`, the binary name in `command`, a truthful `missing_effect`, and a short `reason`.
 2. **MCP-backed skill** — declare each required MCP server under `metadata.dependencies` with `kind: mcp_server`, the expected `server_names`, the supported `config_sources`, a truthful `missing_effect`, and a short `reason`.
@@ -135,7 +135,7 @@ Every packaged Khuym skill must make its dependency posture explicit. There are 
 
 Do not leave a packaged skill with undeclared dependency posture. A missing declaration is treated as an uncovered inventory gap, not as an implicit dependency-free skill.
 
-When updating or adding packaged Khuym skills, keep the docs and the live report aligned by running:
+When updating or adding packaged QD skills, keep the docs and the live report aligned by running:
 
 - `node scripts/test_onboard_qd.mjs`
 - `bash scripts/check-markdown-links.sh SKILL.md`
@@ -172,7 +172,7 @@ Given a user request, determine the working mode first, then the first skill.
 | Mode | Use when... | Notes |
 |---|---|---|
 | `small_change` | ≤3 files, no new API/data model, LOW risk, no gray areas | Lightweight planning and validating, but still no skipping validating |
-| `standard_feature` | Normal feature or refactor with clear value but moderate scope | Default mode for most Khuym work |
+| `standard_feature` | Normal feature or refactor with clear value but moderate scope | Default mode for most QD work |
 | `high_risk_feature` | Cross-cutting, high-blast-radius, or architecture-sensitive work | Use deeper planning review and explicit spikes for risky items |
 
 ### First-skill routing
@@ -200,7 +200,7 @@ Given a user request, determine which skill to invoke first:
 On every session start, before doing anything else:
 
 ```
-0. Confirm Khuym onboarding is current via ._qd/onboarding.json
+0. Confirm QD onboarding is current via ._qd/onboarding.json
    → If missing or stale: return to Plugin Onboarding above
 
 0.5. If .codex/_qd_status.mjs exists: run `node .codex/_qd_status.mjs --json`
@@ -333,7 +333,7 @@ Choose `small_change` when ALL of these are true:
 
 ### `standard_feature`
 
-Use this for the default Khuym chain. This is the normal case for most feature work:
+Use this for the default QD chain. This is the normal case for most feature work:
 
 ```
 exploring → planning → validating → swarming → executing → reviewing → compounding
@@ -367,7 +367,7 @@ These override everything else:
 
 ## Communication Contract
 
-This is the default way Codex and GPT models should communicate anywhere inside the Khuym workflow unless a narrower skill requires something stricter.
+This is the default way Codex and GPT models should communicate anywhere inside the QD workflow unless a narrower skill requires something stricter.
 
 ### The default tone
 
@@ -455,7 +455,7 @@ Watch for these violations. Pause and surface them immediately when detected:
 
 ```
 ._qd/
-  onboarding.json   ← Khuym plugin onboarding status + managed asset versions
+  onboarding.json   ← QD plugin onboarding status + managed asset versions
   state.json        ← Machine-readable routing snapshot used by agents and tools
   STATE.md          ← Current phase, focus, blockers (update at every phase transition)
   config.json       ← Feature toggles (absent=enabled)
