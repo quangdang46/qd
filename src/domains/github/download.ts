@@ -5,12 +5,13 @@
  */
 
 const fs = require('../../shared/fs-native');
+const fsnative = require('fs');
 const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const https = require('https');
 const http = require('http');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 
 const CACHE_DIR = path.join(os.homedir(), '.cache', 'qdspec');
 
@@ -45,46 +46,71 @@ async function getCachedArchive(tag, url) {
 /**
  * Download file from URL
  */
+function getGitHubToken() {
+  try {
+    return execSync('gh auth token -h github.com', {
+      encoding: 'utf-8',
+      timeout: 5000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+  } catch {
+    return process.env.GITHUB_TOKEN || null;
+  }
+}
+
 function downloadFile(url, destination) {
   return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(destination);
-    const client = url.startsWith('https://') ? https : http;
+    const token = getGitHubToken();
 
-    const req = client.get(url, (res) => {
-      if (res.statusCode === 200 || res.statusCode === 302 || res.statusCode === 301) {
-        const redirectUrl = res.redirected ? res.responseUrl || url : url;
-        if (redirectUrl !== url) {
-          // Handle redirect
-          const redirectClient = redirectUrl.startsWith('https://') ? https : http;
-          redirectClient.get(redirectUrl, (redirectRes) => {
-            if (redirectRes.statusCode === 200) {
-              redirectRes.pipe(file);
-            } else {
-              reject(new Error(`Redirect failed: ${redirectRes.statusCode}`));
-              return;
-            }
-          }).on('error', reject);
-        } else {
+    const headers = {
+      'User-Agent': 'qdspec-cli',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    };
+
+    function doRequest(reqUrl) {
+      const file = fsnative.createWriteStream(destination);
+      const client = reqUrl.startsWith('https://') ? https : http;
+
+      const req = client.get(reqUrl, { headers }, (res) => {
+        if (res.statusCode === 302 || res.statusCode === 301) {
+          const redirectUrl = res.headers.location;
+          if (redirectUrl) {
+            file.close();
+            doRequest(redirectUrl);
+          } else {
+            file.close();
+            reject(new Error('Redirect without location header'));
+          }
+        } else if (res.statusCode === 200) {
           res.pipe(file);
+          file.on('finish', () => {
+            file.close();
+            resolve();
+          });
+        } else {
+          file.close();
+          reject(new Error(`Download failed: HTTP ${res.statusCode}`));
         }
-      } else {
-        reject(new Error(`Download failed: HTTP ${res.statusCode}`));
-        return;
-      }
-    });
+      });
 
-    req.on('error', reject);
-    req.setTimeout(120000, () => {
-      req.destroy();
-      reject(new Error('Download timeout'));
-    });
+      req.on('error', (err) => {
+        file.close();
+        reject(err);
+      });
 
-    file.on('finish', () => {
-      file.close();
-      resolve();
-    });
+      req.setTimeout(120000, () => {
+        req.destroy();
+        file.close();
+        reject(new Error('Download timeout'));
+      });
 
-    file.on('error', reject);
+      file.on('error', (err) => {
+        req.destroy();
+        reject(err);
+      });
+    }
+
+    doRequest(url);
   });
 }
 

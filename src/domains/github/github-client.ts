@@ -2,8 +2,10 @@
 /**
  * GitHub Client for QD
  * Fetches releases and assets from GitHub
+ * Uses gh CLI for auth (like Claudekit) with fallback to GITHUB_TOKEN env var
  */
 
+const { execSync } = require('child_process');
 const https = require('https');
 const http = require('http');
 
@@ -41,7 +43,7 @@ function classifyGitHubError(error, operation) {
       category: ErrorCategory.AUTH_MISSING,
       message: 'Not authenticated with GitHub',
       details: 'GitHub token may be invalid or expired',
-      suggestion: 'Set GITHUB_TOKEN env var',
+      suggestion: 'Set GITHUB_TOKEN env var or run gh auth login',
     };
   }
 
@@ -70,6 +72,28 @@ function classifyGitHubError(error, operation) {
 }
 
 /**
+ * Get GitHub token - prefers gh CLI, falls back to env var
+ */
+function getGitHubToken() {
+  // Try gh CLI first (like Claudekit does)
+  try {
+    const token = execSync('gh auth token -h github.com', {
+      encoding: 'utf-8',
+      timeout: 5000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    if (token && token.length > 0) {
+      return token;
+    }
+  } catch {
+    // gh CLI failed, fall back to env var
+  }
+
+  // Fall back to GITHUB_TOKEN env var
+  return process.env.GITHUB_TOKEN || null;
+}
+
+/**
  * Make HTTP request to GitHub API
  */
 function request(url, options = {}) {
@@ -77,7 +101,7 @@ function request(url, options = {}) {
     const isHttps = url.startsWith('https://');
     const client = isHttps ? https : http;
 
-    const token = process.env.GITHUB_TOKEN;
+    const token = getGitHubToken();
     const headers = {
       'User-Agent': 'qdspec-cli',
       Accept: 'application/vnd.github+json',
