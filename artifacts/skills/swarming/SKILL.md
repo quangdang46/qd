@@ -25,6 +25,7 @@ metadata:
       config_sources: [repo_codex_config, global_codex_config]
       missing_effect: unavailable
       reason: Worker orchestration and coordination run through Agent Mail.
+  maintainer: Tran Quang Dang (https://github.com/quangdang46)
   author: Hoang Bang (https://github.com/hoangnb24)
 ---
 

@@ -16,6 +16,7 @@ metadata:
       config_sources: [repo_codex_config, global_codex_config, plugin_mcp_manifest]
       missing_effect: unavailable
       reason: This skill depends on the gkg MCP server for codebase discovery queries.
+  maintainer: Tran Quang Dang (https://github.com/quangdang46)
   author: Hoang Bang (https://github.com/hoangnb24)
 ---
 

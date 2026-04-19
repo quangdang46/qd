@@ -12,6 +12,7 @@ metadata:
   ecosystem: qd
   position: '2 of 9 — runs after using-qd, before planning'
   dependencies: []
+  maintainer: Tran Quang Dang (https://github.com/quangdang46)
   author: Hoang Bang (https://github.com/hoangnb24)
 ---
 

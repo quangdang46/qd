@@ -18,6 +18,7 @@ metadata:
       command: bv
       missing_effect: unavailable
       reason: Validation depends on bv graph checks for polishing and risk review.
+  maintainer: Tran Quang Dang (https://github.com/quangdang46)
   author: Hoang Bang (https://github.com/hoangnb24)
 ---
 

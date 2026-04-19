@@ -24,6 +24,7 @@ metadata:
       config_sources: [repo_codex_config, global_codex_config]
       missing_effect: unavailable
       reason: Reservations, coordination, and reporting are executed via Agent Mail.
+  maintainer: Tran Quang Dang (https://github.com/quangdang46)
   author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
