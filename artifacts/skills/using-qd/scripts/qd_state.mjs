@@ -246,7 +246,7 @@ function extractProjectPaths(payload, collected = new Set()) {
 }
 
 function readGkgServerStatus(repoRoot) {
-  const serverUrl = process.env.KHUYM_GKG_SERVER_URL || GKG_SERVER_URL;
+  const serverUrl = process.env.QD_GKG_SERVER_URL || GKG_SERVER_URL;
   const info = readJsonViaNode(`${serverUrl}/api/info`);
   const workspaceList = info ? readJsonViaNode(`${serverUrl}/api/workspace/list`) : null;
   const indexedPaths = extractProjectPaths(workspaceList);

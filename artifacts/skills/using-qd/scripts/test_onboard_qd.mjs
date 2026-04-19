@@ -12,7 +12,7 @@ import { applyRepo, checkRepo, getNodeRuntimeStatus } from "./onboard_qd.mjs";
 import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
 
 const LOCAL_ONBOARD_SCRIPT_PATH = fileURLToPath(new URL("./onboard_qd.mjs", import.meta.url));
-const LOCAL_USING_KHUYM_SKILL_PATH = fileURLToPath(new URL("../SKILL.md", import.meta.url));
+const LOCAL_USING_QD_SKILL_PATH = fileURLToPath(new URL("../SKILL.md", import.meta.url));
 const LOCAL_REPO_ROOT = fileURLToPath(new URL("../../../../../", import.meta.url));
 
 function runSessionStartHook(root, payload = { cwd: root }, env = {}) {
@@ -120,8 +120,8 @@ test("applyRepo appends managed block to existing agents instructions", () => {
     const agentsText = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
 
     assert.match(agentsText, /# Existing instructions/);
-    assert.match(agentsText, /<!-- KHUYM:START -->/);
-    assert.equal((agentsText.match(/<!-- KHUYM:START -->/g) || []).length, 1);
+    assert.match(agentsText, /<!-- QD:START -->/);
+    assert.equal((agentsText.match(/<!-- QD:START -->/g) || []).length, 1);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -234,7 +234,7 @@ test("installed _qd_status reports gkg readiness for a supported indexed repo", 
     const stdout = execFileSync("node", [path.join(root, ".codex", "_qd_status.mjs"), "--json"], {
       cwd: root,
       encoding: "utf8",
-      env: { ...process.env, KHUYM_GKG_SERVER_URL: mockServer.url },
+      env: { ...process.env, QD_GKG_SERVER_URL: mockServer.url },
     });
     const status = JSON.parse(stdout);
 
@@ -654,7 +654,7 @@ test("session-start hook surfaces gkg readiness guidance for supported repos tha
     const payload = runSessionStartHook(
       root,
       { cwd: root },
-      { KHUYM_GKG_SERVER_URL: "http://127.0.0.1:9" },
+      { QD_GKG_SERVER_URL: "http://127.0.0.1:9" },
     );
     const context = payload.hookSpecificOutput.additionalContext;
 
@@ -734,7 +734,7 @@ test("entry surfaces share the same missing-command vs missing-MCP wording bound
     );
     assert.match(startupContext, /Affected skills: exploringalpha/);
 
-    const skillText = fs.readFileSync(LOCAL_USING_KHUYM_SKILL_PATH, "utf8");
+    const skillText = fs.readFileSync(LOCAL_USING_QD_SKILL_PATH, "utf8");
     assert.match(skillText, /Missing commands:/);
     assert.match(skillText, /Missing MCP server configuration:/);
   } finally {
@@ -983,7 +983,7 @@ test("dependency helper still accepts legacy root-level plugin MCP manifests", (
 
 test("packaged QD inventory stays fully covered and the docs explain the declaration contract", () => {
   const report = buildQDDependencyReport({ repoRoot: LOCAL_REPO_ROOT });
-  const skillText = fs.readFileSync(LOCAL_USING_KHUYM_SKILL_PATH, "utf8");
+  const skillText = fs.readFileSync(LOCAL_USING_QD_SKILL_PATH, "utf8");
   const pluginManifest = JSON.parse(
     fs.readFileSync(
       path.join(LOCAL_REPO_ROOT, "plugins", "qd", ".codex-plugin", "plugin.json"),

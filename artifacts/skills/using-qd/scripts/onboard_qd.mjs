@@ -15,15 +15,15 @@ import {
 import { buildQDDependencyReport } from "./_qd_dependencies.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const USING_KHUYM_DIR = path.dirname(path.dirname(SCRIPT_PATH));
-const USING_KHUYM_SCRIPTS_DIR = path.dirname(SCRIPT_PATH);
-const PLUGIN_ROOT = path.dirname(path.dirname(USING_KHUYM_DIR));
+const USING_QD_DIR = path.dirname(path.dirname(SCRIPT_PATH));
+const USING_QD_SCRIPTS_DIR = path.dirname(SCRIPT_PATH);
+const PLUGIN_ROOT = path.dirname(path.dirname(USING_QD_DIR));
 const PLUGIN_MANIFEST_PATH = path.join(PLUGIN_ROOT, ".codex-plugin", "plugin.json");
 const AGENTS_TEMPLATE_PATH = path.join(PLUGIN_ROOT, "AGENTS.template.md");
-const HOOK_TEMPLATES_DIR = path.join(USING_KHUYM_DIR, "templates");
+const HOOK_TEMPLATES_DIR = path.join(USING_QD_DIR, "templates");
 const ONBOARDING_SCHEMA_VERSION = "1.0";
-const COMPACT_PROMPT_MARKER_START = "# KHUYM: compact_prompt start";
-const COMPACT_PROMPT_MARKER_END = "# KHUYM: compact_prompt end";
+const COMPACT_PROMPT_MARKER_START = "# QD: compact_prompt start";
+const COMPACT_PROMPT_MARKER_END = "# QD: compact_prompt end";
 const MIN_NODE_MAJOR = 18;
 const MANAGED_HOOK_FILENAMES = [
   "_qd_session_start.mjs",
@@ -37,8 +37,8 @@ const LEGACY_HOOK_FILENAMES = [
 ];
 const MANAGED_SUPPORT_FILES = {
   "_qd_status.mjs": path.join(HOOK_TEMPLATES_DIR, "_qd_status.mjs"),
-  "_qd_state.mjs": path.join(USING_KHUYM_SCRIPTS_DIR, "_qd_state.mjs"),
-  "_qd_dependencies.mjs": path.join(USING_KHUYM_SCRIPTS_DIR, "_qd_dependencies.mjs"),
+  "_qd_state.mjs": path.join(USING_QD_SCRIPTS_DIR, "_qd_state.mjs"),
+  "_qd_dependencies.mjs": path.join(USING_QD_SCRIPTS_DIR, "_qd_dependencies.mjs"),
 };
 
 function readDependencyHealth(repoRoot) {
@@ -207,7 +207,7 @@ function ensureParent(filePath) {
 }
 
 function managedAgentsPresent(text) {
-  return text.includes("<!-- KHUYM:START -->") && text.includes("<!-- KHUYM:END -->");
+  return text.includes("<!-- QD:START -->") && text.includes("<!-- QD:END -->");
 }
 
 function mergeAgentsContent(existing, template) {
@@ -218,7 +218,7 @@ function mergeAgentsContent(existing, template) {
 
   if (managedAgentsPresent(existing)) {
     const updated = existing.replace(
-      /<!-- KHUYM:START -->[\s\S]*?<!-- KHUYM:END -->\n?/,
+      /<!-- QD:START -->[\s\S]*?<!-- QD:END -->\n?/,
       template,
     );
     return { text: `${updated.replace(/\s*$/, "")}\n`, status: "updated_managed_block" };
