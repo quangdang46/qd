@@ -171,9 +171,8 @@ class Installer {
         await this.walkDir(fullPath, artifactsRoot, parentSchema, entries, config);
         currentSchema = parentSchema;
       } else if (dirent.isFile()) {
-        if (dirent.name.endsWith('.example.yaml')) continue;
-        if (dirent.name === 'module.yaml') continue;
-        if (dirent.name === 'schema.yaml') continue;
+        const skipPatterns = config?.skip || [];
+        if (skipPatterns.some(p => matchGlob(p, dirent.name))) continue;
 
         const fileSchema = currentSchema || { supported_ides: null, ignored_ides: null, overrides: {} };
         const overrideKey = dirent.name;

@@ -2,6 +2,12 @@ code: qd
 name: "QD Framework"
 description: "Quick Development Framework - AI-driven development methodology"
 
+# Files to skip during installation
+skip:
+  - "*.example.yaml"
+  - "module.yaml"
+  - "schema.yaml"
+
 # Format conversion rules
 convert:
   codex:

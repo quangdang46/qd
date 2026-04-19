@@ -1,22 +1,21 @@
 /**
  * Artifact Resolver
  * Handles artifact type detection and target path calculation
+ * Artifact type is the first directory segment in the relative path
  */
 
 const path = require('node:path');
 const fs = require('../../shared/fs-native');
 
-const ARTIFACT_TYPES = ['skills', 'commands', 'agents', 'subagents', 'hooks', 'rules', 'output-styles'];
-
 export class ArtifactResolver {
   /**
    * Get artifact type from relative path
-   * e.g., "skills/agent-browser/SKILL.md" → "skills"
-   * e.g., "testfile.md" → "skills" (default)
+   * First segment is the type (e.g., "skills/agent-browser/SKILL.md" → "skills")
+   * Files at root go to "skills" by default
    */
   getArtifactType(relativePath) {
     const parts = relativePath.split(path.sep);
-    if (parts.length > 1 && ARTIFACT_TYPES.includes(parts[0])) {
+    if (parts.length > 1) {
       return parts[0];
     }
     return 'skills';
@@ -64,7 +63,6 @@ export class ArtifactResolver {
     const baseName = path.basename(fileName, path.extname(fileName));
 
     if (sourceDir === typeRootDir) {
-      // Direct file in type root (e.g., artifacts/agents/atlas.md)
       if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
         return path.join(target_dir, artifactType, `${baseName}.toml`);
       }
@@ -72,11 +70,9 @@ export class ArtifactResolver {
     }
 
     if (sourceDir === actualArtifactsDir) {
-      // File at artifacts root (e.g., testfile.md) → IDE root
       return path.join(target_dir, fileName);
     }
 
-    // Nested skill directory
     if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
       return path.join(target_dir, artifactType, sourceBasename, `${baseName}.toml`);
     }
@@ -95,17 +91,14 @@ export class ArtifactResolver {
     const actualArtifactsDir = artifactsDir || path.join(projectDir, 'artifacts');
     const typeRootDir = path.join(actualArtifactsDir, artifactType);
 
-    // File at artifacts root → IDE root directory
     if (sourceDir === actualArtifactsDir) {
       return path.join(projectDir, target_dir);
     }
 
-    // Nested skill directory → skill-level directory
     if (sourceDir !== typeRootDir) {
       return path.join(projectDir, target_dir, artifactType, sourceBasename);
     }
 
-    // Direct file in type root → type root directory
     return path.join(projectDir, target_dir, artifactType);
   }
 

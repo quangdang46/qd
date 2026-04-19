@@ -13,7 +13,7 @@ const { GitHubClient, ErrorCategory } = require('../domains/github/github-client
 const { VersionSelector } = require('../domains/github/version-selector');
 const { downloadVersion } = require('../domains/github/download');
 
-const IS_DEV = process.env.QD_ENV === 'development';
+const IS_DEV = process.env.QD_ENV?.toLowerCase() === 'development';
 
 function registerInit(program) {
   program
@@ -36,8 +36,9 @@ function registerInit(program) {
         // Step 1: Resolve artifacts source
         // ========================================
         if (IS_DEV) {
-          // Dev mode: use local artifacts/ directory
-          artifactsDir = path.join(projectDir, 'artifacts');
+          // Dev mode: use QD project's own artifacts/ directory
+          const qdProjectRoot = path.join(__dirname, '..', '..');
+          artifactsDir = path.join(qdProjectRoot, 'artifacts');
           await prompts.log.info('Dev mode: using local artifacts/');
         } else if (options.version) {
           // Specific version requested: download from GitHub
