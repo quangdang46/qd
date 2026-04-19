@@ -194,18 +194,18 @@ After CONTEXT.md passes review:
    Current: exploring complete for <feature>
    CONTEXT.md: .qd/history/<feature>/CONTEXT.md
    Locked decisions: D1...D_N
-   Next: invoke exploringplanning skill
+   Next: invoke planning skill
    ```
 
 2. Present to user:
    > "Decisions captured. CONTEXT.md written to `.qd/history/<feature>/CONTEXT.md`.
    > CONTEXT.md is now the single source of truth for all downstream agents.
-   > Invoke the exploringplanning skill to research the codebase, show the proposed phases and stories, and then wait for approval before current-phase preparation."
+   > Invoke the planning skill to research the codebase, show the proposed phases and stories, and then wait for approval before current-phase preparation."
 
 <HARD-GATE>
 Do NOT invoke planning, write code, create beads, or take any implementation action.
 The terminal state of this skill is writing CONTEXT.md and announcing handoff.
-The ONLY valid next step is the user invoking the exploringplanning skill.
+The ONLY valid next step is the user invoking the planning skill.
 </HARD-GATE>
 
 ---

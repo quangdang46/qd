@@ -67,7 +67,7 @@ In Flywheel terms, this skill is the QD/Codex adaptation of the `ntm spawn` + hu
 
 ## When to Use This Skill
 
-Invoke after the `exploringvalidating` skill issues: _"Validation complete. Current phase passes. Invoke exploringswarming skill."_
+Invoke after the `validating` skill issues: _"Validation complete. Current phase passes. Invoke swarming skill."_
 
 Prerequisites:
 - Current-phase beads are in `open` status and approved for execution
@@ -337,9 +337,9 @@ When no current-phase beads remain `in_progress` and the graph shows no remainin
 
 4. Handoff message:
    - if more phases remain:
-     > "Swarm execution complete for the current phase. Return to exploringplanning to prepare the next phase."
+     > "Swarm execution complete for the current phase. Return to planning to prepare the next phase."
    - if this was the final phase:
-     > "Swarm execution complete for the final phase. Invoke exploringreviewing skill."
+     > "Swarm execution complete for the final phase. Invoke reviewing skill."
 
 ---
 

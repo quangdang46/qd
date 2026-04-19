@@ -1,7 +1,7 @@
 # CONTEXT.md Template
 
-This template is written by the exploringexploring skill in Phase 4.
-It is read by the exploringplanning skill, exploringvalidating skill, and all downstream agents.
+This template is written by the `exploring` skill in Phase 4.
+It is read by the `planning` skill, `validating` skill, and all downstream agents.
 
 **Save to:** `.qd/history/<feature-slug>/CONTEXT.md`
 

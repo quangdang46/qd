@@ -1,6 +1,6 @@
 # Gray Area Probes by Domain Type
 
-Use these probes in Phase 2 of the exploringexploring skill to generate phase-specific gray areas.
+Use these probes in Phase 2 of the exploring skill to generate phase-specific gray areas.
 Select 2–4 probes per domain type that apply to the feature at hand.
 Do NOT use all probes — pick the ones that are genuinely undecided for this feature.
 

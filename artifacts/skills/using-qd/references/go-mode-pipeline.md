@@ -67,7 +67,7 @@ DONE
 
 ## Pre-Pipeline: Bootstrap
 
-Before invoking `exploringexploring`, always:
+Before invoking `exploring`, always:
 
 1. Run State Bootstrap from SKILL.md (check `.qd/`, read `critical-patterns.md`).
 2. Determine feature slug from the user's description (lowercase-hyphenated, e.g. `agent-email-inbox`).
@@ -84,11 +84,11 @@ Before invoking `exploringexploring`, always:
 
 ## Step 1: Exploring
 
-**Invoke:** Load `exploringexploring` skill.
+**Invoke:** Load `exploring` skill.
 
 **Input:** User's feature description.
 
-**The exploringexploring skill will:**
+**The exploring skill will:**
 
 - Classify domain (SEE / CALL / RUN / READ / ORGANIZE)
 - Identify gray areas via Socratic Q&A
@@ -124,7 +124,7 @@ If user says `revise`, loop back to exploring. If user says `yes`, proceed to St
 
 ## Step 2: Planning (Whole Feature)
 
-**Invoke:** Load `exploringplanning` skill.
+**Invoke:** Load `planning` skill.
 
 **Input:** `.qd/history/<feature>/CONTEXT.md`, `.qd/history/learnings/critical-patterns.md`.
 
@@ -165,7 +165,7 @@ If user says `revise`, return to the planning pass that owns `phase-plan.md`. If
 
 ## Step 3: Planning (Current Phase Prep)
 
-**Invoke:** Load `exploringplanning` again in current-phase preparation mode.
+**Invoke:** Load `planning` again in current-phase preparation mode.
 
 **Input:** approved `phase-plan.md`, `approach.md`, `CONTEXT.md`.
 
@@ -188,11 +188,11 @@ If user says `revise`, return to the planning pass that owns `phase-plan.md`. If
 
 ## Step 4: Validating (Current Phase)
 
-**Invoke:** Load `exploringvalidating` skill.
+**Invoke:** Load `validating` skill.
 
 **Input:** current phase beads, `phase-plan.md`, current phase contract/story map, `approach.md`, `CONTEXT.md`.
 
-**The exploringvalidating skill will:**
+**The validating skill will:**
 
 - Phase 0: orient on the current phase and confirm the phase plan was approved
 - Phase 1: plan-checker loop (<=3 iterations, 8 dimensions)
@@ -225,9 +225,9 @@ If user says `no` or `revise`, return to planning or validating. If user says `y
 
 ## Step 5: Swarming + Executing (Current Phase)
 
-**Invoke:** Load `exploringswarming` skill.
+**Invoke:** Load `swarming` skill.
 
-**The exploringswarming skill will:**
+**The swarming skill will:**
 
 - initialize Agent Mail
 - spawn workers for the current phase bead set
@@ -250,9 +250,9 @@ After current-phase execution completes:
 
 ## Step 6: Reviewing
 
-**Invoke:** Load `exploringreviewing` skill only after the final phase swarm completes.
+**Invoke:** Load `reviewing` skill only after the final phase swarm completes.
 
-**The exploringreviewing skill will:**
+**The reviewing skill will:**
 
 - dispatch 5 specialist review agents
 - run 3-level artifact verification
@@ -292,11 +292,11 @@ If fix beads are created, execute them and re-run reviewing before presenting GA
 
 ## Step 7: Compounding
 
-**Invoke:** Load `exploringcompounding` skill.
+**Invoke:** Load `compounding` skill.
 
 **Input:** full feature history (`CONTEXT.md`, `approach.md`, `phase-plan.md`, review findings, execution notes).
 
-**The exploringcompounding skill will:**
+**The compounding skill will:**
 
 - dispatch 3 analysis subagents: patterns / decisions / failures
 - write `.qd/history/learnings/YYYYMMDD-<feature>.md`
@@ -322,7 +322,7 @@ Delete `.qd/HANDOFF.json` if it exists.
 
 ```text
 -> Identify which decisions need revision
--> Load exploringexploring skill, focus on those specific gray areas
+-> Load exploring skill, focus on those specific gray areas
 -> Update CONTEXT.md in place
 -> Re-present GATE 1
 ```
@@ -368,7 +368,7 @@ Delete `.qd/HANDOFF.json` if it exists.
 
 ```text
 -> Create fix beads via br create for each P1 finding
--> Load exploringswarming skill (fix-bead swarm only)
+-> Load swarming skill (fix-bead swarm only)
 -> After execution: re-run reviewing (targeted - fixes diff only)
 -> Re-present GATE 4
 -> Repeat until P1 = 0 or user explicitly overrides

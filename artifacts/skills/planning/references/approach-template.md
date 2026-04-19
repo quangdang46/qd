@@ -70,8 +70,8 @@
 
 | Component | Risk Level | Reason | Verification Needed |
 |-----------|------------|--------|---------------------|
-| [e.g., Stripe SDK] | **HIGH** | New external dep, no existing pattern | Spike (handled by exploringvalidating skill) |
-| [e.g., Webhook handler] | **HIGH** | Security-critical, novel pattern | Spike (handled by exploringvalidating skill) |
+| [e.g., Stripe SDK] | **HIGH** | New external dep, no existing pattern | Spike (handled by validating skill) |
+| [e.g., Webhook handler] | **HIGH** | Security-critical, novel pattern | Spike (handled by validating skill) |
 | [e.g., Subscription entity] | **LOW** | Follows User entity pattern exactly | Proceed |
 | [e.g., oRPC billing router] | **LOW** | Existing router pattern | Proceed |
 | [e.g., S3 file upload] | **MEDIUM** | Variation of existing storage pattern | Interface sketch optional |
@@ -85,9 +85,9 @@ Blast radius > 5 files?    → YES = HIGH
 Otherwise                   → MEDIUM
 ```
 
-### HIGH-Risk Summary (for exploringvalidating skill)
+### HIGH-Risk Summary (for validating skill)
 
-> The exploringvalidating skill will create spikes for these items. List them clearly.
+> The validating skill will create spikes for these items. List them clearly.
 
 - `<Component>`: `<specific question the spike must answer>`
 - `<Component>`: `<specific question the spike must answer>`
@@ -160,7 +160,7 @@ _If none applied: "No prior institutional learnings relevant to this feature."_
 
 ## 8. Open Questions for Validating
 
-> Items that couldn't be resolved in planning. The exploringvalidating skill's plan-checker will address these.
+> Items that couldn't be resolved in planning. The validating skill's plan-checker will address these.
 
 - [ ] `<Question>` — `<why it matters for execution>`
 - [ ] `<Question>` — `<impact if wrong>`

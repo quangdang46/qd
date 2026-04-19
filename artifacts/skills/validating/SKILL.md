@@ -66,7 +66,7 @@ You need all of these:
 - `.qd/history/<feature>/phase-<n>-story-map.md`
 - `.beads/` for the current phase
 
-If any are missing, stop and return to `exploringplanning`.
+If any are missing, stop and return to `planning`.
 
 ## Phase 0: Current Phase Orientation
 
@@ -193,7 +193,7 @@ br close <id> --reason "NO: <blocker and why it breaks the approach>"
 
 - full stop
 - write blocker summary into `approach.md`
-- return to `exploringplanning`
+- return to `planning`
 - re-run validating from Phase 0 after replanning
 
 ---
@@ -332,7 +332,7 @@ BEADS: <N>
 
 Handoff:
 
-`Validation complete. Current phase passes. Invoke exploringswarming skill.`
+`Validation complete. Current phase passes. Invoke swarming skill.`
 
 ### If user rejects
 
@@ -367,8 +367,8 @@ Validating approves execution for the **current phase only**.
 
 After swarming finishes:
 
-- if more phases remain in `phase-plan.md`, return to `exploringplanning` to prepare the next phase
-- if this was the final phase, proceed to `exploringreviewing`
+- if more phases remain in `phase-plan.md`, return to `planning` to prepare the next phase
+- if this was the final phase, proceed to `reviewing`
 
 Do not assume later phases are ready just because the current phase passed.
 

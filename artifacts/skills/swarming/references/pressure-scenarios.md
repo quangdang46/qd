@@ -1,4 +1,4 @@
-# Pressure Scenarios: exploringswarming
+# Pressure Scenarios: swarming
 
 Use these scenarios when hardening the swarm contract around Agent Mail reporting and coordinator tending.
 

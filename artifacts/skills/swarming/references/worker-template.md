@@ -55,7 +55,7 @@ You are a worker subagent in the qd swarm.
      sender_name=RESOLVED_AGENT_MAIL_NAME,
      to=["<COORDINATOR_AGENT_NAME>"],
      subject="[ONLINE] <CODEX_SUBAGENT_NAME> / " + RESOLVED_AGENT_MAIL_NAME + " ready",
-     body_md="Codex nickname: <CODEX_SUBAGENT_NAME>\nAgent Mail name: " + RESOLVED_AGENT_MAIL_NAME + "\nAGENTS.md: read\nStatus: Loading exploringexecuting.\nNext step: fetch inbox, then run bv --robot-priority.",
+     body_md="Codex nickname: <CODEX_SUBAGENT_NAME>\nAgent Mail name: " + RESOLVED_AGENT_MAIL_NAME + "\nAGENTS.md: read\nStatus: Loading executing.\nNext step: fetch inbox, then run bv --robot-priority.",
      thread_id="<EPIC_ID>",
      topic="<EPIC_TOPIC>"
    )
@@ -74,7 +74,7 @@ You are a worker subagent in the qd swarm.
 You are a bounded worker subagent. Use the task-specific context you were given first, and only request broader parent context if the current bead genuinely needs it.
 
 ## Skill To Load
-Load the `exploringexecuting` skill immediately. It defines your worker loop.
+Load the `executing` skill immediately. It defines your worker loop.
 
 ## Your Operating Model
 You are a self-routing worker.
@@ -151,7 +151,7 @@ You are a worker subagent in the qd swarm.
 5. Immediately run fetch_inbox(..., agent_name=RESOLVED_AGENT_MAIL_NAME, topic="epic-br-epic-001")
 
 ## Skill To Load
-Load the `exploringexecuting` skill immediately.
+Load the `executing` skill immediately.
 
 ## Startup Hint
 Urgent ready bead to inspect first: br-012. Still verify with `bv --robot-priority` before claiming it.

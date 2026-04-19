@@ -35,7 +35,7 @@ Use the scout output as the source of truth for this repo:
 
 - `gkg_readiness.supported_repo = false`: do not force gkg; use the fallback section below.
 - `gkg_readiness.server_reachable = false`: gkg is not ready for query work yet.
-- `gkg_readiness.project_indexed = false`: do not pretend MCP discovery is ready. Hand back to `exploringusing-qd` readiness or follow the scout's `recommended_action`.
+- `gkg_readiness.project_indexed = false`: do not pretend MCP discovery is ready. Hand back to `using-qd` readiness or follow the scout's `recommended_action`.
 - If readiness is green, use MCP tools for discovery. Do not switch back to a CLI-shaped discovery workflow.
 
 In this repo, readiness is exposed through the scout. Treat that as the normal operator path.
@@ -148,7 +148,7 @@ If it cannot resolve the symbol cleanly, do not fight it. Fall back to `search_c
 
 ## QD Workflow Fit
 
-Use this skill mainly during `exploringplanning` discovery work.
+Use this skill mainly during `planning` discovery work.
 
 - `repo_map` feeds the architecture snapshot.
 - `search_codebase_definitions` plus `read_definitions` feed the existing-pattern evidence.

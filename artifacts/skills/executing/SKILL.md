@@ -2,7 +2,7 @@
 name: executing
 description: >-
   Per-agent worker loop for the qd ecosystem. Load when you are a worker subagent
-  spawned by the exploringswarming skill. Implements the Flywheel single-agent loop (register,
+  spawned by the swarming skill. Implements the Flywheel single-agent loop (register,
   get bead, reserve files, implement, verify, close, report, loop). Handles context
   monitoring, atomic git commits, post-compaction recovery, and graceful handoff.
 metadata:
@@ -81,7 +81,7 @@ If any of these files does not exist, note the absence and proceed — do not fa
 
 ### 1c. Report Online Before Claiming Work
 
-Before you select a bead, you must report in on the epic thread. Startup is not complete until you read `AGENTS.md`, post a startup acknowledgment with both identities, say `AGENTS.md` was read and `exploringexecuting` is loading, and run `fetch_inbox(...)` on the epic topic.
+Before you select a bead, you must report in on the epic thread. Startup is not complete until you read `AGENTS.md`, post a startup acknowledgment with both identities, say `AGENTS.md` was read and `executing` is loading, and run `fetch_inbox(...)` on the epic topic.
 
 Do not call `bv --robot-priority` before this sequence is complete.
 

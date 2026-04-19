@@ -40,7 +40,7 @@ If a finding makes sense only to someone who already read the diff carefully, it
 
 ## When to Invoke
 
-- After `exploringswarming` reports the final phase is complete
+- After `swarming` reports the final phase is complete
 - Manually: when spot-checking any branch or set of changes
 - Flags: `--serial` (always serial), `--skip-uat` (auto mode only, skips Phase 3)
 
@@ -202,9 +202,9 @@ Can you navigate to /forgot-password, enter an email, and confirm the reset emai
 ```
 
 **On failure:**
-1. Invoke `exploringdebugging` skill → root-cause the failure
+1. Invoke `debugging` skill → root-cause the failure
 2. Create a fix bead: `br create "Fix: <description>" -t task -p 0 --parent <epic-id>`
-3. Execute the fix bead (invoke `exploringexecuting` skill)
+3. Execute the fix bead (invoke `executing` skill)
 4. Re-verify the specific UAT item
 5. Do not proceed until the item passes or user explicitly accepts the failure
 
@@ -261,7 +261,7 @@ gh pr create \
 After Phase 4 completes:
 
 > "Feature complete. Epic [id] closed. [N] learnings flagged by learnings-synthesizer.
-> Invoke `exploringcompounding` skill to capture patterns, decisions, and failures for future planning cycles."
+> Invoke `compounding` skill to capture patterns, decisions, and failures for future planning cycles."
 
 Update `.qd/STATE.md`:
 ```

@@ -3,7 +3,7 @@ name: planning
 description: >-
   Research the codebase, turn locked decisions into a plain-English phase plan,
   and after approval prepare only the current phase for validating. Use after
-  exploringexploring completes. Reads CONTEXT.md, retrieves institutional
+  exploring completes. Reads CONTEXT.md, retrieves institutional
   learnings, runs discovery and synthesis, writes discovery.md, approach.md,
   phase-plan.md, and then writes current-phase contract/story artifacts plus
   beads for that phase only.
@@ -163,7 +163,7 @@ If the scout reports a supported gkg repo, treat `gkg` as the default discovery 
 cat .qd/history/<feature>/CONTEXT.md
 ```
 
-If `CONTEXT.md` does not exist, stop. Tell the user: "Run the exploringexploring skill first to lock decisions before planning."
+If `CONTEXT.md` does not exist, stop. Tell the user: "Run the exploring skill first to lock decisions before planning."
 
 If a larger roadmap or whole-feature document exists, read it too. The phase plan should show how the feature unfolds from first usable slice to finished capability.
 
@@ -581,7 +581,7 @@ On successful completion:
 > - Current Phase Story Map: `.qd/history/<feature>/phase-<n>-story-map.md`
 > - HIGH-risk components flagged for this phase: [list or "none"]
 >
-> **Invoke exploringvalidating skill for Phase <n> before execution.**
+> **Invoke exploringvalidating skill**
 
 HARD-GATE: do not hand off to swarming directly.
 

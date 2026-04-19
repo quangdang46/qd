@@ -6,7 +6,7 @@ description: >-
   analysis subagents (patterns/decisions/failures), synthesizes into
   .qd/history/learnings dated markdown entries, promotes critical items to
   critical-patterns.md. Trigger phrases: what did we learn, capture learnings,
-  compound, lessons learned, document what we found, exploringcompounding skill.
+  compound, lessons learned, document what we found, compounding skill.
   Key output: critical-patterns.md is read by every planning and exploring
   Phase 0 — this is the flywheel that makes the ecosystem smarter over time.
 metadata:
@@ -31,7 +31,7 @@ Skip this step and the ecosystem stays flat. Run it and it gets smarter every cy
 
 ## When to Use This Skill
 
-Invoke after `exploringreviewing` completes and the feature is merged (or abandoned with lessons).
+Invoke after `reviewing` completes and the feature is merged (or abandoned with lessons).
 Also invoke after any debugging session that surfaced a non-obvious root cause.
 Skip only for trivial one-line changes where nothing reusable emerged.
 
@@ -55,8 +55,8 @@ Collect all artifacts from the completed feature. Read:
 .beads/ or `br show` output           ← the executable work graph we actually ran
 ```
 
-Also read any review output written by the `exploringreviewing` skill, including P1/P2/P3 findings.
-If debug notes exist from `exploringdebugging` skill invocations for this feature, read those too.
+Also read any review output written by the `reviewing` skill, including P1/P2/P3 findings.
+If debug notes exist from `debugging` skill invocations for this feature, read those too.
 
 Run this git command to get the feature's commit history:
 

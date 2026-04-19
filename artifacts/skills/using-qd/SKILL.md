@@ -110,17 +110,17 @@ These checks are the package-wide contract: the report should stay fully covered
 
 | # | Skill | One-line description | Load when... |
 |---|-------|----------------------|--------------|
-| 1 | `exploringusing-qd` | This file. Routing, go mode, red flags. | Starting any session |
-| 2 | `exploringexploring` | Identify gray areas, lock decisions → CONTEXT.md | Feature request is vague or new; "what exactly should this do?" |
-| 3 | `exploringplanning` | Research + synthesis → `phase-plan.md`, then current-phase contract/story map + beads | Decisions are locked (CONTEXT.md exists); ready to show the full phase/story breakdown and prepare the next phase |
-| 4 | `exploringvalidating` | Verify the current phase contract, story map, and bead graph before execution | The phase plan is approved and the current phase has stories and beads; need to prove this phase is actually execution-ready |
-| 5 | `exploringswarming` | Launch+tend worker pool via Agent Mail + bv | Beads are validated; ready to execute at scale |
-| 6 | `exploringexecuting` | Single worker loop: priority → reserve → implement bead → close → loop | Spawned by swarming; one agent, self-routing from the live graph |
-| 7 | `exploringreviewing` | 5 parallel review agents (P1/P2/P3) + artifact verification + UAT | Execution complete; need quality gate before merge |
-| 8 | `exploringcompounding` | Capture learnings → .qd/history/learnings/ → critical-patterns.md | Feature shipped; extract patterns/decisions/failures for future runs |
-| 9 | `exploringwriting-qd-skills` | TDD-for-skills: RED-GREEN-REFACTOR + persuasion psychology | Improving or creating qd skills themselves |
-| 10 | `exploringdebugging` | Root-cause analysis for blocked beads and execution failures | Agent stuck, bead blocked, unexpected error |
-| 11 | `exploringgkg` | Codebase intelligence via gkg MCP tools after readiness is green | Need deep codebase understanding before planning |
+| 1 | `using-qd` | This file. Routing, go mode, red flags. | Starting any session |
+| 2 | `exploring` | Identify gray areas, lock decisions → CONTEXT.md | Feature request is vague or new; "what exactly should this do?" |
+| 3 | `planning` | Research + synthesis → `phase-plan.md`, then current-phase contract/story map + beads | Decisions are locked (CONTEXT.md exists); ready to show the full phase/story breakdown and prepare the next phase |
+| 4 | `validating` | Verify the current phase contract, story map, and bead graph before execution | The phase plan is approved and the current phase has stories and beads; need to prove this phase is actually execution-ready |
+| 5 | `swarming` | Launch+tend worker pool via Agent Mail + bv | Beads are validated; ready to execute at scale |
+| 6 | `executing` | Single worker loop: priority → reserve → implement bead → close → loop | Spawned by swarming; one agent, self-routing from the live graph |
+| 7 | `reviewing` | 5 parallel review agents (P1/P2/P3) + artifact verification + UAT | Execution complete; need quality gate before merge |
+| 8 | `compounding` | Capture learnings → .qd/history/learnings/ → critical-patterns.md | Feature shipped; extract patterns/decisions/failures for future runs |
+| 9 | `writing-qd-skills` | TDD-for-skills: RED-GREEN-REFACTOR + persuasion psychology | Improving or creating qd skills themselves |
+| 10 | `debugging` | Root-cause analysis for blocked beads and execution failures | Agent stuck, bead blocked, unexpected error |
+| 11 | `gkg` | Codebase intelligence via gkg MCP tools after readiness is green | Need deep codebase understanding before planning |
 
 ---
 
@@ -142,17 +142,17 @@ Given a user request, determine which skill to invoke first:
 
 | Request type | First skill | Notes |
 |---|---|---|
-| Vague/new feature ("build X") | `exploringexploring` | Always start here if gray areas exist |
-| Research task ("investigate Y") | `exploringplanning` | Skip exploring only if scope is fully clear |
-| "Just fix this" / small change | `exploringplanning` | Route in `small_change` mode |
-| "Review my code" | `exploringreviewing` | Load directly |
-| "What did we learn?" / "Capture learnings" | `exploringcompounding` | Load directly |
-| "Improve qd itself" | `exploringwriting-qd-skills` | Load directly |
-| Agent stuck / error | `exploringdebugging` | Load directly |
+| Vague/new feature ("build X") | `exploring` | Always start here if gray areas exist |
+| Research task ("investigate Y") | `planning` | Skip exploring only if scope is fully clear |
+| "Just fix this" / small change | `planning` | Route in `small_change` mode |
+| "Review my code" | `reviewing` | Load directly |
+| "What did we learn?" / "Capture learnings" | `compounding` | Load directly |
+| "Improve qd itself" | `writing-qd-skills` | Load directly |
+| Agent stuck / error | `debugging` | Load directly |
 | "Run the full pipeline" / `/go` | Go Mode (below) | Chain all skills |
 | Resuming a session | Resume Logic (below) | Check HANDOFF.json first |
 
-**When in doubt: invoke `exploringexploring` first.** The cost of over-exploring is low; the cost of executing a misunderstood feature is high.
+**When in doubt: invoke `exploring` first.** The cost of over-exploring is low; the cost of executing a misunderstood feature is high.
 
 ---
 

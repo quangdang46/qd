@@ -1,6 +1,6 @@
 # Review Agent Prompts
 
-Exact prompts for the 5 specialist review agents dispatched in Phase 1 of the exploringreviewing skill.
+Exact prompts for the 5 specialist review agents dispatched in Phase 1 of the reviewing skill.
 
 **Dispatch rule:** Load this file only when spawning review agents. Pass the relevant agent section as the subagent's system prompt. Never pass more than one agent's prompt to the same subagent — isolation is the point.
 
