@@ -20,6 +20,7 @@ metadata:
       config_sources: [repo_codex_config, global_codex_config]
       missing_effect: degraded
       reason: Debugging checks epic mail threads and reports blockers or fixes through Agent Mail.
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Debugging

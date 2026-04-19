@@ -3,6 +3,7 @@ name: refresh-project-docs
 description: Refresh README files and project documentation so they match the current repository state. Use when Codex needs to update stale docs after feature work, sync documentation to current commands, options, configuration, and workflows, rewrite changelog-style wording into evergreen current-state documentation, or turn a rough docs-update prompt into an execution-ready instruction set.
 metadata:
   dependencies: []
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Refresh Project Docs

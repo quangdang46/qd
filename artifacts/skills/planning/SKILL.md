@@ -36,6 +36,7 @@ metadata:
       config_sources: [repo_codex_config, global_codex_config, plugin_mcp_manifest]
       missing_effect: degraded
       reason: Discovery architecture snapshots rely on gkg-backed analysis.
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Planning Skill

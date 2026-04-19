@@ -25,6 +25,7 @@ metadata:
       config_sources: [repo_codex_config, global_codex_config]
       missing_effect: unavailable
       reason: Worker orchestration and coordination run through Agent Mail.
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Swarming

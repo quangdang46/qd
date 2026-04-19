@@ -10,6 +10,7 @@ metadata:
   ecosystem: "qd"
   position: "support skill — invoked on demand"
   dependencies: []
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Dream Skill

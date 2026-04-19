@@ -19,6 +19,7 @@ metadata:
       command: br
       missing_effect: degraded
       reason: Compounding reads bead history to reconstruct what work actually ran.
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Compounding Skill

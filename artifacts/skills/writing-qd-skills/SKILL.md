@@ -3,6 +3,7 @@ name: writing-qd-skills
 description: Use when creating a new qd skill, editing an existing qd skill, or verifying a skill works under pressure before deploying. Use when you need an agent skill to be bulletproof against rationalization. Do NOT use for project-specific AGENTS.md conventions or one-off solutions.
 metadata:
   dependencies: []
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Writing QD Skills

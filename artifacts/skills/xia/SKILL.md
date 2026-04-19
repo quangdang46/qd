@@ -15,6 +15,7 @@ metadata:
       config_sources: [global_codex_config, plugin_mcp_manifest]
       missing_effect: degraded
       reason: Xia uses DeepWiki as a best-effort upstream pattern and repository-structure research path.
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Xia

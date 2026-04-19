@@ -18,6 +18,7 @@ metadata:
       command: bv
       missing_effect: degraded
       reason: Reviewing verifies the live bead graph before epic closeout.
+  author: Hoang Bang (https://github.com/hoangnb24)
 ---
 
 # Reviewing
