@@ -162,7 +162,8 @@ class Installer {
     for (const dirent of dirents) {
       const fullPath = path.join(currentPath, dirent.name);
 
-      if (dirent.name.startsWith('.') && dirent.name !== '.gitkeep') continue;
+      // Skip hidden directories but allow hidden files (e.g., .mcp.json) to be installed
+      if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.gitkeep') continue;
       if (dirent.name === OUTPUT_FOLDER) continue;
 
       if (dirent.isDirectory()) {
