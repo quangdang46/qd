@@ -29,36 +29,22 @@ function assertExists(filePath) {
   }
 }
 
-function copyDir(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
-}
-
 function main() {
   const repoRoot = path.resolve(__dirname, '..');
   const cliPath = path.join(repoRoot, 'dist', 'index.js');
   const tempProject = fs.mkdtempSync(path.join(os.tmpdir(), 'qd-smoke-'));
+  const specPath = process.env.QD_SPEC_PATH || path.join(repoRoot, '..', 'spec', 'artifacts');
 
   console.log(`Smoke test: ${tempProject}`);
+  console.log(`Using artifacts: ${specPath}`);
 
   try {
-    // Copy artifacts to temp project
-    const srcArtifacts = path.join(repoRoot, 'artifacts');
-    const destArtifacts = path.join(tempProject, 'artifacts');
-    copyDir(srcArtifacts, destArtifacts);
-
     // Run: qd init --ides claude-code --directory <temp>
+    // Uses QD_SPEC_PATH or defaults to ../spec/artifacts
     console.log(`Running: qd init --ides claude-code`);
     const install = run('node', [cliPath, 'init', '--ides', 'claude-code', '--directory', tempProject], {
       cwd: repoRoot,
+      env: { ...process.env, QD_SPEC_PATH: specPath },
     });
 
     if (install.status !== 0) {
