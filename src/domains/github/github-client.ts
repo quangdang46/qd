@@ -155,7 +155,7 @@ const GITHUB_API = 'https://api.github.com';
 class GitHubClient {
   constructor() {
     this.owner = 'quangdang46';
-    this.repo = 'qd';
+    this.repo = 'spec';
   }
 
   /**
