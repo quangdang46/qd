@@ -29,8 +29,9 @@ cd qd
 pnpm install
 pnpm build
 
-# Run in dev mode (uses local artifacts)
-QD_ENV=development qdspec init --ides claude-code
+# Run in dev mode (artifacts downloaded from GitHub Releases at init)
+# Use QD_SPEC_PATH=/path/to/spec/artifacts for local artifacts
+qdspec init --ides claude-code
 ```
 
 ## CLI Commands
@@ -83,49 +84,22 @@ Run `qd init --ides` to see all available IDEs.
 
 ```
 qd/
-├── artifacts/          # Installation artifacts
-│   ├── skills/         # QD skills
-│   ├── hooks/         # Session hooks
-│   ├── agents/        # Agent definitions
-│   └── ...
 ├── src/               # Source code
 │   ├── commands/      # CLI commands
 │   ├── domains/       # Domain logic
 │   └── ...
-└── dist/              # Compiled output
-```
-
-## Configuration
-
-### module.yaml
-
-Located in `artifacts/module.yaml`, controls installation behavior:
-
-```yaml
-code: qd
-name: "QD Framework"
-description: "AI-driven development methodology"
-
-# Files to skip during installation
-skip:
-  - "*.example.yaml"
-  - "module.yaml"
-  - "schema.yaml"
-
-# Format conversion rules
-convert:
-  codex:
-    "agents/**": toml
+├── dist/              # Compiled output
+└── test/              # Test files
 ```
 
 ## Versioning
 
 QD uses a two-part release system:
 
-1. **CLI** - Published to npm with `cli-*.*.*` tags (e.g., `cli-0.1.1`)
-2. **Artifacts** - Published to GitHub Releases with `spec-*.*.*` tags (e.g., `spec-0.1.0`)
+1. **CLI** - Published to npm
+2. **Spec** - Published to GitHub Releases of the spec repository
 
-When you run `qdspec init --version spec-0.1.0`, the CLI downloads artifacts from the matching GitHub release.
+When you run `qdspec init`, the CLI downloads artifacts from the latest GitHub release of the spec repository.
 
 ## License
 
