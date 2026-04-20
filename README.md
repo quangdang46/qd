@@ -6,10 +6,10 @@
 
 ```bash
 # Initialize QD for Claude Code
-npx qd init --ides claude-code
+npx qdspec init --ides claude-code
 
 # Or initialize for multiple IDEs
-npx qd init --ides claude-code,cursor,codex
+npx qdspec init --ides claude-code,cursor,codex
 ```
 
 ## Installation
@@ -18,7 +18,7 @@ npx qd init --ides claude-code,cursor,codex
 
 ```bash
 npm install -g qdspec
-qd init --ides <your-ide>
+qdspec init --ides <your-ide>
 ```
 
 ### Development Mode
@@ -30,39 +30,39 @@ pnpm install
 pnpm build
 
 # Run in dev mode (uses local artifacts)
-QD_ENV=development qd init --ides claude-code
+QD_ENV=development qdspec init --ides claude-code
 ```
 
 ## CLI Commands
 
-### `qd init`
+### `qdspec init`
 
 Initialize QD artifacts for selected IDEs.
 
 ```bash
-qd init --ides claude-code,cursor,codex  # Initialize for multiple IDEs
-qd init --ides claude-code --version v0.1.0  # Install specific version
-qd init --ides cursor --no-cache  # Bypass cache
-qd init --directory /path/to/project  # Initialize in specific directory
+qdspec init --ides claude-code,cursor,codex  # Initialize for multiple IDEs
+qdspec init --ides claude-code --version v0.1.0  # Install specific version
+qdspec init --ides cursor --no-cache  # Bypass cache
+qdspec init --directory /path/to/project  # Initialize in specific directory
 ```
 
-### `qd status`
+### `qdspec status`
 
 Display installation status.
 
 ```bash
-qd status  # Check current directory
-qd status --directory /path/to/project  # Check specific directory
+qdspec status  # Check current directory
+qdspec status --directory /path/to/project  # Check specific directory
 ```
 
-### `qd remove`
+### `qdspec  remove`
 
 Remove QD from a project.
 
 ```bash
-qd remove  # Interactive mode
-qd remove --yes  # Remove without prompting
-qd remove --directory /path/to/project  # Remove from specific directory
+qdspec remove  # Interactive mode
+qdspec remove --yes  # Remove without prompting
+qdspec remove --directory /path/to/project  # Remove from specific directory
 ```
 
 ## Supported IDEs
@@ -125,7 +125,7 @@ QD uses a two-part release system:
 1. **CLI** - Published to npm with `cli-*.*.*` tags (e.g., `cli-0.1.1`)
 2. **Artifacts** - Published to GitHub Releases with `spec-*.*.*` tags (e.g., `spec-0.1.0`)
 
-When you run `qd init --version spec-0.1.0`, the CLI downloads artifacts from the matching GitHub release.
+When you run `qdspec init --version spec-0.1.0`, the CLI downloads artifacts from the matching GitHub release.
 
 ## License
 

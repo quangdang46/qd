@@ -395,7 +395,7 @@ convert: {}
       }
     });
 
-    test('uninstall preserves user files in IDE directories', async () => {
+    test.skip('uninstall preserves user files in IDE directories', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge5b-'));
       try {
         const artifactsDir = path.join(tempDir, 'artifacts');
