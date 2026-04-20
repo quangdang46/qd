@@ -35,11 +35,15 @@ function registerInit(program) {
         // ========================================
         // Step 1: Resolve artifacts source
         // ========================================
-        if (IS_DEV) {
-          // Dev mode: use QD project's own artifacts/ directory
+        if (process.env.QD_SPEC_PATH) {
+          // Explicit override (CI, dev workflows)
+          artifactsDir = path.resolve(projectDir, process.env.QD_SPEC_PATH);
+          await prompts.log.info(`Using artifacts from QD_SPEC_PATH: ${artifactsDir}`);
+        } else if (IS_DEV) {
+          // Dev mode: use sibling spec repo artifacts (e.g., qd/ → spec/artifacts)
           const qdProjectRoot = path.join(__dirname, '..', '..');
-          artifactsDir = path.join(qdProjectRoot, 'artifacts');
-          await prompts.log.info('Dev mode: using local artifacts/');
+          artifactsDir = path.join(qdProjectRoot, '..', 'spec', 'artifacts');
+          await prompts.log.info('Dev mode: using sibling spec/artifacts/');
         } else if (options.version) {
           // Specific version requested: download from GitHub
           await prompts.log.info(`Downloading version ${options.version}...`);
