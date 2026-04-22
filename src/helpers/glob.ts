@@ -3,6 +3,12 @@
  */
 
 function matchGlob(pattern, str) {
+  // Leading * means "ends with"
+  if (pattern.startsWith('*')) {
+    const suffix = pattern.slice(1).replace(/\./g, '\\.').replace(/\*/g, '\\*');
+    return new RegExp(`${suffix}$`).test(str);
+  }
+
   const regex = pattern
     .replace(/\./g, '\\.')
     .replace(/\*\*/g, '{{DOUBLE_STAR}}')

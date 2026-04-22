@@ -22,6 +22,7 @@ function registerInit(program) {
     .option('--ides <ides>', 'Comma-separated list of IDE IDs (e.g., "claude-code,cursor")')
     .option('--directory <path>', 'Project directory (default: current directory)')
     .option('--version <version>', 'Specific version to install (e.g., v0.1.0)')
+    .option('--bundle <name>', 'Bundle name to use (overrides default_bundle in module.yaml)')
     .option('--no-cache', 'Bypass cache and re-download even if cached')
     .action(async (options) => {
       const installer = new Installer();
@@ -167,6 +168,7 @@ function registerInit(program) {
           directory: projectDir,
           autoConfirm: !!options.ides,
           artifactsDir, // Inject the resolved artifacts directory
+          bundle: options.bundle || null, // CLI bundle override
         });
 
         if (result && result.success) {

@@ -53,13 +53,13 @@ export class ArtifactResolver {
   /**
    * Determine installed path for manifest (relative to project)
    */
-  getInstalledPath(projectDir, ide, artifact, platformConfig, artifactsDir) {
+  getInstalledPath(projectDir, ide, artifact, platformConfig, artifactsDir, ideSourceRoot) {
     const platform = platformConfig.platforms[ide];
     const { target_dir } = platform.installer;
     const artifactType = this.getArtifactType(artifact.relativePath);
     const sourceDir = path.dirname(artifact.sourcePath);
     const sourceBasename = path.basename(sourceDir);
-    const actualArtifactsDir = artifactsDir || path.join(projectDir, 'artifacts');
+    const actualArtifactsDir = ideSourceRoot || artifactsDir || path.join(projectDir, 'artifacts');
     const typeRootDir = path.join(actualArtifactsDir, artifactType);
     const fileName = path.basename(artifact.sourcePath);
     const baseName = path.basename(fileName, path.extname(fileName));
@@ -84,13 +84,13 @@ export class ArtifactResolver {
   /**
    * Determine installedDir for manifest (parent directory of installed file)
    */
-  getInstalledDir(projectDir, ide, artifact, platformConfig, artifactsDir) {
+  getInstalledDir(projectDir, ide, artifact, platformConfig, artifactsDir, ideSourceRoot) {
     const platform = platformConfig.platforms[ide];
     const { target_dir } = platform.installer;
     const artifactType = this.getArtifactType(artifact.relativePath);
     const sourceDir = path.dirname(artifact.sourcePath);
     const sourceBasename = path.basename(sourceDir);
-    const actualArtifactsDir = artifactsDir || path.join(projectDir, 'artifacts');
+    const actualArtifactsDir = ideSourceRoot || artifactsDir || path.join(projectDir, 'artifacts');
     const typeRootDir = path.join(actualArtifactsDir, artifactType);
 
     if (sourceDir === actualArtifactsDir) {

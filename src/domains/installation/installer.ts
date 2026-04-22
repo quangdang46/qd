@@ -34,6 +34,7 @@ class Installer {
     this.results = [];
     this.resolver = new ArtifactResolver();
     this.artifactsDir = null; // Can be injected for remote artifact installation
+    this.ideSourceRoot = null; // Root for artifact walking (artifacts/app-dev/.IDE after entering)
   }
 
   async install(options = {}) {
@@ -42,6 +43,7 @@ class Installer {
 
     // Support external artifactsDir (for remote download) or default to local
     this.artifactsDir = options.artifactsDir || path.join(projectDir, 'artifacts');
+    this.requestedBundle = options.bundle || null; // CLI override for bundle
 
     try {
       const config = await this.phase1CollectConfig(projectDir);
@@ -103,13 +105,39 @@ class Installer {
   }
 
   async phase1CollectConfig(projectDir) {
-    const modulePath = path.join(this.artifactsDir, 'module.yaml');
+    let modulePath = path.join(this.artifactsDir, 'module.yaml');
     let config = { convert: {} };
 
     if (await fs.pathExists(modulePath)) {
       try {
         const content = await fs.readFile(modulePath, 'utf8');
-        config = yaml.parse(content) || { convert: {} };
+        const rootConfig = yaml.parse(content) || {};
+
+        // If module.yaml has default_bundle or CLI --bundle override, resolve to that bundle's module.yaml
+        // CLI --bundle takes precedence over default_bundle in module.yaml
+        // Only use default_bundle if CLI --bundle was explicitly provided (not null)
+        const bundleName = this.requestedBundle ?? rootConfig.default_bundle;
+        // Check bundle root first, then .IDE subdir (where actual bundle configs live)
+        let bundlePath = bundleName ? path.join(this.artifactsDir, bundleName, 'module.yaml') : null;
+        let bundleConfig = null;
+        if (bundlePath && await fs.pathExists(bundlePath)) {
+          const bundleContent = await fs.readFile(bundlePath, 'utf8');
+          bundleConfig = yaml.parse(bundleContent) || { convert: {} };
+        } else if (bundleName) {
+          // Fallback: check .IDE subdir for bundle config
+          const ideBundlePath = path.join(this.artifactsDir, bundleName, '.IDE', 'module.yaml');
+          if (await fs.pathExists(ideBundlePath)) {
+            const bundleContent = await fs.readFile(ideBundlePath, 'utf8');
+            bundleConfig = yaml.parse(bundleContent) || { convert: {} };
+          }
+        }
+        if (bundleConfig) {
+          config = bundleConfig;
+          config.bundle = bundleName;
+        } else {
+          config = rootConfig;
+          if (bundleName) config.bundle = bundleName;
+        }
       } catch (error) {
         await prompts.log.warn(`Warning: Could not read module.yaml: ${error.message}`);
       }
@@ -156,14 +184,71 @@ class Installer {
   }
 
   async walkDir(currentPath, artifactsRoot, parentSchema, entries, config) {
+    
     const dirents = await fs.readdir(currentPath, { withFileTypes: true });
     let currentSchema = parentSchema;
+    
 
     for (const dirent of dirents) {
       const fullPath = path.join(currentPath, dirent.name);
 
+      // Handle .IDE folder - walk INTO it
+      if (dirent.isDirectory() && dirent.name === '.IDE') {
+        this.ideSourceRoot = fullPath; // Set IDE source root
+        // Set artifactsRoot to .IDE folder so relativePath is computed from .IDE
+        await this.walkDir(fullPath, fullPath, parentSchema, entries, config);
+        continue;
+      }
+
+      // At root level (artifacts/), skip bundle directories that are NOT the selected bundle
+      // Also skip any other non-bundle, non-.IDE directories at root (e.g., CCGS Skill Testing Framework)
+      // But not when inside .IDE/ itself (where artifactsRoot == currentPath for .IDE's children)
+      if (currentPath === artifactsRoot && currentPath !== this.ideSourceRoot && dirent.isDirectory() && dirent.name !== '.IDE') {
+        const ideFolder = path.join(fullPath, '.IDE');
+        if (await fs.pathExists(ideFolder)) {
+          // This is a bundle dir
+          const bundleName = this.config?.bundle || this.config?.default_bundle;
+          if (bundleName && dirent.name !== bundleName) {
+            // Bundle specified but this is not the selected bundle - skip it
+            continue;
+          } else if (!bundleName) {
+            // No bundle specified - skip all bundles at root, use default_bundle if set
+            const rootDefault = this.config?.default_bundle;
+            if (rootDefault && dirent.name !== rootDefault) {
+              continue;
+            } else if (!rootDefault) {
+              // No default_bundle either - skip all bundle dirs
+              continue;
+            }
+          }
+        } else {
+          // Non-bundle directory at root level (e.g., CCGS Skill Testing Framework) - skip it
+          continue;
+        }
+      }
+
+      // At bundle root level (e.g., artifacts/game-dev/), only walk .IDE/ subdir
+      // Skip everything else (CCGS Skill Testing Framework, docs, etc.)
+      if (currentPath !== artifactsRoot && currentPath !== this.ideSourceRoot && dirent.isDirectory() && dirent.name !== '.IDE') {
+        const ideFolder = path.join(fullPath, '.IDE');
+        if (await fs.pathExists(ideFolder)) {
+          // This is a nested .IDE in a subdir of a bundle - skip it
+          continue;
+        }
+        // Non-.IDE subdir in bundle root - skip it (e.g., CCGS Skill Testing Framework in game-dev/)
+        // But NOT subdirs inside .IDE/ (they're valid artifact directories)
+        if (this.config && this.config.bundle) {
+          const parentDir = path.dirname(fullPath);
+          const isInsideIdeSource = this.ideSourceRoot && fullPath.startsWith(this.ideSourceRoot + path.sep);
+          if (parentDir === path.join(artifactsRoot, this.config.bundle) && !isInsideIdeSource) {
+            continue;
+          }
+        }
+      }
+
       // Skip hidden directories but allow hidden files (e.g., .mcp.json) to be installed
-      if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.gitkeep') continue;
+      // Exception: .IDE is the source folder and must be walked
+      if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.IDE' && dirent.name !== '.gitkeep') continue;
       if (dirent.name === OUTPUT_FOLDER) continue;
 
       if (dirent.isDirectory()) {
@@ -178,7 +263,12 @@ class Installer {
         const overrideKey = dirent.name;
         const fileOverride = fileSchema.overrides?.[overrideKey];
         const targetIdes = this.resolveTargetIdes(fileSchema, fileOverride);
-        const relativePath = path.relative(artifactsRoot, fullPath);
+        let relativePath = path.relative(artifactsRoot, fullPath);
+        // Strip bundle prefix from relativePath for bundle-root files (e.g., game-dev/CLAUDE.md -> CLAUDE.md)
+        // so they get artifact type 'skills' and are installed at .claude/CLAUDE.md, not .claude/game-dev/
+        if (this.config?.bundle && relativePath.startsWith(this.config.bundle + '/')) {
+          relativePath = relativePath.slice(this.config.bundle.length + 1);
+        }
         const convertFormat = this.getConvertFormat(relativePath, config);
 
         entries.push({
@@ -256,7 +346,9 @@ class Installer {
 
     // Check if sourceDir is directly the artifact type root (e.g., artifacts/agents)
     // vs a nested skill directory (e.g., artifacts/skills/agent-browser)
-    const typeRootDir = path.join(this.artifactsDir, artifactType);
+    // Use ideSourceRoot if set (when inside .IDE/), otherwise artifactsDir
+    const sourceRoot = this.ideSourceRoot || this.artifactsDir;
+    const typeRootDir = path.join(sourceRoot, artifactType);
 
     const artifactsDir = this.artifactsDir;
 
@@ -276,6 +368,14 @@ class Installer {
         }
 
         // Copy to IDE target (e.g., .claude/testfile.md)
+        const targetFile = path.join(projectDir, target_dir, fileName);
+        await fs.copy(sourceFile, targetFile, { overwrite: true });
+        return;
+      }
+      // If sourceDir is ideSourceRoot (.IDE/ dir), copy root files directly to target_dir
+      if (this.ideSourceRoot && sourceDir === this.ideSourceRoot) {
+        const sourceFile = artifact.sourcePath;
+        const fileName = path.basename(sourceFile);
         const targetFile = path.join(projectDir, target_dir, fileName);
         await fs.copy(sourceFile, targetFile, { overwrite: true });
         return;
@@ -444,21 +544,28 @@ class Installer {
         const artifactType = this.getArtifactType(artifact.relativePath);
         const sourceDir = path.dirname(artifact.sourcePath);
         const sourceBasename = path.basename(sourceDir);
-        const typeRootDir = path.join(projectDir, 'artifacts', artifactType);
+        const sourceRoot = this.ideSourceRoot || this.artifactsDir;
+        const typeRootDir = path.join(sourceRoot, artifactType);
         const fileName = path.basename(artifact.sourcePath);
         const baseName = path.basename(fileName, path.extname(fileName));
 
 
         let installed;
-        if (sourceDir === typeRootDir) {
+        // Files at .IDE/ root go directly to target_dir/
+        if (!artifact.relativePath.includes('/')) {
+          installed = path.join(target_dir, fileName);
+        } else if (this.ideSourceRoot && sourceDir === this.ideSourceRoot) {
+          // File at IDE source root (.IDE/) -> goes to target_dir/filename
+          installed = path.join(target_dir, fileName);
+        } else if (sourceDir === typeRootDir) {
           // Direct file in type root (e.g., artifacts/agents/atlas.md)
           if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
             installed = path.join(target_dir, artifactType, `${baseName}.toml`);
           } else {
             installed = path.join(target_dir, artifactType, fileName);
           }
-        } else if (sourceDir === path.join(projectDir, 'artifacts')) {
-          // File directly at artifacts root (e.g., testfile.md) -> goes to target_dir/filename
+        } else if (sourceDir === path.join(projectDir, 'artifacts') || sourceDir === this.artifactsDir) {
+          // File directly at artifacts root -> goes to target_dir/filename
           installed = path.join(target_dir, fileName);
         } else {
           // Nested skill directory
@@ -468,7 +575,7 @@ class Installer {
             installed = path.join(target_dir, artifactType, sourceBasename, fileName);
           }
         }
-        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig, this.artifactsDir);
+        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig, this.artifactsDir, this.ideSourceRoot);
 
         currentIdeArtifacts.push({
           source: artifact.relativePath,
