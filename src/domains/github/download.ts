@@ -62,9 +62,13 @@ function downloadFile(url, destination) {
   return new Promise((resolve, reject) => {
     const token = getGitHubToken();
 
+    // Determine headers based on URL type
+    const isApiUrl = url.includes('api.github.com');
     const headers = {
       'User-Agent': 'qdspec-cli',
       ...(token && { Authorization: `Bearer ${token}` }),
+      // For API asset URLs, need Accept header to get binary content
+      ...(isApiUrl && { Accept: 'application/octet-stream' }),
     };
 
     function doRequest(reqUrl, headers = {}) {
@@ -110,7 +114,7 @@ function downloadFile(url, destination) {
       });
     }
 
-    doRequest(url);
+    doRequest(url, headers);
   });
 }
 
@@ -246,7 +250,8 @@ async function downloadVersion(tag, options = {}) {
       a.name.endsWith('.tar.gz') || a.name.endsWith('.tgz') || a.name.endsWith('.zip')
     );
     if (asset) {
-      downloadUrl = asset.browser_download_url;
+      // Use the API URL directly for asset download (browser_download_url may 404)
+      downloadUrl = asset.url;
     }
   }
 
