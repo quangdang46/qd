@@ -237,17 +237,22 @@ async function downloadVersion(tag, options = {}) {
   // Get release info
   const release = await client.getReleaseByTag(tag);
 
-  // Determine download URL - prefer tarball_url over assets
-  let downloadUrl = release.tarball_url;
+  // Determine download URL - prefer uploaded asset over auto-generated tarball_url
+  let downloadUrl = null;
 
-  // If no tarball_url, try to find an asset
-  if (!downloadUrl && release.assets && release.assets.length > 0) {
+  // First check for uploaded asset (qdspec-artifacts.tar.gz)
+  if (release.assets && release.assets.length > 0) {
     const asset = release.assets.find((a) =>
       a.name.endsWith('.tar.gz') || a.name.endsWith('.tgz') || a.name.endsWith('.zip')
     );
     if (asset) {
       downloadUrl = asset.browser_download_url;
     }
+  }
+
+  // Fall back to auto-generated tarball_url only if no asset found
+  if (!downloadUrl) {
+    downloadUrl = release.tarball_url;
   }
 
   if (!downloadUrl) {
