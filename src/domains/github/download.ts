@@ -67,7 +67,7 @@ function downloadFile(url, destination) {
       ...(token && { Authorization: `Bearer ${token}` }),
     };
 
-    function doRequest(reqUrl) {
+    function doRequest(reqUrl, headers = {}) {
       const file = fsnative.createWriteStream(destination);
       const client = reqUrl.startsWith('https://') ? https : http;
 
@@ -76,7 +76,7 @@ function downloadFile(url, destination) {
           const redirectUrl = res.headers.location;
           if (redirectUrl) {
             file.close();
-            doRequest(redirectUrl);
+            doRequest(redirectUrl, headers);  // Pass headers on redirect
           } else {
             file.close();
             reject(new Error('Redirect without location header'));
