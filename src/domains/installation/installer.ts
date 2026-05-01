@@ -166,9 +166,8 @@ class Installer {
       if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.gitkeep') continue;
       if (dirent.name === OUTPUT_FOLDER) continue;
 
-      // Hardcoded skip for installer/bundle meta files (not artifacts)
-      const installerMetaFiles = ['module.yaml', 'AGENTS.template.md', 'jest.config.js', 'package.json', 'README.md', 'tsconfig.json'];
-      if (installerMetaFiles.includes(dirent.name)) continue;
+      // Skip bundle manifest - not an artifact to install
+      if (dirent.name === 'module.yaml') continue;
 
       if (dirent.isDirectory()) {
         await this.walkDir(fullPath, artifactsRoot, parentSchema, entries, config);
