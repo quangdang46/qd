@@ -201,12 +201,12 @@ async function downloadAndExtract(url, tag, options = {}) {
 
 /**
  * Find the artifacts directory within extracted content
- * GitHub tarball extracts as owner-repo-tag/ - artifacts/ is inside that
+ * GitHub tarball extracts as owner-repo-tag/ - .IDE/ is inside that
  */
 async function findArtifactsDir(extractedDir) {
   const candidates = [
-    path.join(extractedDir, 'artifacts'),
-    extractedDir, // artifacts might be at root
+    path.join(extractedDir, '.IDE'),
+    extractedDir, // .IDE might be at root
   ];
 
   for (const candidate of candidates) {
