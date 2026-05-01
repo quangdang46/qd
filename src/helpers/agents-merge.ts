@@ -9,20 +9,22 @@ const fs = require('../shared/fs-native');
 async function mergeAgentsTemplate(sourceFile, targetFile) {
   const template = await fs.readFile(sourceFile, 'utf8');
   const templateContent = extractAgentsBlock(template);
+  // Strip any existing markers from template content for clean insertion
+  const cleanContent = stripMarkers(templateContent);
 
   if (!(await fs.pathExists(targetFile))) {
     // No existing file - write with markers
-    await fs.writeFile(targetFile, '<!-- QD:START -->\n' + templateContent.trim() + '\n<!-- QD:END -->\n', 'utf8');
+    await fs.writeFile(targetFile, '<!-- QD:START -->\n' + cleanContent.trim() + '\n<!-- QD:END -->\n', 'utf8');
     return;
   }
 
   const existing = await fs.readFile(targetFile, 'utf8');
 
   if (hasAgentsBlock(existing)) {
-    const merged = replaceAgentsBlock(existing, templateContent);
+    const merged = replaceAgentsBlock(existing, cleanContent);
     await fs.writeFile(targetFile, merged, 'utf8');
   } else {
-    const merged = existing.trimEnd() + '\n\n<!-- QD:START -->\n' + templateContent.trim() + '\n<!-- QD:END -->\n';
+    const merged = existing.trimEnd() + '\n\n<!-- QD:START -->\n' + cleanContent.trim() + '\n<!-- QD:END -->\n';
     await fs.writeFile(targetFile, merged, 'utf8');
   }
 }
@@ -48,10 +50,21 @@ function replaceAgentsBlock(existing, newBlock) {
     // No existing block - just append new block with markers
     return existing.trimEnd() + '\n\n<!-- QD:START -->\n' + newBlock.trim() + '\n<!-- QD:END -->\n';
   }
-  // Replace existing block with new content (wrap with markers if not present)
-  const hasMarkers = newBlock.includes('<!-- QD:START -->');
-  const blockToInsert = hasMarkers ? newBlock.trim() : '<!-- QD:START -->\n' + newBlock.trim() + '\n<!-- QD:END -->';
-  return existing.slice(0, start) + blockToInsert + '\n' + existing.slice(end + '<!-- QD:END -->'.length);
+  // Replace existing block - newBlock is already clean (no markers)
+  return existing.slice(0, start) + '<!-- QD:START -->\n' + newBlock.trim() + '\n<!-- QD:END -->\n' + existing.slice(end + '<!-- QD:END -->'.length);
+}
+
+function stripMarkers(content) {
+  // Remove QD markers from content if present
+  let result = content;
+  const startMarker = '<!-- QD:START -->';
+  const endMarker = '<!-- QD:END -->';
+  const startIdx = result.indexOf(startMarker);
+  const endIdx = result.indexOf(endMarker);
+  if (startIdx !== -1 && endIdx !== -1) {
+    result = result.slice(0, startIdx) + result.slice(startIdx + startMarker.length, endIdx) + result.slice(endIdx + endMarker.length);
+  }
+  return result;
 }
 
 module.exports = {

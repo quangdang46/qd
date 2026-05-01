@@ -90,7 +90,7 @@ export class ArtifactResolver {
     const artifactType = this.getArtifactType(artifact.relativePath);
     const sourceDir = path.dirname(artifact.sourcePath);
     const sourceBasename = path.basename(sourceDir);
-    const actualArtifactsDir = ideSourceRoot || artifactsDir || path.join(projectDir, 'artifacts');
+    const actualArtifactsDir = ideSourceRoot || artifactsDir || path.join(projectDir, '.IDE');
     const typeRootDir = path.join(actualArtifactsDir, artifactType);
 
     if (sourceDir === actualArtifactsDir) {
@@ -98,7 +98,9 @@ export class ArtifactResolver {
     }
 
     if (sourceDir !== typeRootDir) {
-      return path.join(projectDir, target_dir, artifactType, sourceBasename);
+      // For nested directories, compute relative path from typeRootDir to preserve structure
+      const relativeFromTypeRoot = path.relative(typeRootDir, sourceDir);
+      return path.join(projectDir, target_dir, artifactType, relativeFromTypeRoot);
     }
 
     return path.join(projectDir, target_dir, artifactType);

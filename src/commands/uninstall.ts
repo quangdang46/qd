@@ -124,17 +124,29 @@ function registerUninstall(program) {
           await installer.uninstallIdeConfigs(projectDir, existingInstall, { silent: true });
           s.stop(`Removed IDE integrations (${ides || 'none'})`);
 
-          // Clean up AGENTS.md QD block
+          // Clean up AGENTS.md - delete if only contains QD markers, otherwise clean block
           const agentsFile = path.join(projectDir, 'AGENTS.md');
           if (await fs.pathExists(agentsFile)) {
             const content = await fs.readFile(agentsFile, 'utf8');
             const startMarker = '<!-- QD:START -->';
             const endMarker = '<!-- QD:END -->';
-            const startIdx = content.indexOf(startMarker);
-            const endIdx = content.indexOf(endMarker);
-            if (startIdx !== -1 && endIdx !== -1) {
+            const hasStart = content.includes(startMarker);
+            const hasEnd = content.includes(endMarker);
+
+            if (!hasStart && hasEnd) {
+              // File only has end marker - delete the file
+              await fs.remove(agentsFile);
+            } else if (hasStart && hasEnd) {
+              // Clean content between markers
+              const startIdx = content.indexOf(startMarker);
+              const endIdx = content.indexOf(endMarker);
               const cleaned = content.slice(0, startIdx).trimEnd() + '\n' + content.slice(endIdx + endMarker.length);
-              await fs.writeFile(agentsFile, cleaned + '\n', 'utf8');
+              // If cleaned is just whitespace/newlines, delete the file
+              if (cleaned.trim().length === 0) {
+                await fs.remove(agentsFile);
+              } else {
+                await fs.writeFile(agentsFile, cleaned + '\n', 'utf8');
+              }
             }
           }
         }

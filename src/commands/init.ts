@@ -22,7 +22,6 @@ function registerInit(program) {
     .option('--ides <ides>', 'Comma-separated list of IDE IDs (e.g., "claude-code,cursor")')
     .option('--directory <path>', 'Project directory (default: current directory)')
     .option('--version <version>', 'Specific version to install (e.g., v0.1.0)')
-    .option('--bundle <name>', 'Bundle name to use (overrides default_bundle in module.yaml)')
     .option('--no-cache', 'Bypass cache and re-download even if cached')
     .action(async (options) => {
       const installer = new Installer();
@@ -41,10 +40,10 @@ function registerInit(program) {
           artifactsDir = path.resolve(projectDir, process.env.QD_SPEC_PATH);
           await prompts.log.info(`Using artifacts from QD_SPEC_PATH: ${artifactsDir}`);
         } else if (IS_DEV) {
-          // Dev mode: use sibling spec repo artifacts (e.g., qd/ → spec/artifacts)
+          // Dev mode: use sibling spec repo .IDE (e.g., qd/ → spec/.IDE)
           const qdProjectRoot = path.join(__dirname, '..', '..');
-          artifactsDir = path.join(qdProjectRoot, '..', 'spec', 'artifacts');
-          await prompts.log.info('Dev mode: using sibling spec/artifacts/');
+          artifactsDir = path.join(qdProjectRoot, '..', 'spec', '.IDE');
+          await prompts.log.info('Dev mode: using sibling spec/.IDE/');
         } else if (options.version) {
           // Specific version requested: download from GitHub
           await prompts.log.info(`Downloading version ${options.version}...`);
@@ -56,10 +55,10 @@ function registerInit(program) {
             artifactsDir = result.artifactsDir;
             await prompts.log.success(`Installed from cache: ${result.fromCache}`);
           } catch (err) {
-            // On download error, try fallback to local artifacts
+            // On download error, try fallback to local .IDE
             await prompts.log.warn(`Download failed: ${err.message}`);
-            await prompts.log.info('Falling back to local artifacts/...');
-            artifactsDir = path.join(projectDir, 'artifacts');
+            await prompts.log.info('Falling back to local .IDE/...');
+            artifactsDir = path.join(projectDir, '.IDE');
           }
         } else {
           // No version specified: interactive version selection from GitHub
@@ -72,10 +71,10 @@ function registerInit(program) {
             if (rateLimit.remaining === 0) {
               await prompts.log.warn('GitHub API rate limit exceeded');
               await prompts.log.info('Set GITHUB_TOKEN env var for 5,000 req/hr');
-              // Fallback to local artifacts
-              artifactsDir = path.join(projectDir, 'artifacts');
+              // Fallback to local .IDE
+              artifactsDir = path.join(projectDir, '.IDE');
               if (!(await require('../shared/fs-native').pathExists(artifactsDir))) {
-                throw new Error('No GitHub access and no local artifacts/ found');
+                throw new Error('No GitHub access and no local .IDE/ found');
               }
             } else {
               // Show version picker
@@ -95,9 +94,9 @@ function registerInit(program) {
             if (err.classified?.category === ErrorCategory.RATE_LIMIT) {
               await prompts.log.warn('GitHub API rate limit exceeded');
               await prompts.log.info('Set GITHUB_TOKEN env var for 5,000 req/hr');
-              artifactsDir = path.join(projectDir, 'artifacts');
+              artifactsDir = path.join(projectDir, '.IDE');
               if (!(await require('../shared/fs-native').pathExists(artifactsDir))) {
-                throw new Error('No GitHub access and no local artifacts/ found');
+                throw new Error('No GitHub access and no local .IDE/ found');
               }
             } else {
               throw err;
@@ -168,7 +167,6 @@ function registerInit(program) {
           directory: projectDir,
           autoConfirm: !!options.ides,
           artifactsDir, // Inject the resolved artifacts directory
-          bundle: options.bundle || null, // CLI bundle override
         });
 
         if (result && result.success) {

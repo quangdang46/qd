@@ -34,7 +34,6 @@ class Installer {
     this.results = [];
     this.resolver = new ArtifactResolver();
     this.artifactsDir = null; // Can be injected for remote artifact installation
-    this.ideSourceRoot = null; // Root for artifact walking (artifacts/app-dev/.IDE after entering)
   }
 
   async install(options = {}) {
@@ -42,8 +41,7 @@ class Installer {
     const autoConfirm = options.autoConfirm || false;
 
     // Support external artifactsDir (for remote download) or default to local
-    this.artifactsDir = options.artifactsDir || path.join(projectDir, 'artifacts');
-    this.requestedBundle = options.bundle || null; // CLI override for bundle
+    this.artifactsDir = options.artifactsDir || path.join(projectDir, '.IDE');
 
     try {
       const config = await this.phase1CollectConfig(projectDir);
@@ -111,33 +109,7 @@ class Installer {
     if (await fs.pathExists(modulePath)) {
       try {
         const content = await fs.readFile(modulePath, 'utf8');
-        const rootConfig = yaml.parse(content) || {};
-
-        // If module.yaml has default_bundle or CLI --bundle override, resolve to that bundle's module.yaml
-        // CLI --bundle takes precedence over default_bundle in module.yaml
-        // Only use default_bundle if CLI --bundle was explicitly provided (not null)
-        const bundleName = this.requestedBundle ?? rootConfig.default_bundle;
-        // Check bundle root first, then .IDE subdir (where actual bundle configs live)
-        let bundlePath = bundleName ? path.join(this.artifactsDir, bundleName, 'module.yaml') : null;
-        let bundleConfig = null;
-        if (bundlePath && await fs.pathExists(bundlePath)) {
-          const bundleContent = await fs.readFile(bundlePath, 'utf8');
-          bundleConfig = yaml.parse(bundleContent) || { convert: {} };
-        } else if (bundleName) {
-          // Fallback: check .IDE subdir for bundle config
-          const ideBundlePath = path.join(this.artifactsDir, bundleName, '.IDE', 'module.yaml');
-          if (await fs.pathExists(ideBundlePath)) {
-            const bundleContent = await fs.readFile(ideBundlePath, 'utf8');
-            bundleConfig = yaml.parse(bundleContent) || { convert: {} };
-          }
-        }
-        if (bundleConfig) {
-          config = bundleConfig;
-          config.bundle = bundleName;
-        } else {
-          config = rootConfig;
-          if (bundleName) config.bundle = bundleName;
-        }
+        config = yaml.parse(content) || { convert: {} };
       } catch (error) {
         await prompts.log.warn(`Warning: Could not read module.yaml: ${error.message}`);
       }
@@ -184,75 +156,17 @@ class Installer {
   }
 
   async walkDir(currentPath, artifactsRoot, parentSchema, entries, config) {
-    
     const dirents = await fs.readdir(currentPath, { withFileTypes: true });
     let currentSchema = parentSchema;
-    
 
     for (const dirent of dirents) {
       const fullPath = path.join(currentPath, dirent.name);
 
-      // Handle .IDE folder - walk INTO it
-      if (dirent.isDirectory() && dirent.name === '.IDE') {
-        this.ideSourceRoot = fullPath; // Set IDE source root
-        // Set artifactsRoot to .IDE folder so relativePath is computed from .IDE
-        await this.walkDir(fullPath, fullPath, parentSchema, entries, config);
-        continue;
-      }
-
-      // At root level (artifacts/), skip bundle directories that are NOT the selected bundle
-      // Also skip any other non-bundle, non-.IDE directories at root (e.g., CCGS Skill Testing Framework)
-      // But not when inside .IDE/ itself (where artifactsRoot == currentPath for .IDE's children)
-      if (currentPath === artifactsRoot && currentPath !== this.ideSourceRoot && dirent.isDirectory() && dirent.name !== '.IDE') {
-        const ideFolder = path.join(fullPath, '.IDE');
-        if (await fs.pathExists(ideFolder)) {
-          // This is a bundle dir
-          const bundleName = this.config?.bundle || this.config?.default_bundle;
-          if (bundleName && dirent.name !== bundleName) {
-            // Bundle specified but this is not the selected bundle - skip it
-            continue;
-          } else if (!bundleName) {
-            // No bundle specified - skip all bundles at root, use default_bundle if set
-            const rootDefault = this.config?.default_bundle;
-            if (rootDefault && dirent.name !== rootDefault) {
-              continue;
-            } else if (!rootDefault) {
-              // No default_bundle either - skip all bundle dirs
-              continue;
-            }
-          }
-        } else {
-          // Non-bundle directory at root level (e.g., CCGS Skill Testing Framework) - skip it
-          continue;
-        }
-      }
-
-      // At bundle root level (e.g., artifacts/game-dev/), only walk .IDE/ subdir
-      // Skip everything else (CCGS Skill Testing Framework, docs, etc.)
-      if (currentPath !== artifactsRoot && currentPath !== this.ideSourceRoot && dirent.isDirectory() && dirent.name !== '.IDE') {
-        const ideFolder = path.join(fullPath, '.IDE');
-        if (await fs.pathExists(ideFolder)) {
-          // This is a nested .IDE in a subdir of a bundle - skip it
-          continue;
-        }
-        // Non-.IDE subdir in bundle root - skip it (e.g., CCGS Skill Testing Framework in game-dev/)
-        // But NOT subdirs inside .IDE/ (they're valid artifact directories)
-        if (this.config && this.config.bundle) {
-          const parentDir = path.dirname(fullPath);
-          const isInsideIdeSource = this.ideSourceRoot && fullPath.startsWith(this.ideSourceRoot + path.sep);
-          if (parentDir === path.join(artifactsRoot, this.config.bundle) && !isInsideIdeSource) {
-            continue;
-          }
-        }
-      }
-
       // Skip hidden directories but allow hidden files (e.g., .mcp.json) to be installed
-      // Exception: .IDE is the source folder and must be walked
-      if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.IDE' && dirent.name !== '.gitkeep') continue;
+      if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.gitkeep') continue;
       if (dirent.name === OUTPUT_FOLDER) continue;
 
       if (dirent.isDirectory()) {
-        // Use module.yaml config for all directories - no subdirectory schema.yaml
         await this.walkDir(fullPath, artifactsRoot, parentSchema, entries, config);
         currentSchema = parentSchema;
       } else if (dirent.isFile()) {
@@ -263,12 +177,7 @@ class Installer {
         const overrideKey = dirent.name;
         const fileOverride = fileSchema.overrides?.[overrideKey];
         const targetIdes = this.resolveTargetIdes(fileSchema, fileOverride);
-        let relativePath = path.relative(artifactsRoot, fullPath);
-        // Strip bundle prefix from relativePath for bundle-root files (e.g., game-dev/CLAUDE.md -> CLAUDE.md)
-        // so they get artifact type 'skills' and are installed at .claude/CLAUDE.md, not .claude/game-dev/
-        if (this.config?.bundle && relativePath.startsWith(this.config.bundle + '/')) {
-          relativePath = relativePath.slice(this.config.bundle.length + 1);
-        }
+        const relativePath = path.relative(artifactsRoot, fullPath);
         const convertFormat = this.getConvertFormat(relativePath, config);
 
         entries.push({
@@ -346,8 +255,7 @@ class Installer {
 
     // Check if sourceDir is directly the artifact type root (e.g., artifacts/agents)
     // vs a nested skill directory (e.g., artifacts/skills/agent-browser)
-    // Use ideSourceRoot if set (when inside .IDE/), otherwise artifactsDir
-    const sourceRoot = this.ideSourceRoot || this.artifactsDir;
+    const sourceRoot = this.artifactsDir;
     const typeRootDir = path.join(sourceRoot, artifactType);
 
     const artifactsDir = this.artifactsDir;
@@ -373,7 +281,7 @@ class Installer {
         return;
       }
       // If sourceDir is ideSourceRoot (.IDE/ dir), copy root files directly to target_dir
-      if (this.ideSourceRoot && sourceDir === this.ideSourceRoot) {
+      if (this.artifactsDir && sourceDir === this.artifactsDir) {
         const sourceFile = artifact.sourcePath;
         const fileName = path.basename(sourceFile);
         const targetFile = path.join(projectDir, target_dir, fileName);
@@ -544,7 +452,7 @@ class Installer {
         const artifactType = this.getArtifactType(artifact.relativePath);
         const sourceDir = path.dirname(artifact.sourcePath);
         const sourceBasename = path.basename(sourceDir);
-        const sourceRoot = this.ideSourceRoot || this.artifactsDir;
+        const sourceRoot = this.artifactsDir || this.artifactsDir;
         const typeRootDir = path.join(sourceRoot, artifactType);
         const fileName = path.basename(artifact.sourcePath);
         const baseName = path.basename(fileName, path.extname(fileName));
@@ -554,7 +462,7 @@ class Installer {
         // Files at .IDE/ root go directly to target_dir/
         if (!artifact.relativePath.includes('/')) {
           installed = path.join(target_dir, fileName);
-        } else if (this.ideSourceRoot && sourceDir === this.ideSourceRoot) {
+        } else if (this.artifactsDir && sourceDir === this.artifactsDir) {
           // File at IDE source root (.IDE/) -> goes to target_dir/filename
           installed = path.join(target_dir, fileName);
         } else if (sourceDir === typeRootDir) {
@@ -568,14 +476,15 @@ class Installer {
           // File directly at artifacts root -> goes to target_dir/filename
           installed = path.join(target_dir, fileName);
         } else {
-          // Nested skill directory
+          // Nested skill directory - preserve full relative path from typeRootDir
+          const relativeFromTypeRoot = path.relative(typeRootDir, sourceDir);
           if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
-            installed = path.join(target_dir, artifactType, sourceBasename, `${baseName}.toml`);
+            installed = path.join(target_dir, artifactType, relativeFromTypeRoot, `${baseName}.toml`);
           } else {
-            installed = path.join(target_dir, artifactType, sourceBasename, fileName);
+            installed = path.join(target_dir, artifactType, relativeFromTypeRoot, fileName);
           }
         }
-        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig, this.artifactsDir, this.ideSourceRoot);
+        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig, this.artifactsDir, this.artifactsDir);
 
         currentIdeArtifacts.push({
           source: artifact.relativePath,
@@ -716,65 +625,113 @@ class Installer {
     const ides = manifestData?.ides || existingInstall?.ides || [];
     const installedFiles = manifestData?.artifacts || [];
 
-    // Collect ALL parent directories of installed files for cleanup
-    // This includes skill directories (depth > 2) AND artifact type dirs like hooks/ (depth == 2)
-    const allParentDirs = new Set();
-    const ideRootsToClean = new Set();
+    // Track all directories created by QD (we can remove these if empty)
+    const qdDirs = new Set();
 
     for (const entry of installedFiles) {
-      // Remove the file
+      // Remove only the specific installed file
       const targetPath = path.join(projectDir, entry.installed);
       if (await fs.pathExists(targetPath)) {
         await fs.remove(targetPath);
       }
 
-      // Collect all parent directories of installed files (for depth >= 2 dirs)
-      // This ensures nested structure directories are removed even at depth == 2
+      // Track the installed directory for potential cleanup
       if (entry.installedDir) {
-        allParentDirs.add(entry.installedDir);
+        qdDirs.add(entry.installedDir);
       }
 
-      // Track IDE root
-      const parts = entry.installed.split(path.sep);
-      ideRootsToClean.add(path.join(projectDir, parts[0]));
+      // Also collect ALL parent directories up to .claude/ root
+      // AND all intermediate directories between parent dirs
+      // (ensureDir creates these even if they have no files)
+      let parentDir = path.dirname(path.join(projectDir, entry.installed));
+      const claudeRoot = path.join(projectDir, '.claude');
+      while (parentDir && parentDir !== claudeRoot && parentDir.startsWith(claudeRoot + path.sep)) {
+        qdDirs.add(parentDir);
+        parentDir = path.dirname(parentDir);
+      }
     }
-
-    // Remove all parent directories (this handles depth == 2 artifact dirs like .claude/hooks/)
-    for (const parentDir of allParentDirs) {
-      try {
-        if (await fs.pathExists(parentDir)) {
-          await fs.remove(parentDir);
+    // Also add intermediate subdirectories that were created by ensureDir during install
+    // These might not be directly parent dirs of files but exist as empty dirs
+    // Walk from .claude/skills down to collect all subdirs
+    const skillsDir = path.join(projectDir, '.claude', 'skills');
+    if (await fs.pathExists(skillsDir)) {
+      async function collectSubdirs(dir) {
+        const items = await fs.readdir(dir, { withFileTypes: true });
+        for (const item of items) {
+          if (item.isDirectory()) {
+            const subDir = path.join(dir, item.name);
+            qdDirs.add(subDir);
+            await collectSubdirs(subDir);
+          }
         }
-      } catch {
-        // Ignore errors
+      }
+      await collectSubdirs(skillsDir);
+    }
+
+    // Only clean up directories that were created by QD and are now empty
+    // Never remove directories that contain user files
+    // Use iterative approach: keep removing empty directories until no more can be removed
+    // (because removing a child can make its parent empty)
+    let removed = true;
+    const toRemove = new Set(qdDirs);
+    while (removed) {
+      removed = false;
+      const currentIter = [...toRemove];
+      toRemove.clear();
+      for (const qdDir of currentIter) {
+        if (!(await fs.pathExists(qdDir))) {
+          toRemove.delete(qdDir);
+          continue;
+        }
+        const items = await fs.readdir(qdDir);
+        if (items.length === 0) {
+          toRemove.delete(qdDir);
+          await fs.remove(qdDir);
+          removed = true;
+
+          // After removing this directory, check if any parent directory is now empty
+          // Walk up the tree removing empty directories as we go
+          let parentDir = path.dirname(qdDir);
+          const claudeRoot = path.join(projectDir, '.claude');
+          while (parentDir && parentDir !== claudeRoot && parentDir.startsWith(claudeRoot + path.sep)) {
+            if (await fs.pathExists(parentDir)) {
+              const parentItems = await fs.readdir(parentDir);
+              if (parentItems.length === 0) {
+                // Only add to toRemove if it exists (avoid double-processing Set during iteration)
+                if (toRemove.has(parentDir)) {
+                  toRemove.delete(parentDir);
+                }
+                await fs.remove(parentDir);
+                parentDir = path.dirname(parentDir);
+                removed = true; // Continue trying to remove parents
+              } else {
+                break;
+              }
+            } else {
+              break;
+            }
+          }
+        }
       }
     }
 
-    // Clean up intermediate empty directories (e.g., .claude/skills/ after removing nested skills)
-    for (const ideRoot of ideRootsToClean) {
+    // Clean up IDE root directories if empty (e.g., .claude/ if nothing user-created remains)
+    const ideRoots = new Set();
+    for (const entry of installedFiles) {
+      const parts = entry.installed.split(path.sep);
+      if (parts.length > 0) {
+        ideRoots.add(path.join(projectDir, parts[0]));
+      }
+    }
+
+    for (const ideRoot of ideRoots) {
       try {
         if (await fs.pathExists(ideRoot)) {
-          const cleanEmptyDirs = async (dir) => {
-            const items = await fs.readdir(dir);
-            for (const item of items) {
-              const fullPath = path.join(dir, item);
-              const stat = await fs.stat(fullPath);
-              if (stat.isDirectory()) {
-                await cleanEmptyDirs(fullPath);
-                // Check if now empty after cleaning children
-                const remaining = await fs.readdir(fullPath);
-                if (remaining.length === 0) {
-                  await fs.remove(fullPath);
-                }
-              }
-            }
-          };
-          await cleanEmptyDirs(ideRoot);
-          // Final check: remove IDE root if empty
-          const rootItems = await fs.readdir(ideRoot);
-          if (rootItems.length === 0) {
+          const items = await fs.readdir(ideRoot);
+          if (items.length === 0) {
             await fs.remove(ideRoot);
           }
+          // If not empty, leave it (user files remain)
         }
       } catch {
         // Ignore errors
