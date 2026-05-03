@@ -176,6 +176,7 @@ class GitHubClient {
         assets: (r.assets || []).map((a) => ({
           name: a.name,
           size: a.size,
+          url: a.url,
           browser_download_url: a.browser_download_url,
         })),
       }));

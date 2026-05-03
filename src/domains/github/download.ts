@@ -64,11 +64,13 @@ function downloadFile(url, destination) {
 
     // Determine headers based on URL type
     const isApiUrl = url.includes('api.github.com');
+    // Only use Accept: octet-stream for asset download URLs, not tarball/zipball endpoints.
+    // Tarball endpoints return HTTP 415 with this header.
+    const isAssetUrl = url.includes('/releases/assets/');
     const headers = {
       'User-Agent': 'qdspec-cli',
       ...(token && { Authorization: `Bearer ${token}` }),
-      // For API asset URLs, need Accept header to get binary content
-      ...(isApiUrl && { Accept: 'application/octet-stream' }),
+      ...(isAssetUrl && token && { Accept: 'application/octet-stream' }),
     };
 
     function doRequest(reqUrl, headers = {}) {
