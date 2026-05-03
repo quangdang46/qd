@@ -2,28 +2,25 @@
 
 /**
  * Phase-based installer for QD artifacts → IDE targets
- * 6-Phase Flow:
+ * 5-Phase Flow:
  * Phase 1: Collect config from module.yaml (format conversion rules)
  * Phase 2: Detect selected IDEs + load platform-codes.yaml
  * Phase 3: Walk artifacts tree (cascade schema.yaml + apply overrides)
  * Phase 4: Copy/convert to IDE targets (apply mappings, format conversion)
- * Phase 5: Create .qd-output/ directory
- * Phase 6: Display summary
+ * Phase 5: Display summary
  */
 
 const path = require('node:path');
 const fs = require('../../shared/fs-native');
 const yaml = require('yaml');
 const { loadPlatformCodes } = require('../ide/platform-codes');
-const { getProjectRoot } = require('./project-root');
-const { Manifest } = require('./manifest');
 const { ArtifactResolver } = require('./artifact-resolver');
 const { matchGlob } = require('../../helpers/glob');
 const { mdToToml, escapeTomlString } = require('../../helpers/toml');
 const { mergeAgentsTemplate } = require('../../helpers/agents-merge');
 const prompts = require('../../shared/prompts');
 
-const OUTPUT_FOLDER = 'learnings';
+const RUNTIME_OUTPUT_DIR = 'learnings';
 
 class Installer {
   constructor() {
@@ -68,10 +65,8 @@ class Installer {
       }
 
       await this.phase4CopyToTargets(projectDir, platformConfig, artifacts, config);
-      // Phase 5: no output folder creation needed — history/ created at runtime
-      await this.phase6WriteManifest(projectDir, artifacts, platformConfig);
       await this.phaseAddToGitignore(projectDir);
-      await this.phase6DisplaySummary(platformConfig);
+      await this.phase5DisplaySummary(platformConfig);
 
       return { success: true, projectDir, ides: this.selectedIdes };
     } catch (error) {
@@ -164,7 +159,7 @@ class Installer {
 
       // Skip hidden directories but allow hidden files (e.g., .mcp.json) to be installed
       if (dirent.isDirectory() && dirent.name.startsWith('.') && dirent.name !== '.gitkeep') continue;
-      if (dirent.name === OUTPUT_FOLDER) continue;
+      if (dirent.name === RUNTIME_OUTPUT_DIR) continue;
 
       // Skip bundle manifest - not an artifact to install
       if (dirent.name === 'module.yaml') continue;
@@ -430,88 +425,7 @@ class Installer {
     return tomlLines.join('\n');
   }
 
-// Phase 5 intentionally empty — history/ created at runtime, not during install
-
-  async phase6WriteManifest(projectDir, artifacts, platformConfig) {
-    const { qdDir } = await this.findQdDir(projectDir);
-    await fs.ensureDir(path.join(qdDir, '_config'));
-
-    const manifest = new Manifest();
-    const existingManifest = await manifest.read(qdDir);
-    const existingIdes = existingManifest?.ides || [];
-    const existingArtifacts = existingManifest?.artifacts || [];
-
-    // Merge IDEs: keep old ones + add new ones
-    const allIdes = [...new Set([...existingIdes, ...this.selectedIdes])];
-
-    // Replace artifacts for current IDEs (remove old, add new)
-    const currentIdeArtifacts = [];
-    for (const artifact of artifacts) {
-      if (artifact.targetIdes.length === 0) continue;
-      for (const ide of artifact.targetIdes) {
-        const platform = platformConfig.platforms[ide];
-        if (!platform?.installer) continue;
-        const { target_dir } = platform.installer;
-        const artifactType = this.getArtifactType(artifact.relativePath);
-        const sourceDir = path.dirname(artifact.sourcePath);
-        const sourceBasename = path.basename(sourceDir);
-        const sourceRoot = this.artifactsDir || this.artifactsDir;
-        const typeRootDir = path.join(sourceRoot, artifactType);
-        const fileName = path.basename(artifact.sourcePath);
-        const baseName = path.basename(fileName, path.extname(fileName));
-
-
-        let installed;
-        // Files at .IDE/ root go directly to target_dir/
-        if (!artifact.relativePath.includes('/')) {
-          installed = path.join(target_dir, fileName);
-        } else if (this.artifactsDir && sourceDir === this.artifactsDir) {
-          // File at IDE source root (.IDE/) -> goes to target_dir/filename
-          installed = path.join(target_dir, fileName);
-        } else if (sourceDir === typeRootDir) {
-          // Direct file in type root (e.g., artifacts/agents/atlas.md)
-          if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
-            installed = path.join(target_dir, artifactType, `${baseName}.toml`);
-          } else {
-            installed = path.join(target_dir, artifactType, fileName);
-          }
-        } else if (sourceDir === path.join(projectDir, 'artifacts') || sourceDir === this.artifactsDir) {
-          // File directly at artifacts root -> goes to target_dir/filename
-          installed = path.join(target_dir, fileName);
-        } else {
-          // Nested skill directory - preserve full relative path from typeRootDir
-          const relativeFromTypeRoot = path.relative(typeRootDir, sourceDir);
-          if (artifact.convertFormat?.ide === ide && artifact.convertFormat?.format === 'toml') {
-            installed = path.join(target_dir, artifactType, relativeFromTypeRoot, `${baseName}.toml`);
-          } else {
-            installed = path.join(target_dir, artifactType, relativeFromTypeRoot, fileName);
-          }
-        }
-        const installedDir = this.resolver.getInstalledDir(projectDir, ide, artifact, platformConfig, this.artifactsDir, this.artifactsDir);
-
-        currentIdeArtifacts.push({
-          source: artifact.relativePath,
-          installed,
-          installedDir,
-          ide,
-          artifactType,
-        });
-      }
-    }
-
-    // Remove old artifacts for current IDEs, keep others
-    const artifactEntries = existingArtifacts.filter(a => !this.selectedIdes.includes(a.ide));
-    artifactEntries.push(...currentIdeArtifacts);
-
-    await manifest.write(qdDir, {
-      version: '1.0.0',
-      installDate: new Date().toISOString(),
-      ides: allIdes,
-      artifacts: artifactEntries,
-    });
-  }
-
-  async phase6DisplaySummary(platformConfig) {
+  async phase5DisplaySummary(platformConfig) {
     const color = await prompts.getColor();
 
     const lines = [];
@@ -536,7 +450,7 @@ class Installer {
     }
 
     lines.push('');
-    lines.push('  History/ learn ings created at runtime, not during install');
+    lines.push('  No .qd state folder or manifest is created during install');
     lines.push('');
     lines.push('  Get started:');
     lines.push('    1. Launch your AI agent');
@@ -577,184 +491,10 @@ class Installer {
 
       if (toAdd.length > 0) {
         const newLine = content.endsWith('\n') || content === '' ? '' : '\n';
-        await fs.writeFile(gitignorePath, content + newLine + toAdd.join('\n') + '\n', 'utf8');
+      await fs.writeFile(gitignorePath, content + newLine + toAdd.join('\n') + '\n', 'utf8');
       }
     } catch {
       // Silently ignore gitignore errors
-    }
-  }
-
-  // Methods needed by status/remove commands
-  qdFolderName = '.qd';
-
-  async findQdDir(projectDir) {
-    return { qdDir: path.join(projectDir, this.qdFolderName) };
-  }
-
-  async getStatus(projectDir) {
-    const { qdDir } = await this.findQdDir(projectDir);
-    const exists = await fs.pathExists(qdDir);
-
-    if (!exists) {
-      return {
-        installed: false,
-        version: '1.0.0',
-        moduleIds: [],
-        ides: [],
-      };
-    }
-
-    const manifest = new Manifest();
-    const manifestData = await manifest.read(qdDir);
-
-    return {
-      installed: true,
-      version: manifestData?.installation?.version || '1.0.0',
-      moduleIds: [],
-      ides: manifestData?.ides || [],
-    };
-  }
-
-  async getOutputFolder(projectDir) {
-    return OUTPUT_FOLDER;
-  }
-
-  async uninstallIdeConfigs(projectDir, existingInstall, options) {
-    const { qdDir } = await this.findQdDir(projectDir);
-    const manifest = new Manifest();
-    const manifestData = await manifest.read(qdDir);
-
-    // Use IDEs from manifest if available, otherwise fall back to existingInstall
-    const ides = manifestData?.ides || existingInstall?.ides || [];
-    const installedFiles = manifestData?.artifacts || [];
-
-    // Track all directories created by QD (we can remove these if empty)
-    const qdDirs = new Set();
-
-    for (const entry of installedFiles) {
-      // Remove only the specific installed file
-      const targetPath = path.join(projectDir, entry.installed);
-      if (await fs.pathExists(targetPath)) {
-        await fs.remove(targetPath);
-      }
-
-      // Track the installed directory for potential cleanup
-      if (entry.installedDir) {
-        qdDirs.add(entry.installedDir);
-      }
-
-      // Also collect ALL parent directories up to .claude/ root
-      // AND all intermediate directories between parent dirs
-      // (ensureDir creates these even if they have no files)
-      let parentDir = path.dirname(path.join(projectDir, entry.installed));
-      const claudeRoot = path.join(projectDir, '.claude');
-      while (parentDir && parentDir !== claudeRoot && parentDir.startsWith(claudeRoot + path.sep)) {
-        qdDirs.add(parentDir);
-        parentDir = path.dirname(parentDir);
-      }
-    }
-    // Also add intermediate subdirectories that were created by ensureDir during install
-    // These might not be directly parent dirs of files but exist as empty dirs
-    // Walk from .claude/skills down to collect all subdirs
-    const skillsDir = path.join(projectDir, '.claude', 'skills');
-    if (await fs.pathExists(skillsDir)) {
-      async function collectSubdirs(dir) {
-        const items = await fs.readdir(dir, { withFileTypes: true });
-        for (const item of items) {
-          if (item.isDirectory()) {
-            const subDir = path.join(dir, item.name);
-            qdDirs.add(subDir);
-            await collectSubdirs(subDir);
-          }
-        }
-      }
-      await collectSubdirs(skillsDir);
-    }
-
-    // Only clean up directories that were created by QD and are now empty
-    // Never remove directories that contain user files
-    // Use iterative approach: keep removing empty directories until no more can be removed
-    // (because removing a child can make its parent empty)
-    let removed = true;
-    const toRemove = new Set(qdDirs);
-    while (removed) {
-      removed = false;
-      const currentIter = [...toRemove];
-      toRemove.clear();
-      for (const qdDir of currentIter) {
-        if (!(await fs.pathExists(qdDir))) {
-          toRemove.delete(qdDir);
-          continue;
-        }
-        const items = await fs.readdir(qdDir);
-        if (items.length === 0) {
-          toRemove.delete(qdDir);
-          await fs.remove(qdDir);
-          removed = true;
-
-          // After removing this directory, check if any parent directory is now empty
-          // Walk up the tree removing empty directories as we go
-          let parentDir = path.dirname(qdDir);
-          const claudeRoot = path.join(projectDir, '.claude');
-          while (parentDir && parentDir !== claudeRoot && parentDir.startsWith(claudeRoot + path.sep)) {
-            if (await fs.pathExists(parentDir)) {
-              const parentItems = await fs.readdir(parentDir);
-              if (parentItems.length === 0) {
-                // Only add to toRemove if it exists (avoid double-processing Set during iteration)
-                if (toRemove.has(parentDir)) {
-                  toRemove.delete(parentDir);
-                }
-                await fs.remove(parentDir);
-                parentDir = path.dirname(parentDir);
-                removed = true; // Continue trying to remove parents
-              } else {
-                break;
-              }
-            } else {
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    // Clean up IDE root directories if empty (e.g., .claude/ if nothing user-created remains)
-    const ideRoots = new Set();
-    for (const entry of installedFiles) {
-      const parts = entry.installed.split(path.sep);
-      if (parts.length > 0) {
-        ideRoots.add(path.join(projectDir, parts[0]));
-      }
-    }
-
-    for (const ideRoot of ideRoots) {
-      try {
-        if (await fs.pathExists(ideRoot)) {
-          const items = await fs.readdir(ideRoot);
-          if (items.length === 0) {
-            await fs.remove(ideRoot);
-          }
-          // If not empty, leave it (user files remain)
-        }
-      } catch {
-        // Ignore errors
-      }
-    }
-  }
-
-  async uninstallOutputFolder(projectDir, outputFolder) {
-    // .qd-output is now inside .qd/ folder
-    const { qdDir } = await this.findQdDir(projectDir);
-    const outputPath = path.join(qdDir, outputFolder);
-    if (await fs.pathExists(outputPath)) {
-      await fs.remove(outputPath);
-    }
-  }
-
-  async uninstallModules(projectDir) {
-    const { qdDir } = await this.findQdDir(projectDir);
-    if (await fs.pathExists(qdDir)) {
-      await fs.remove(qdDir);
     }
   }
 }

@@ -33,14 +33,14 @@ function main() {
   const repoRoot = path.resolve(__dirname, '..');
   const cliPath = path.join(repoRoot, 'dist', 'index.js');
   const tempProject = fs.mkdtempSync(path.join(os.tmpdir(), 'qd-smoke-'));
-  const specPath = process.env.QD_SPEC_PATH || path.join(repoRoot, '..', 'spec', 'artifacts');
+  const specPath = process.env.QD_SPEC_PATH || path.join(repoRoot, '..', 'spec', '.IDE');
 
   console.log(`Smoke test: ${tempProject}`);
   console.log(`Using artifacts: ${specPath}`);
 
   try {
     // Run: qd init --ides claude-code --directory <temp>
-    // Uses QD_SPEC_PATH or defaults to ../spec/artifacts
+    // Uses QD_SPEC_PATH or defaults to ../spec/.IDE
     console.log(`Running: qd init --ides claude-code`);
     const install = run('node', [cliPath, 'init', '--ides', 'claude-code', '--directory', tempProject], {
       cwd: repoRoot,
@@ -57,15 +57,15 @@ function main() {
     assertExists(claudeDir);
     assertExists(skillsDir);
 
-    // Verify output folder (_qd/learnings)
-    const qdDir = path.join(tempProject, '_qd');
-    const learningsDir = path.join(qdDir, 'learnings');
-    assertExists(qdDir);
-    assertExists(learningsDir);
+    // Verify no hidden qd state is created
+    const qdDir = path.join(tempProject, '.qd');
+    if (fs.existsSync(qdDir)) {
+      throw new Error(`Unexpected state folder created: ${qdDir}`);
+    }
 
     console.log('\nSmoke init PASS');
     console.log('  .claude/skills created');
-    console.log('  _qd/learnings created');
+    console.log('  no .qd folder created');
   } catch (error) {
     console.error(`Smoke init FAIL: ${error.message}`);
     process.exit(1);

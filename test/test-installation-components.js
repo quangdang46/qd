@@ -58,13 +58,10 @@ async function main() {
     ok(platformCodes.platforms['claude-code']?.installer?.target_dir === '.claude', 'Expected .claude');
   });
 
-  await runCase('Installer creates output directory', async () => {
+  await runCase('Installer does not create a .qd state directory', async () => {
     const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-test-'));
     try {
-      const outputPath = path.join(tempDir, '_qd-output');
-      await fsNative.ensureDir(path.join(outputPath, 'learnings'));
-      ok(await fsNative.pathExists(outputPath), 'Output dir exists');
-      ok(await fsNative.pathExists(path.join(outputPath, 'learnings')), 'Learnings dir exists');
+      ok(!(await fsNative.pathExists(path.join(tempDir, '.qd'))), '.qd should not exist before install');
     } finally {
       await fsNative.remove(tempDir).catch(() => {});
     }
@@ -73,8 +70,8 @@ async function main() {
   await runCase('Installer full install creates .claude directory', async () => {
     const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-install-'));
     try {
-      // Copy artifacts
-      await copyDir(path.join(__dirname, '..', 'artifacts'), path.join(tempDir, 'artifacts'));
+      // Copy local .IDE artifact bundle into the temp project
+      await copyDir(path.join(__dirname, '..', '..', 'spec', '.IDE'), path.join(tempDir, '.IDE'));
 
       const installer = new Installer();
       const result = await installer.install({
@@ -85,6 +82,7 @@ async function main() {
       ok(result.success === true, 'Install should succeed');
       ok(await fsNative.pathExists(path.join(tempDir, '.claude')), '.claude directory should exist');
       ok(await fsNative.pathExists(path.join(tempDir, '.claude', 'skills')), '.claude/skills should exist');
+      ok(!(await fsNative.pathExists(path.join(tempDir, '.qd'))), '.qd directory should not be created');
     } finally {
       await fsNative.remove(tempDir).catch(() => {});
     }

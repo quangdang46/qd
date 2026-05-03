@@ -12,7 +12,7 @@ function findProjectRoot(startPath = path.join(__dirname, '..')) {
   try {
     const qdspecPath = require.resolve('qdspec/package.json');
     const qdspecDir = path.dirname(qdspecPath);
-    if (fs.existsSync(path.join(qdspecDir, 'artifacts'))) {
+    if (fs.existsSync(path.join(qdspecDir, '.IDE'))) {
       return qdspecDir;
     }
   } catch {
@@ -51,7 +51,7 @@ function getProjectRoot() {
 }
 
 function getArtifactsPath(...segments) {
-  return path.join(getProjectRoot(), 'artifacts', ...segments);
+  return path.join(getProjectRoot(), '.IDE', ...segments);
 }
 
 module.exports = {

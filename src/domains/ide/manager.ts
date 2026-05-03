@@ -10,11 +10,6 @@ class IdeManager {
   constructor() {
     this.handlers = new Map();
     this._initialized = false;
-    this.qdFolderName = '.qd';
-  }
-
-  setQdFolderName(qdFolderName) {
-    this.qdFolderName = qdFolderName;
   }
 
   async ensureInitialized() {
@@ -34,9 +29,6 @@ class IdeManager {
       if (!platformInfo.installer) continue;
 
       const handler = new ConfigDrivenIdeSetup(platformCode, platformInfo);
-      if (typeof handler.setQdFolderName === 'function') {
-        handler.setQdFolderName(this.qdFolderName);
-      }
       this.handlers.set(platformCode, handler);
     }
   }

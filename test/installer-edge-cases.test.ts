@@ -81,7 +81,7 @@ describe('Installer Comprehensive Tests', () => {
   };
 
   const createMinimalArtifacts = async (tempDir: string, moduleYaml?: string): Promise<void> => {
-    const artifactsDir = path.join(tempDir, 'artifacts');
+    const artifactsDir = path.join(tempDir, '.IDE');
     await fsNative.ensureDir(artifactsDir);
     await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
     await fsNative.ensureDir(path.join(artifactsDir, 'hooks'));
@@ -117,7 +117,7 @@ convert: {}
     test('artifacts/testfile.md copies to .claude/testfile.md (IDE root, not skills subdir)', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge1-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -159,7 +159,7 @@ convert: {}
     test('artifacts/testfile.md can be IDE-specific via module.yaml overrides', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge1b-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -204,7 +204,7 @@ convert: {}
     test('artifacts/skills/my-skill/*.md copies to .claude/skills/my-skill/*.md', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge2-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(path.join(artifactsDir, 'skills', 'my-skill'));
 
         await fsNative.writeFile(path.join(artifactsDir, 'module.yaml'), `
@@ -241,7 +241,7 @@ convert: {}
     test('supported_ides: only listed IDEs receive artifacts', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge3a-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -276,7 +276,7 @@ convert: {}
     test('ignored_ides: all IDEs except listed receive artifacts', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge3b-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -316,7 +316,7 @@ convert: {}
     test('specific file can be excluded via overrides', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge4-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -351,13 +351,13 @@ convert: {}
   });
 
   // ============================================================================
-  // EDGE CASE 5: Uninstall removes all installed files
+  // EDGE CASE 5: Stateless install
   // ============================================================================
-  describe('Edge Case 5: Uninstall', () => {
-    test('uninstall removes all QD-installed files', async () => {
+  describe('Edge Case 5: Stateless install', () => {
+    test('install does not create a .qd folder or manifest state', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge5-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -378,58 +378,9 @@ convert: {}
           autoConfirm: true,
         });
 
-        // Verify files exist
         expect(await fsNative.pathExists(path.join(tempDir, '.claude', 'testfile.md'))).toBe(true);
         expect(await fsNative.pathExists(path.join(tempDir, '.claude', 'skills', 'test.md'))).toBe(true);
-
-        // Uninstall
-        await installer.uninstallIdeConfigs(tempDir, { ides: ['claude-code'] }, {});
-        await installer.uninstallModules(tempDir);
-
-        // Files should be removed
-        expect(await fsNative.pathExists(path.join(tempDir, '.claude', 'testfile.md'))).toBe(false);
-        expect(await fsNative.pathExists(path.join(tempDir, '.claude', 'skills', 'test.md'))).toBe(false);
-        expect(await fsNative.pathExists(path.join(tempDir, '_qd'))).toBe(false);
-      } finally {
-        await fsNative.remove(tempDir);
-      }
-    });
-
-    test.skip('uninstall preserves user files in IDE directories', async () => {
-      const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge5b-'));
-      try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
-        const claudeDir = path.join(tempDir, '.claude');
-        await fsNative.ensureDir(artifactsDir);
-        await fsNative.ensureDir(path.join(claudeDir, 'skills'));
-        await fsNative.ensureDir(path.join(claudeDir, 'skills', 'my-custom-skill'));
-
-        // Create user's custom skill
-        await fsNative.writeFile(path.join(claudeDir, 'skills', 'my-custom-skill', 'SKILL.md'), '# Custom');
-
-        await fsNative.writeFile(path.join(artifactsDir, 'module.yaml'), `
-code: test
-name: "Test"
-supported_ides: [claude-code]
-convert: {}
-`);
-
-        await fsNative.ensureDir(path.join(artifactsDir, 'skills', 'qd-skill'));
-        await fsNative.writeFile(path.join(artifactsDir, 'skills', 'qd-skill', 'SKILL.md'), '# QD Skill');
-
-        const installer = new Installer();
-        await installer.install({
-          ides: ['claude-code'],
-          directory: tempDir,
-          autoConfirm: true,
-        });
-
-        // Uninstall
-        await installer.uninstallIdeConfigs(tempDir, { ides: ['claude-code'] }, {});
-        await installer.uninstallModules(tempDir);
-
-        // User's custom skill should still exist
-        expect(await fsNative.pathExists(path.join(claudeDir, 'skills', 'my-custom-skill', 'SKILL.md'))).toBe(true);
+        expect(await fsNative.pathExists(path.join(tempDir, '.qd'))).toBe(false);
       } finally {
         await fsNative.remove(tempDir);
       }
@@ -443,7 +394,7 @@ convert: {}
     test('re-init updates files without duplication', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge6-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -494,7 +445,7 @@ convert: {}
     test('supported_ides: [] skips all IDEs', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge7-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -531,7 +482,7 @@ convert: {}
     test('installs to correct target directories for each IDE', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge8-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 
@@ -571,7 +522,7 @@ convert: {}
     test('artifacts/agents/atlas.md copies to .claude/agents/atlas.md', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge9-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'agents'));
 
@@ -606,7 +557,7 @@ convert: {}
     test('installs with default config when module.yaml missing', async () => {
       const tempDir = await fsNative.mkdtemp(path.join(os.tmpdir(), 'qd-edge10-'));
       try {
-        const artifactsDir = path.join(tempDir, 'artifacts');
+        const artifactsDir = path.join(tempDir, '.IDE');
         await fsNative.ensureDir(artifactsDir);
         await fsNative.ensureDir(path.join(artifactsDir, 'skills'));
 

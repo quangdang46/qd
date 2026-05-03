@@ -1,6 +1,6 @@
 # QD Framework
 
-**AI-Driven Development Methodology** - A breakthrough method for agile development powered by AI agents.
+**AI-Driven Development Methodology** - A simple installer that places `.IDE` artifacts into your chosen AI IDE directories.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ pnpm install
 pnpm build
 
 # Run in dev mode (artifacts downloaded from GitHub Releases at init)
-# Use QD_SPEC_PATH=/path/to/spec/artifacts for local artifacts
+# Use QD_SPEC_PATH=/path/to/spec/.IDE for local artifacts
 qdspec init --ides claude-code
 ```
 
@@ -39,31 +39,17 @@ qdspec init --ides claude-code
 ### `qdspec init`
 
 Initialize QD artifacts for selected IDEs.
+This command is stateless:
+
+- it does not create a `.qd` folder
+- it does not write a manifest
+- it does not install a remove/status management layer
 
 ```bash
 qdspec init --ides claude-code,cursor,codex  # Initialize for multiple IDEs
 qdspec init --ides claude-code --version v0.1.0  # Install specific version
 qdspec init --ides cursor --no-cache  # Bypass cache
 qdspec init --directory /path/to/project  # Initialize in specific directory
-```
-
-### `qdspec status`
-
-Display installation status.
-
-```bash
-qdspec status  # Check current directory
-qdspec status --directory /path/to/project  # Check specific directory
-```
-
-### `qdspec  remove`
-
-Remove QD from a project.
-
-```bash
-qdspec remove  # Interactive mode
-qdspec remove --yes  # Remove without prompting
-qdspec remove --directory /path/to/project  # Remove from specific directory
 ```
 
 ## Supported IDEs
@@ -78,7 +64,7 @@ qdspec remove --directory /path/to/project  # Remove from specific directory
 | Gemini CLI | `--ides gemini` |
 | And 20+ more... |
 
-Run `qd init --ides` to see all available IDEs.
+Run `qdspec init --ides` to see all available IDEs.
 
 ## Architecture
 

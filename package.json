@@ -18,9 +18,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && cp src/domains/ide/platform-codes.yaml dist/domains/ide/",
-    "qd:install": "node dist/index.js install",
-    "qd:remove": "node dist/index.js remove",
-    "install:qd": "node dist/index.js install",
+    "qd:init": "node dist/index.js init",
     "smoke:init": "node test/smoke-init.js",
     "test": "jest --config jest.config.ts",
     "test:watch": "jest --config jest.config.ts --watch"
